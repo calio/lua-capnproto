@@ -1,0 +1,8 @@
+#!/bin/bash
+
+make all || exit
+./main > a.data || exit
+make test.txt || exit
+luajit foo.lua || exit
+xxd -g 1 a || exit
+xxd -g 1 c || exit

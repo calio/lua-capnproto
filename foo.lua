@@ -9,6 +9,6 @@ msg.b1 = true
 msg.i2 = 254
 msg.i3 = 65536
 
-local f = io.open("c", "w")
+local f = io.open("c.data", "w")
 f:write(serialize(test_capnp.T1))
 f:close()
