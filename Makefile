@@ -6,7 +6,7 @@ CXX:=g++-4.7
 test.capnp.c++: test.capnp
 	capnp compile -oc++ $<
 
-test.txt: test.capnp
+test.schema.txt: test.capnp
 	capnp compile -oecho $< > /tmp/capnp.bin
 	capnp decode /home/calio/code/c-capnproto/compiler/schema.capnp CodeGeneratorRequest > $@ < /tmp/capnp.bin
 

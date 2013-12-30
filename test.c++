@@ -16,6 +16,15 @@ void writeT1(int fd) {
     t1.setI2(254);
     t1.setB1(true);
     t1.setI3(65536);
+    //local t0 = t1.initT0(#"XW&JZ");
+    //::capnp::List< ::int8_t>::Builder l0 = t1.initL0(2);
+    //l0[0].setInt8(128);
+    //l0[1] = 129;
+    /*
+    T1::T2::Builder t2 = t1.initS0();
+    t2.setF0(1.414121);
+    t2.setF1(3.141492265358979);
+    */
     writeMessageToFd(fd, message);
 }
 

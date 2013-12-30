@@ -2,7 +2,9 @@
 
 make all || exit
 ./main > a.data || exit
-make test.txt || exit
-luajit foo.lua || exit
-xxd -g 1 a || exit
-xxd -g 1 c || exit
+make test.schema.txt || exit
+luajit foo.lua c.data || exit
+xxd -g 1 a.data || exit
+echo
+xxd -g 1 c.data || exit
+diff a.data c.data
