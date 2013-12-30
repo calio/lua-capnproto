@@ -32,29 +32,54 @@ end
 -- segment size in word
 -- TODO support 64 bit float number
 _M.write_val = function(buf, val, size, off)
-    if type(val) == "boolean" then
-        val = val and 1 or 0
-    end
 
     local p = ffi.cast("int32_t *", buf)
+
+    if type(val) == "boolean" then
+        print("boolean")
+        val = val and 1 or 0
+    else
+        local i, f = math.modf(val)
+        -- float number
+        if (f ~= 0) then
+            if size == 32 then
+        print("float32")
+                p = ffi.cast("float *", p)
+            elseif size == 64 then
+        print("float64")
+                p = ffi.cast("double *", p)
+            else
+                error("float size other than 32 and 64")
+            end
+        else
+            if size == 64 then
+        print("int64")
+                p = ffi.cast("int64_t *", buf)
+            else
+        print("int32")
+            end
+        end
+    end
+
+
     local bit_off = size * off -- offset in bits
-    local n = math.floor(bit_off / 32) -- offset in 4 bytes
-    local s = bit_off % 32     -- offset within 4 bytes
+    local n, s
+    if size <= 32 then
+        n = math.floor(bit_off / 32) -- offset in 4 bytes
+        s = bit_off % 32     -- offset within 4 bytes
+    elseif size == 64 then
+        n = math.floor(bit_off / 64) -- offset in 8 bytes
+        s = bit_off % 64     -- offset within 8 bytes
+    end
 
     print(string.format("n %d, s %d, %d\n", n, s, val))
-    buf = ffi.cast("int32_t *", buf)
 
     -- shift returns 32 bit number
     if (size < 32) then
-        buf[n] = bor(tonumber(buf[n]), lshift(val, s))
-    elseif (size == 32) then
-        local i, f = math.modf(val)
-        if (f ~= 0) then
-            buf = ffi.cast("float *", buf)
-        end
-        buf[n] = val
+        p[n] = bor(tonumber(p[n]), lshift(val, s))
     else
-        error("not supported size: " .. size)
+        -- 32 bit or 64 bit
+        p[n] = val
     end
 end
 
