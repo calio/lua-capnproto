@@ -10,14 +10,9 @@ local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 local _M = {}
 
+-- works only with Little Endian
 assert(ffi.abi("le") == true)
 
-
-local bwrite_pointer = function(buf, ftype, off)
-    if ftype == "list" then
-
-    end
-end
 
 
 function serialize_header(segs, sizes)
@@ -55,9 +50,15 @@ function msg_newindex(t, k, v)
     --print(string.format("%s, %s\n", k, v))
     local T = rawget(t, "T")
     local schema = T.fields
-    local size = assert(schema[k].size)
-    local offset = assert(schema[k].offset)
-    if schema[k].is_pointer then
+    local field = schema[k]
+
+    if field.is_enum then
+        v = capnp.get_enum_val(v, field.enum_name, T)
+    end
+
+    local size = assert(field.size)
+    local offset = assert(field.offset)
+    if field.is_pointer then
         ftype = schema[k].ftype
         if ftype == "data" then
             error("not implemented")
@@ -84,6 +85,11 @@ _M.T1 = {
         }
 
     },
+    EnumType1 = {
+        enum1 = 0,
+        enum2 = 1,
+        enum3 = 2,
+    },
     id = 13624321058757364083,
     displayName = "test.capnp:T1",
     dataWordCount = 2,
@@ -95,6 +101,7 @@ _M.T1 = {
         b0 = { size = 1, offset = 48 },
         b1 = { size = 1, offset = 49 },
         i3 = { size = 32, offset = 2 },
+        e0 = { enum_name = "EnumType1", is_enum = true, size = 16, offset = 6 }, -- enum size 16
         s0 = { is_pointer = true, size = 8, offset = 0 },
         t0 = { is_pointer = true, ftype = "text" }
     },

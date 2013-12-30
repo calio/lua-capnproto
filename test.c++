@@ -16,6 +16,7 @@ void writeT1(int fd) {
     t1.setI2(254);
     t1.setB1(true);
     t1.setI3(65536);
+    t1.setE0(::T1::EnumType1::ENUM3);
     //local t0 = t1.initT0(#"XW&JZ");
     //::capnp::List< ::int8_t>::Builder l0 = t1.initL0(2);
     //l0[0].setInt8(128);

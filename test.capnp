@@ -13,7 +13,14 @@ struct T1 {
     b1 @4 :Bool;
     i3 @5 :Int32;
     s0 @6 :T2;
+    e0 @7 :EnumType1;
     #t0 @6 :Text;
     #d0 @7 :Data;
     #l0 @8 :List(Int8);
+
+    enum EnumType1 {
+        enum1 @0;
+        enum2 @1;
+        enum3 @2;
+    }
 }

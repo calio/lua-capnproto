@@ -6,6 +6,8 @@ local bnot = bit.bnot
 local band, bor, bxor = bit.band, bit.bor, bit.bxor
 local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
+-- works only with Little Endian
+assert(ffi.abi("le") == true)
 
 -- FIXME prealloc
 local _M = {}
@@ -120,8 +122,12 @@ end
 _M.init_root = function (segment, T)
     assert(T)
     _M.write_structp_seg(segment, T, 0) -- offset 0 (in words)
---print(segment.pos)
     return _M.write_struct(segment, T)
+end
+
+_M.get_enum_val = function (v, enum_name, T)
+    assert(enum_name)
+    return T[enum_name][v]
 end
 
 return _M
