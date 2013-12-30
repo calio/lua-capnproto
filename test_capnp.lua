@@ -61,13 +61,13 @@ end
 function init_root(segment, T)
     assert(T)
     capnp.write_structp_seg(segment, T, 0) -- offset 0 (in words)
-print(segment.pos)
+--print(segment.pos)
     return capnp.write_struct(segment, T)
 end
 
 
 function msg_newindex(t, k, v)
-    print(string.format("%s, %s\n", k, v))
+    --print(string.format("%s, %s\n", k, v))
     local T = rawget(t, "T")
     local schema = T.fields
     local size = assert(schema[k].size)

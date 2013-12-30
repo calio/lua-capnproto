@@ -21,10 +21,8 @@ void writeT1(int fd) {
     //l0[0].setInt8(128);
     //l0[1] = 129;
     T1::T2::Builder t2 = t1.initS0();
-    /*
-    t2.setF0(1.414121);
-    t2.setF1(3.141492265358979);
-    */
+    t2.setF0(3.14);
+    t2.setF1(3.14159265358979);
     writeMessageToFd(fd, message);
 }
 

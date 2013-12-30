@@ -10,10 +10,8 @@ msg.b1 = true
 msg.i2 = 254
 msg.i3 = 65536
 local s0 = msg:init_s0()
---[[
 s0.f0 = 3.14
 s0.f1 = 3.14159265358979
-]]
 local f = io.open(file, "w")
 f:write(test_capnp.serialize(msg))
 f:close()
