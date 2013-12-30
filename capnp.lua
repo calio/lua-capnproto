@@ -1,4 +1,3 @@
-
 local ffi = require "ffi"
 local bit = require "bit"
 
@@ -33,7 +32,6 @@ _M.read_val = function(buf, vtype, size, off)
 end
 
 -- segment size in word
--- TODO support 64 bit float number
 _M.write_val = function(buf, val, size, off)
 
     local p = ffi.cast("int32_t *", buf)
@@ -87,7 +85,6 @@ _M.write_val = function(buf, val, size, off)
 end
 
 _M.write_structp = function (buf, T, data_off)
-    --print(string.format("%s, pointer count:%d, data word count:%d", T.displayName, T.pointerCount, T.dataWordCount))
     local p = ffi.cast("int32_t *", buf)
     p[0] = lshift(data_off, 2)
     p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
@@ -96,7 +93,6 @@ end
 _M.write_structp_seg = function(seg, T, data_off)
     local p = ffi.cast("int32_t *", seg.data + seg.pos)
 
-    --print(string.format("%s, pointer count:%d, data word count:%d", T.displayName, T.pointerCount, T.dataWordCount))
     -- A = 0
     _M.write_structp(p, T, data_off)
     seg.pos = seg.pos + 8 -- 64 bits -> 8 bytes
@@ -104,7 +100,6 @@ end
 
 -- allocate space for struct body
 _M.write_struct = function(seg, T)
-    -- TODO buf must be in segment
     local buf = seg.data + seg.pos
 
     --local offset = seg.data + seg.offset - buf
@@ -120,6 +115,13 @@ _M.write_struct = function(seg, T)
     seg.pos = seg.pos + T.dataWordCount * 8 + T.pointerCount * 8
 
     return struct
+end
+
+_M.init_root = function (segment, T)
+    assert(T)
+    _M.write_structp_seg(segment, T, 0) -- offset 0 (in words)
+--print(segment.pos)
+    return _M.write_struct(segment, T)
 end
 
 return _M

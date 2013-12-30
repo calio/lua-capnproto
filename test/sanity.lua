@@ -82,3 +82,10 @@ function test_write_structp_seg()
 
     assert_hex("00 00 00 00 00 00 00 00 08 00 00 00 02 00 01 00", seg)
 end
+
+function test_init_root()
+    local seg = capnp.new_segment(32) -- 32 bytes
+    capnp.init_root(seg, T1)
+
+    assert_hex("00 00 00 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
+end

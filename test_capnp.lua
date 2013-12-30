@@ -12,13 +12,6 @@ local _M = {}
 
 assert(ffi.abi("le") == true)
 
---[[
-local segment = {
-    data = "",
-    offset = 0, -- in words
-    size = 0, -- in bytes
-}]]
-
 
 local bwrite_pointer = function(buf, ftype, off)
     if ftype == "list" then
@@ -57,14 +50,6 @@ function bwrite_listp(buf, elm_size, nelm, offset)
 
     buf.offset = buf.offset + math.ceil(elm_size * nelm/64)
 end
-
-function init_root(segment, T)
-    assert(T)
-    capnp.write_structp_seg(segment, T, 0) -- offset 0 (in words)
---print(segment.pos)
-    return capnp.write_struct(segment, T)
-end
-
 
 function msg_newindex(t, k, v)
     --print(string.format("%s, %s\n", k, v))
@@ -123,7 +108,7 @@ _M.T1 = {
 
         -- FIXME size
         local segment = capnp.new_segment(8000)
-        local struct = init_root(segment, self)
+        local struct = capnp.init_root(segment, self)
 
         struct.init_s0 = function(self)
             local segment = assert(rawget(self, "segment"))
