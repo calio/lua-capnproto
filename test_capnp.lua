@@ -52,6 +52,7 @@ function msg_newindex(t, k, v)
     local schema = T.fields
     local field = schema[k]
 
+    -- TODO deal with unknown value
     if field.is_enum then
         v = capnp.get_enum_val(v, field.enum_name, T)
     end
