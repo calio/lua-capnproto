@@ -35,9 +35,13 @@ function test_write_plain_val()
 
     -- write_val(buf, val, size, off)
     capnp.write_val(seg.data, true, 1, 0)
-    capnp.write_val(seg.data, 8, 16, 1)
-    capnp.write_val(seg.data, 3.14, 32, 1)
-    capnp.write_val(seg.data, 3, 32, 2)
+    capnp.write_val(seg.data, 8, 8, 1)
+    capnp.write_val(seg.data, 65535, 16, 1)
+    capnp.write_val(seg.data, 1048576, 32, 1)
+    capnp.write_val(seg.data, 4294967296, 64, 1)
+    capnp.write_val(seg.data, 3.14, 32, 5)
+    capnp.write_val(seg.data, 1.41421, 32, 6)
+    capnp.write_val(seg.data, 3.14159265358979, 64, 4)
 
     assert_hex("01 00 08 00 c3 f5 48 40 03 00 00 00 00 00 00 00", seg)
 end
