@@ -58,47 +58,11 @@ function bwrite_listp(buf, elm_size, nelm, offset)
     buf.offset = buf.offset + math.ceil(elm_size * nelm/64)
 end
 
-function bwrite_structp_data(buf, T, data_off)
-    local p = buf
-    p[0] = lshift(data_off, 2)
-    p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
-end
-
--- write struct pointer
-function bwrite_structp(seg, T, data_off)
-    local p = ffi.cast("int32_t *", seg.data + seg.pos)
-
-    print(string.format("%s, pointer count:%d, data word count:%d", T.displayName, T.pointerCount, T.dataWordCount))
-    -- A = 0
-    bwrite_structp_data(p, T, data_off)
-    seg.pos = seg.pos + 8 -- 64 bits -> 8 bytes
-end
-
--- allocate space for struct body
-function bwrite_struct(seg, T)
-    -- TODO buf must be in segment
-    local buf = seg.data + seg.pos
-
-    --local offset = seg.data + seg.offset - buf
-    --bwrite_structp(buf, T, offset)
-
-    local struct = {
-        segment         = seg,
-        --header_pos      = buf,
-        data_pos        = seg.data + seg.pos,
-        pointer_pos     = seg.data + seg.pos + T.dataWordCount * 8,
-        T               = T,
-    }
-    seg.pos = seg.pos + T.dataWordCount * 8 + T.pointerCount * 8
-
-    return struct
-end
-
 function init_root(segment, T)
     assert(T)
-    bwrite_structp(segment, T, 0) -- offset 0 (in words)
+    capnp.write_structp_seg(segment, T, 0) -- offset 0 (in words)
 print(segment.pos)
-    return bwrite_struct(segment, T)
+    return capnp.write_struct(segment, T)
 end
 
 
@@ -166,10 +130,10 @@ _M.T1 = {
 
             local structp_pos = assert(rawget(self, "pointer_pos")) + 0 * 8 -- s0.offset * s0.size (pointer size is 8) 
             local data_off = (segment.data + segment.pos) - (structp_pos + 8) -- unused memory pos - struct pointer end pos
-            bwrite_structp_data(structp_pos, self.T.T2, data_off)
+            capnp.write_structp(structp_pos, self.T.T2, data_off)
 
             --local s = init_root(segment, self.T2)
-            local s =  bwrite_struct(segment, self.T.T2)
+            local s =  capnp.write_struct(segment, self.T.T2)
             local mt = {
                 __newindex =  msg_newindex
             }
