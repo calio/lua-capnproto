@@ -1,8 +1,24 @@
+# Compiled Object files
+*.slo
+*.lo
 *.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# Vim files
 *.swp
 *.swo
-*.data
 *~
+
+# Project temp files
+*.data
 test.capnp.c++
 test.capnp.h
 test.txt
