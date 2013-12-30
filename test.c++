@@ -20,8 +20,8 @@ void writeT1(int fd) {
     //::capnp::List< ::int8_t>::Builder l0 = t1.initL0(2);
     //l0[0].setInt8(128);
     //l0[1] = 129;
-    /*
     T1::T2::Builder t2 = t1.initS0();
+    /*
     t2.setF0(1.414121);
     t2.setF1(3.141492265358979);
     */

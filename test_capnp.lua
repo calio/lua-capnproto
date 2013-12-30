@@ -1,5 +1,7 @@
 local ffi = require "ffi"
 local bit = require "bit"
+local capnp = require "capnp"
+local cjson = require "cjson"
 
 local tobit = bit.tobit
 local bnot = bit.bnot
@@ -24,29 +26,6 @@ local bwrite_pointer = function(buf, ftype, off)
     end
 end
 
--- segment size in word
-local bwrite_plain = function(buf, val, size, off)
-    if type(val) == "boolean" then
-        val = val and 1 or 0
-    end
-
-    local bit_off = size * off
-    local n = math.floor(bit_off / 64)
-    local s = bit_off % 64
-
-    if (size == 64) then
-        print(string.format("n %d, s %d, %d\n", n, s, val))
-        buf[n] = bor(tonumber(buf[n]), lshift(val, s))
-    elseif (size < 64) then
-        n = math.floor(bit_off / 32)
-        s = bit_off % 32
-        print(string.format("n %d, s %d, %d\n", n, s, val))
-        buf = ffi.cast("int32_t *", buf)
-        buf[n] = bor(tonumber(buf[n]), lshift(val, s))
-    else
-        error("not supported size: " .. size)
-    end
-end
 
 function serialize_header(segs, sizes)
     assert(type(sizes) == "table")
@@ -73,10 +52,16 @@ function bwrite_listp(buf, elm_size, nelm, offset)
     buf.data[0] = 0x0000000000000001
     local p = ffi.cast("int32_t *", buf.data)
     --local offset = buf.offset -- FIXME
-    p[0] = bor(tonumber(p[0]), rshift(offset, 2))
-    p[1] = rshift(T.pointerCount, 16) + T.dataWordCount
+    p[0] = bor(tonumber(p[0]), lshift(offset, 2))
+    p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 
     buf.offset = buf.offset + math.ceil(elm_size * nelm/64)
+end
+
+function bwrite_structp_data(buf, T, data_off)
+    local p = buf
+    p[0] = lshift(data_off, 2)
+    p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
 -- write struct pointer
@@ -85,8 +70,7 @@ function bwrite_structp(seg, T, data_off)
 
     print(string.format("%s, pointer count:%d, data word count:%d", T.displayName, T.pointerCount, T.dataWordCount))
     -- A = 0
-    p[0] = lshift(data_off, 2)
-    p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
+    bwrite_structp_data(p, T, data_off)
     seg.pos = seg.pos + 8 -- 64 bits -> 8 bytes
 end
 
@@ -111,29 +95,12 @@ function bwrite_struct(seg, T)
 end
 
 function init_root(segment, T)
+    assert(T)
     bwrite_structp(segment, T, 0) -- offset 0 (in words)
 print(segment.pos)
     return bwrite_struct(segment, T)
 end
 
--- in bytes
-function new_segment(size)
-    local segment = {
-        pos = 0, -- point to free space
-        used = 0, -- bytes used
-        len = 0,
-    }
-
-    if size % 8 ~= 0 then
-        error("size should be devided by 8")
-    end
-    -- set segment size
-    --local word_size = 1 + T.dataWordCount + T.pointerCount
-    segment.data = ffi.new("int8_t[?]", size)
-    segment.len = size
-
-    return segment
-end
 
 function msg_newindex(t, k, v)
     print(string.format("%s, %s\n", k, v))
@@ -148,7 +115,7 @@ function msg_newindex(t, k, v)
             --bwrite_listp(rawget(t, "pointer_pos"), 1, #v, )
         end
     else
-        bwrite_plain(rawget(t, "data_pos"), v, size, offset)
+        capnp.write_val(rawget(t, "data_pos"), v, size, offset)
     end
 
     --print(string.format("%d, %d\n", size, offset))
@@ -159,7 +126,7 @@ end
 _M.T1 = {
     T2 = {
         id = 13624321058757364083,
-        displayNmae = "test.capnp:T1.T2",
+        displayName = "test.capnp:T1.T2",
         dataWordCount = 2,
         pointerCount = 0,
         fields = {
@@ -179,6 +146,7 @@ _M.T1 = {
         b0 = { size = 1, offset = 48 },
         b1 = { size = 1, offset = 49 },
         i3 = { size = 32, offset = 2 },
+        s0 = { is_pointer = true, size = 8, offset = 0 },
         t0 = { is_pointer = true, ftype = "text" }
     },
 
@@ -190,11 +158,18 @@ _M.T1 = {
     new = function(self)
 
         -- FIXME size
-        local segment = new_segment(8000)
+        local segment = capnp.new_segment(8000)
         local struct = init_root(segment, self)
 
-        struct.init_s0 = function()
-            local s = init_root(segment, self.T2)
+        struct.init_s0 = function(self)
+            local segment = assert(rawget(self, "segment"))
+
+            local structp_pos = assert(rawget(self, "pointer_pos")) + 0 * 8 -- s0.offset * s0.size (pointer size is 8) 
+            local data_off = (segment.data + segment.pos) - (structp_pos + 8) -- unused memory pos - struct pointer end pos
+            bwrite_structp_data(structp_pos, self.T.T2, data_off)
+
+            --local s = init_root(segment, self.T2)
+            local s =  bwrite_struct(segment, self.T.T2)
             local mt = {
                 __newindex =  msg_newindex
             }

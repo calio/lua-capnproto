@@ -1,0 +1,9 @@
+*.o
+*.swp
+*.swo
+*.data
+*~
+test.capnp.c++
+test.capnp.h
+test.txt
+main
