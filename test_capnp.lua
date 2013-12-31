@@ -118,7 +118,7 @@ _M.T1 = {
     id = 13624321058757364083,
     displayName = "test.capnp:T1",
     dataWordCount = 2,
-    pointerCount = 2,
+    pointerCount = 3,
     fields = {
         i0 = { size = 32, offset = 0 },
         i1 = { size = 16, offset = 2 },
