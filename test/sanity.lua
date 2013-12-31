@@ -126,3 +126,25 @@ function test_write_data()
     assert_hex("00 01 02 03 04 05 06 07", seg)
 end
 
+function test_list_newindex()
+    local seg = capnp.new_segment(16)
+
+    local num = 5
+    local size_type =2
+    capnp.write_listp(seg.data, size_type, num, 0) -- 2: 1 byte, 8: 8 items, 0: offset
+    seg.pos = seg.pos + 8 -- 8: list pointer size
+    local l = capnp.write_list(seg, size_type, num)
+
+    local mt = {
+        __newindex =  capnp.list_newindex
+    }
+    local list = setmetatable(l, mt)
+
+    list[1] = 1
+    list[2] = 2
+    list[3] = 3
+    list[4] = 4
+    list[5] = 5
+
+    assert_hex("01 00 00 00 2a 00 00 00 01 02 03 04 05 00 00 00", seg)
+end

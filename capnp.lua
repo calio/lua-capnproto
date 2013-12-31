@@ -130,12 +130,12 @@ _M.get_enum_val = function (v, enum_name, T)
     return T[enum_name][v]
 end
 
-_M.write_listp = function (buf, size, num, data_off)
+_M.write_listp = function (buf, size_type, num, data_off)
     local p = ffi.cast("int32_t *", buf)
-    assert(size <= 7)
+    assert(size_type <= 7)
     -- List: A = 1
     p[0] = lshift(data_off, 2) + 1
-    p[1] = lshift(num, 3) + size
+    p[1] = lshift(num, 3) + size_type
 end
 
 -- see http://kentonv.github.io/capnproto/encoding.html#lists
@@ -201,5 +201,31 @@ _M.write_data = function(seg, str)
     return true
 end
 
+
+_M.list_newindex = function (t, k, v)
+    local num = assert(rawget(t, "num"))
+
+    if k > num then
+        error("access out of boundry")
+    end
+
+    assert(k > 0)
+    local data = assert(rawget(t, "data"))
+    local actual_size = assert(rawget(t, "actual_size"))
+
+    print("list_newindex", k, v, num, actual_size)
+
+    if actual_size == 0 then
+        -- do nothing
+    elseif actual_size == 0.125 then
+        if v == 1 then
+            local n = math.floor(k / 8)
+            local s = k % 8
+            data[n] = bor(data[n], lshift(1, s))
+        end
+    else
+        data[k - 1] = v
+    end
+end
 
 return _M

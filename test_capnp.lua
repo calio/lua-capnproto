@@ -46,32 +46,6 @@ function bwrite_listp(buf, elm_size, nelm, offset)
     buf.offset = buf.offset + math.ceil(elm_size * nelm/64)
 end
 
-function list_newindex(t, k, v)
-    local num = assert(rawget(t, "num"))
-
-    if k > num then
-        error("access out of boundry")
-    end
-
-    assert(k > 0)
-    local data = assert(rawget(t, "data"))
-    local actual_size = assert(rawget(t, "actual_size"))
-
-    print("list_newindex", k, v, num, actual_size)
-
-    if actual_size == 0 then
-        -- do nothing
-    elseif actual_size == 0.125 then
-        if v == 1 then
-            local n = math.floor(k / 8)
-            local s = k % 8
-            data[n] = bor(data[n], lshift(1, s))
-        end
-    else
-        data[k - 1] = v
-    end
-end
-
 function msg_newindex(t, k, v)
     --print(string.format("%s, %s\n", k, v))
     local T = rawget(t, "T")
@@ -175,7 +149,7 @@ _M.T1 = {
             local l = capnp.write_list(segment, 2, num) -- 2: l0.size
 
             local mt = {
-                __newindex =  list_newindex
+                __newindex =  capnp.list_newindex
             }
             return setmetatable(l, mt)
         end
