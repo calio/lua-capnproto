@@ -8,7 +8,8 @@ local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 -- works only with Little Endian
 assert(ffi.abi("le") == true)
-
+assert(ffi.sizeof("float") == 4)
+assert(ffi.sizeof("double") == 8)
 -- FIXME prealloc
 local _M = {}
 -- in bytes
