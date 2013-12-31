@@ -19,6 +19,8 @@ local l0 = msg:init_l0(2)
 l0[1] = 128
 l0[2] = 129
 
+msg.t0 = "hello"
+
 local f = io.open(file, "w")
 f:write(test_capnp.serialize(msg))
 f:close()

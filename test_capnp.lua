@@ -83,6 +83,17 @@ function msg_newindex(t, k, v)
         v = capnp.get_enum_val(v, field.enum_name, T)
     end
 
+    if field.is_data then
+        local segment = assert(rawget(t, "segment"))
+        local data_pos = assert(rawget(t, "pointer_pos")) + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
+        local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
+
+        print("t0", data_off, #v)
+        capnp.write_listp(data_pos, 2, #v + 1,  data_off) -- 2: l0.size
+
+        capnp.write_data(segment, v) -- 2: l0.size
+    end
+
     local size = assert(field.size)
     local offset = assert(field.offset)
     if field.is_pointer then
@@ -128,8 +139,8 @@ _M.T1 = {
         i3 = { size = 32, offset = 2 },
         e0 = { enum_name = "EnumType1", is_enum = true, size = 16, offset = 6 }, -- enum size 16
         s0 = { is_pointer = true, offset = 0 },
-        t0 = { is_pointer = true, ftype = "text" },
-        l0 = { is_pointer = true, size = 2, offset = 1 }, -- size: list item size
+        l0 = { is_pointer = true, size = 2, offset = 1 }, -- size: list item size id, not actual size
+        t0 = { is_pointer = true, is_data = true, size = 2, offset = 2 },
     },
 
     serialize = function(message)

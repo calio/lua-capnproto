@@ -150,6 +150,10 @@ local list_size_map = {
     -- 7 = ?,
 }
 
+local round8 = function(size)
+    return math.ceil(size / 8) * 8
+end
+
 -- in here size is not the actual size, use list_size_map to get actual size
 _M.write_list = function (seg, size, num)
     local buf = seg.data + seg.pos
@@ -175,12 +179,18 @@ _M.write_list = function (seg, size, num)
         error("unsupported size: " .. tostring(actual_size))
     end
 
-    local list_size = math.ceil((actual_size * num) / 8) * 8
+    local list_size = round8(actual_size * num)
     print("list size", list_size)
 
     seg.pos = seg.pos + list_size
 
     return list
+end
+
+_M.write_data = function(seg, str)
+    -- TODO pay attention to writing out of boundry
+    ffi.copy(seg.data + seg.pos, str)
+    seg.pos = seg.pos + round8(#str + 1) -- include trailing NULL
 end
 
 return _M

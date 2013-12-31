@@ -25,6 +25,9 @@ void writeT1(int fd) {
     ::capnp::List< ::int8_t>::Builder l0 = t1.initL0(2);
     l0.set(0, 128);
     l0.set(1, 129);
+
+    t1.setT0("hello");
+
     writeMessageToFd(fd, message);
 }
 
