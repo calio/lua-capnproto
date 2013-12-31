@@ -13,7 +13,7 @@ void writeT1(int fd) {
     t1.setI0(32);
     t1.setI1(16);
     t1.setB0(true);
-    t1.setI2(254);
+    t1.setI2(127);
     t1.setB1(true);
     t1.setI3(65536);
     t1.setE0(::T1::EnumType1::ENUM3);
@@ -23,8 +23,8 @@ void writeT1(int fd) {
     t2.setF1(3.14159265358979);
 
     ::capnp::List< ::int8_t>::Builder l0 = t1.initL0(2);
-    l0.set(0, 128);
-    l0.set(1, 129);
+    l0.set(0, 28);
+    l0.set(1, 29);
 
     t1.setT0("hello");
 

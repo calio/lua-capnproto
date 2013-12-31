@@ -7,7 +7,7 @@ msg.i0 = 32
 msg.i1 = 16
 msg.b0 = true
 msg.b1 = true
-msg.i2 = 254
+msg.i2 = 127
 msg.i3 = 65536
 msg.e0 = "enum3"
 
@@ -16,8 +16,8 @@ s0.f0 = 3.14
 s0.f1 = 3.14159265358979
 
 local l0 = msg:init_l0(2)
-l0[1] = 128
-l0[2] = 129
+l0[1] = 28
+l0[2] = 29
 
 msg.t0 = "hello"
 
