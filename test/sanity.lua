@@ -89,3 +89,12 @@ function test_init_root()
 
     assert_hex("00 00 00 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
+
+function test_write_listp()
+    local seg = capnp.new_segment(8)
+
+    -- write_listp = function (buf, size, num, data_off)
+    capnp.write_listp(seg.data, 2, 1, 0)
+
+    assert_hex("01 00 00 00 0a 00 00 00", seg)
+end

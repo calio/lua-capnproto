@@ -14,6 +14,11 @@ msg.e0 = "enum3"
 local s0 = msg:init_s0()
 s0.f0 = 3.14
 s0.f1 = 3.14159265358979
+
+local l0 = msg:init_l0(2)
+l0[1] = 128
+l0[2] = 129
+
 local f = io.open(file, "w")
 f:write(test_capnp.serialize(msg))
 f:close()
