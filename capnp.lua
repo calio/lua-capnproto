@@ -10,22 +10,34 @@ local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 assert(ffi.abi("le") == true)
 assert(ffi.sizeof("float") == 4)
 assert(ffi.sizeof("double") == 8)
+
+
+ffi.cdef[[
+typedef struct {
+    int     pos;
+    int     len;
+    char   *data;
+} segment;
+]]
+
 -- FIXME prealloc
 local _M = {}
 -- in bytes
 function _M.new_segment(size)
+    local segment = ffi.new("segment")
+--[[
     local segment = {
         pos = 0, -- point to free space
-        used = 0, -- bytes used
+        --used = 0, -- bytes used
         len = 0,
     }
-
+]]
     if size % 8 ~= 0 then
         error("size should be devided by 8")
     end
     -- set segment size
     --local word_size = 1 + T.dataWordCount + T.pointerCount
-    segment.data = ffi.new("int8_t[?]", size)
+    segment.data = ffi.new("char[?]", size)
     segment.len = size
 
     return segment
