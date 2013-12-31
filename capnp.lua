@@ -187,10 +187,18 @@ _M.write_list = function (seg, size, num)
     return list
 end
 
+_M.write_text = function(seg, str)
+    -- TODO check if str is valid utf8
+    return _M.write_data(seg, str)
+end
+
 _M.write_data = function(seg, str)
-    -- TODO pay attention to writing out of boundry
+    if seg.len - seg.pos < #str then
+        return nil, "not enough space in segment"
+    end
     ffi.copy(seg.data + seg.pos, str)
     seg.pos = seg.pos + round8(#str + 1) -- include trailing NULL
+    return true
 end
 
 return _M

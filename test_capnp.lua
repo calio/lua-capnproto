@@ -83,7 +83,7 @@ function msg_newindex(t, k, v)
         v = capnp.get_enum_val(v, field.enum_name, T)
     end
 
-    if field.is_data then
+    if field.is_data or field.is_text  then
         local segment = assert(rawget(t, "segment"))
         local data_pos = assert(rawget(t, "pointer_pos")) + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
         local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
@@ -91,7 +91,15 @@ function msg_newindex(t, k, v)
         print("t0", data_off, #v)
         capnp.write_listp(data_pos, 2, #v + 1,  data_off) -- 2: l0.size
 
-        capnp.write_data(segment, v) -- 2: l0.size
+        local ok, err
+        if field.is_data then
+            ok, err = capnp.write_data(segment, v) -- 2: l0.size
+        else
+            ok, err = capnp.write_text(segment, v)
+        end
+        if not ok then
+            error(err)
+        end
     end
 
     local size = assert(field.size)
