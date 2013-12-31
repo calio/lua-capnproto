@@ -109,3 +109,20 @@ function test_write_list()
     assert_equal(1, l.actual_size)
     assert_equal(8, l.num)
 end
+
+function test_write_text()
+    local seg = capnp.new_segment(16)
+
+    -- write_text = function(seg, str)
+    capnp.write_text(seg, "To err is human")
+    assert_hex("54 6f 20 65 72 72 20 69 73 20 68 75 6d 61 6e 00", seg)
+end
+
+function test_write_data()
+    local seg = capnp.new_segment(8)
+
+    -- write_text = function(seg, str)
+    capnp.write_text(seg, "\0\1\2\3\4\5\6\7")
+    assert_hex("00 01 02 03 04 05 06 07", seg)
+end
+
