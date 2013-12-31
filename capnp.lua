@@ -13,7 +13,7 @@ assert(ffi.sizeof("double") == 8)
 -- FIXME prealloc
 local _M = {}
 -- in bytes
-_M.new_segment = function(size)
+function _M.new_segment(size)
     local segment = {
         pos = 0, -- point to free space
         used = 0, -- bytes used
@@ -31,11 +31,11 @@ _M.new_segment = function(size)
     return segment
 end
 
-_M.read_val = function(buf, vtype, size, off)
+function _M.read_val(buf, vtype, size, off)
 end
 
 -- segment size in word
-_M.write_val = function(buf, val, size, off)
+function _M.write_val(buf, val, size, off)
 
     local p = ffi.cast("int32_t *", buf)
 
@@ -87,13 +87,13 @@ _M.write_val = function(buf, val, size, off)
     end
 end
 
-_M.write_structp = function (buf, T, data_off)
+function _M.write_structp(buf, T, data_off)
     local p = ffi.cast("int32_t *", buf)
     p[0] = lshift(data_off, 2)
     p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
-_M.write_structp_seg = function(seg, T, data_off)
+function _M.write_structp_seg(seg, T, data_off)
     local p = ffi.cast("int32_t *", seg.data + seg.pos)
 
     -- A = 0
@@ -102,7 +102,7 @@ _M.write_structp_seg = function(seg, T, data_off)
 end
 
 -- allocate space for struct body
-_M.write_struct = function(seg, T)
+function _M.write_struct(seg, T)
     local buf = seg.data + seg.pos
 
     --local offset = seg.data + seg.offset - buf
@@ -120,18 +120,18 @@ _M.write_struct = function(seg, T)
     return struct
 end
 
-_M.init_root = function (segment, T)
+function _M.init_root(segment, T)
     assert(T)
     _M.write_structp_seg(segment, T, 0) -- offset 0 (in words)
     return _M.write_struct(segment, T)
 end
 
-_M.get_enum_val = function (v, enum_name, T)
+function _M.get_enum_val(v, enum_name, T)
     assert(enum_name)
     return T[enum_name][v]
 end
 
-_M.write_listp = function (buf, size_type, num, data_off)
+function _M.write_listp(buf, size_type, num, data_off)
     local p = ffi.cast("int32_t *", buf)
     assert(size_type <= 7)
     -- List: A = 1
@@ -156,7 +156,7 @@ local round8 = function(size)
 end
 
 -- in here size is not the actual size, use list_size_map to get actual size
-_M.write_list = function (seg, size_type, num)
+function _M.write_list(seg, size_type, num)
     local buf = seg.data + seg.pos
 
     local actual_size = assert(list_size_map[size_type])
@@ -188,12 +188,12 @@ _M.write_list = function (seg, size_type, num)
     return list
 end
 
-_M.write_text = function(seg, str)
+function _M.write_text(seg, str)
     -- TODO check if str is valid utf8
     return _M.write_data(seg, str)
 end
 
-_M.write_data = function(seg, str)
+function _M.write_data(seg, str)
     if seg.len - seg.pos < #str then
         return nil, "not enough space in segment"
     end
@@ -203,7 +203,7 @@ _M.write_data = function(seg, str)
 end
 
 
-_M.list_newindex = function (t, k, v)
+function _M.list_newindex(t, k, v)
     local num = assert(rawget(t, "num"))
 
     if k > num then
@@ -229,7 +229,7 @@ _M.list_newindex = function (t, k, v)
     end
 end
 
-_M.struct_newindex = function (t, k, v)
+function _M.struct_newindex(t, k, v)
     --print(string.format("%s, %s\n", k, v))
     local T = rawget(t, "T")
     local schema = T.fields
