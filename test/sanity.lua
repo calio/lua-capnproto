@@ -98,3 +98,14 @@ function test_write_listp()
 
     assert_hex("01 00 00 00 0a 00 00 00", seg)
 end
+
+function test_write_list()
+    local seg = capnp.new_segment(8)
+
+    -- write_list = function (seg, size_type, num)
+    local l = capnp.write_list(seg, 2, 8)
+
+    assert_equal(2, l.size_type)
+    assert_equal(1, l.actual_size)
+    assert_equal(8, l.num)
+end

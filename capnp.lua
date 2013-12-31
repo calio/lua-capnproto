@@ -155,14 +155,14 @@ local round8 = function(size)
 end
 
 -- in here size is not the actual size, use list_size_map to get actual size
-_M.write_list = function (seg, size, num)
+_M.write_list = function (seg, size_type, num)
     local buf = seg.data + seg.pos
 
-    local actual_size = assert(list_size_map[size])
+    local actual_size = assert(list_size_map[size_type])
     local list = {
         segment         = seg,
         data            = seg.data + seg.pos,
-        size            = size,
+        size_type       = size_type,
         actual_size     = actual_size,
         num             = num,
     }
@@ -200,5 +200,6 @@ _M.write_data = function(seg, str)
     seg.pos = seg.pos + round8(#str + 1) -- include trailing NULL
     return true
 end
+
 
 return _M
