@@ -46,48 +46,6 @@ function bwrite_listp(buf, elm_size, nelm, offset)
     buf.offset = buf.offset + math.ceil(elm_size * nelm/64)
 end
 
-function msg_newindex(t, k, v)
-    --print(string.format("%s, %s\n", k, v))
-    local T = rawget(t, "T")
-    local schema = T.fields
-    local field = schema[k]
-
-    -- TODO deal with unknown value
-    if field.is_enum then
-        v = capnp.get_enum_val(v, field.enum_name, T)
-    end
-
-    if field.is_data or field.is_text  then
-        local segment = assert(rawget(t, "segment"))
-        local data_pos = assert(rawget(t, "pointer_pos")) + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
-        local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
-
-        print("t0", data_off, #v)
-        capnp.write_listp(data_pos, 2, #v + 1,  data_off) -- 2: l0.size
-
-        local ok, err
-        if field.is_data then
-            ok, err = capnp.write_data(segment, v) -- 2: l0.size
-        else
-            ok, err = capnp.write_text(segment, v)
-        end
-        if not ok then
-            error(err)
-        end
-    end
-
-    local size = assert(field.size)
-    local offset = assert(field.offset)
-    if field.is_pointer then
-        ftype = schema[k].ftype
-        if ftype == "data" then
-            error("not implemented")
-            --bwrite_listp(rawget(t, "pointer_pos"), 1, #v, )
-        end
-    else
-        capnp.write_val(rawget(t, "data_pos"), v, size, offset)
-    end
-end
 
 ------------------------------------------------------------------
 
@@ -166,13 +124,13 @@ _M.T1 = {
             --local s = init_root(segment, self.T2)
             local s =  capnp.write_struct(segment, self.T.T2)
             local mt = {
-                __newindex =  msg_newindex
+                __newindex =  capnp.struct_newindex
             }
             return setmetatable(s, mt)
         end
 
         local mt = {
-            __newindex =  msg_newindex
+            __newindex = capnp.struct_newindex
         }
         return setmetatable(struct, mt)
     end

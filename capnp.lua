@@ -105,7 +105,7 @@ _M.write_struct = function(seg, T)
     local buf = seg.data + seg.pos
 
     --local offset = seg.data + seg.offset - buf
-    --capnp.write_structp_seg(buf, T, offset)
+    --_M.write_structp_seg(buf, T, offset)
 
     local struct = {
         segment         = seg,
@@ -138,7 +138,7 @@ _M.write_listp = function (buf, size_type, num, data_off)
     p[1] = lshift(num, 3) + size_type
 end
 
--- see http://kentonv.github.io/capnproto/encoding.html#lists
+-- see http://kentonv.github.io/_Mroto/encoding.html#lists
 local list_size_map = {
     [0] = 0,
     [1] = 0.125,
@@ -225,6 +225,49 @@ _M.list_newindex = function (t, k, v)
         end
     else
         data[k - 1] = v
+    end
+end
+
+_M.struct_newindex = function (t, k, v)
+    --print(string.format("%s, %s\n", k, v))
+    local T = rawget(t, "T")
+    local schema = T.fields
+    local field = schema[k]
+
+    -- TODO deal with unknown value
+    if field.is_enum then
+        v = _M.get_enum_val(v, field.enum_name, T)
+    end
+
+    if field.is_data or field.is_text  then
+        local segment = assert(rawget(t, "segment"))
+        local data_pos = assert(rawget(t, "pointer_pos")) + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
+        local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
+
+        print("t0", data_off, #v)
+        _M.write_listp(data_pos, 2, #v + 1,  data_off) -- 2: l0.size
+
+        local ok, err
+        if field.is_data then
+            ok, err = _M.write_data(segment, v) -- 2: l0.size
+        else
+            ok, err = _M.write_text(segment, v)
+        end
+        if not ok then
+            error(err)
+        end
+    end
+
+    local size = assert(field.size)
+    local offset = assert(field.offset)
+    if field.is_pointer then
+        ftype = schema[k].ftype
+        if ftype == "data" then
+            error("not implemented")
+            --bwrite_listp(rawget(t, "pointer_pos"), 1, #v, )
+        end
+    else
+        _M.write_val(rawget(t, "data_pos"), v, size, offset)
     end
 end
 

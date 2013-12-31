@@ -32,6 +32,7 @@ local T1 = {
         b0 = { size = 1, offset = 48 },
         b1 = { size = 1, offset = 49 },
         i3 = { size = 32, offset = 2 },
+        s1 = { is_pointer = true }
     },
 }
 
@@ -147,4 +148,30 @@ function test_list_newindex()
     list[5] = 5
 
     assert_hex("01 00 00 00 2a 00 00 00 01 02 03 04 05 00 00 00", seg)
+end
+
+function test_struct_newindex()
+    local seg = capnp.new_segment(24)
+
+    local s = capnp.init_root(seg, T1)
+    local mt = {
+        __newindex = capnp.struct_newindex
+    }
+
+    local struct = setmetatable(s, mt)
+--[[
+        i0 = { size = 32, offset = 0 },
+        i1 = { size = 16, offset = 2 },
+        i2 = { size = 8, offset = 7 },
+        b0 = { size = 1, offset = 48 },
+        b1 = { size = 1, offset = 49 },
+        i3 = { size = 32, offset = 2 },
+        ]]
+    struct.i0 = 8
+    struct.i1 = 7
+    struct.b0 = true
+    struct.b1 = false
+    struct.i3 = 9
+
+    assert_hex("00 00 00 00 02 00 01 00 08 00 00 00 07 00 01 00 09 00 00 00 00 00 00 00", seg)
 end
