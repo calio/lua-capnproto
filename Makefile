@@ -3,27 +3,27 @@ LDFLAGS:=-lcapnp -lkj -pthread
 CXX:=g++-4.7
 
 
-test.capnp.c++: test.capnp
+proto/test.capnp.c++: proto/test.capnp
 	capnp compile -oc++ $<
 
-test.schema.txt: test.capnp
+test.schema.txt: proto/test.capnp
 	capnp compile -oecho $< > /tmp/capnp.bin
 	capnp decode /home/calio/code/c-capnproto/compiler/schema.capnp CodeGeneratorRequest > $@ < /tmp/capnp.bin
 
-test.capnp.h: test.capnp.c++
+proto/test.capnp.h: proto/test.capnp.c++
 
-test_capnp.o: test.capnp.c++ test.capnp.h
+test_capnp.o: proto/test.capnp.c++ proto/test.capnp.h
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-test.o: test.c++ test.capnp.h
+main.o: main.c++ proto/test.capnp.h
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-main: test.o test_capnp.o
+main: main.o test_capnp.o
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
 
 all: main
 
 clean:
-	-rm test.capnp.c++ test.capnp.h *.o
+	-rm proto/test.capnp.c++ proto/test.capnp.h *.o main
 
 .PHONY: all
