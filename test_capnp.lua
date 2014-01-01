@@ -1,6 +1,7 @@
 local ffi = require "ffi"
 local capnp = require "capnp"
 
+-- TODO data types with the same but different scope
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -14,30 +15,6 @@ function _M.init(T)
     local segment = capnp.new_segment(8000)
     return T:new(segment)
 end
-
-_M.EnumType1 = {
-    enum1 = 0,
-    enum2 = 1,
-    enum3 = 2,
-}
-
-_M.T2 = {
-    id = 13624321058757364083,
-    displayName = "test.capnp:T1.T2",
-    dataWordCount = 2,
-    pointerCount = 0,
-    fields = {
-        f0 = { size = 32, offset = 0 },
-        f1 = { size = 64, offset = 1 },
-    },
-
-    new = function(self)
-        local struct = capnp.init_root(segment, self)
-        struct.schema = _M
-
-        return capnp.init_new_struct(struct)
-    end
-}
 
 _M.T1 = {
     id = 13624321058757364083,
@@ -88,10 +65,10 @@ _M.T1 = {
 
             local data_pos = self.pointer_pos + 0 * 8 -- s0.offset * s0.size (pointer size is 8) 
             local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - struct pointer end pos
-            capnp.write_structp(data_pos, self.schema.T2, data_off)
+            capnp.write_structp(data_pos, self.schema.T1.T2, data_off)
 
             --print(data_off)
-            local s =  capnp.write_struct(segment, self.schema.T2)
+            local s =  capnp.write_struct(segment, self.schema.T1.T2)
             local mt = {
                 __newindex =  capnp.struct_newindex
             }
@@ -102,10 +79,38 @@ _M.T1 = {
     end
 }
 
+_M.T1.EnumType1 = {
+    enum1 = 0,
+    enum2 = 1,
+    enum3 = 2,
+}
+
+_M.T1.fields.e0.enum_schema = _M.T1.EnumType1
+
+_M.T1.T2 = {
+    id = 13624321058757364083,
+    displayName = "test.capnp:T1.T2",
+    dataWordCount = 2,
+    pointerCount = 0,
+    fields = {
+        f0 = { size = 32, offset = 0 },
+        f1 = { size = 64, offset = 1 },
+    },
+
+    new = function(self)
+        local struct = capnp.init_root(segment, self)
+        struct.schema = _M
+
+        return capnp.init_new_struct(struct)
+    end
+}
+
 _M.EnumType2 = {
     enum5 = 0,
     enum6 = 1,
     enum7 = 2,
 }
+
+_M.T1.fields.e1.enum_schema = _M.EnumType2
 
 return _M

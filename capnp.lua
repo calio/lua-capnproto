@@ -142,9 +142,9 @@ function _M.init_root(segment, T)
     return _M.write_struct(segment, T)
 end
 
-function _M.get_enum_val(v, enum_name, T)
-    assert(enum_name)
-    return assert(T[enum_name][v])
+function _M.get_enum_val(v, enum_schema)
+    assert(enum_schema)
+    return assert(enum_schema[v])
 end
 
 function _M.write_listp(buf, size_type, num, data_off)
@@ -254,7 +254,7 @@ function _M.struct_newindex(t, k, v)
     -- TODO deal with unknown value
     if field.is_enum then
         --print(v, field.enum_name)
-        v = _M.get_enum_val(v, field.enum_name, schema)
+        v = _M.get_enum_val(v, field.enum_schema)
         --print(v)
     end
 
