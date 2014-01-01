@@ -1,5 +1,7 @@
 @0xa0d78d3689d48a0b;
 
+using import "enums.capnp".EnumType2;
+
 struct T1 {
     struct T2 {
         f0 @0 :Float32;
@@ -24,10 +26,4 @@ struct T1 {
         enum2 @1;
         enum3 @2;
     }
-}
-
-enum EnumType2 {
-    enum5 @0;
-    enum6 @1;
-    enum7 @2;
 }
