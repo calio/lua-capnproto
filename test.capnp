@@ -16,6 +16,7 @@ struct T1 {
     e0 @7 :EnumType1;
     l0 @8 :List(Int8);
     t0 @9 :Text;
+    e1 @10 :EnumType2;
     #d0 @7 :Data;
 
     enum EnumType1 {
@@ -23,4 +24,10 @@ struct T1 {
         enum2 @1;
         enum3 @2;
     }
+}
+
+enum EnumType2 {
+    enum5 @0;
+    enum6 @1;
+    enum7 @2;
 }

@@ -246,13 +246,14 @@ end
 
 function _M.struct_newindex(t, k, v)
     --print(string.format("%s, %s\n", k, v))
+    local schema = t.schema
     local T = t.T
-    local schema = T.fields
-    local field = schema[k]
+    local fields = T.fields
+    local field = fields[k]
 
     -- TODO deal with unknown value
     if field.is_enum then
-        v = _M.get_enum_val(v, field.enum_name, T)
+        v = _M.get_enum_val(v, field.enum_name, schema)
     end
 
     if field.is_data or field.is_text  then
@@ -277,7 +278,7 @@ function _M.struct_newindex(t, k, v)
     local size = assert(field.size)
     local offset = assert(field.offset)
     if field.is_pointer then
-        ftype = schema[k].ftype
+        ftype = fields[k].ftype
         if ftype == "data" then
             error("not implemented")
         end
@@ -307,4 +308,14 @@ function _M.serialize(msg)
     return _M.serialize_header(1, { segment.pos }) .. ffi.string(segment.data, segment.pos)
 end
 
+function _M.init_new_struct(struct)
+    struct.serialize = function(self)
+        return _M.serialize(self)
+    end
+
+    local mt = {
+        __newindex = _M.struct_newindex
+    }
+    return setmetatable(struct, mt)
+end
 return _M

@@ -1,6 +1,6 @@
 local test_capnp = require "test_capnp"
 
-local msg = test_capnp.T1:new()
+local msg = test_capnp.init(test_capnp.T1)
 
 local file = arg[1] or "c.data"
 msg.i0 = 32
@@ -20,6 +20,8 @@ l0[1] = 28
 l0[2] = 29
 
 msg.t0 = "hello"
+
+msg.e1 = "enum5"
 
 local f = io.open(file, "w")
 f:write(msg:serialize())
