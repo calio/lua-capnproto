@@ -1,7 +1,4 @@
-local ffi = require "ffi"
-local capnp = require "capnp"
-
--- TODO data types with the same but different scope
+local ffi = require "ffi" local capnp = require "capnp" 
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -28,16 +25,14 @@ _M.T1 = {
         b0 = { size = 1, offset = 48 },
         b1 = { size = 1, offset = 49 },
         i3 = { size = 32, offset = 2 },
-        e0 = { enum_name = "EnumType1", is_enum = true, size = 16, offset = 6 }, -- enum size 16
+        e0 = { is_enum = true, size = 16, offset = 6 }, -- enum size 16
         s0 = { is_pointer = true, offset = 0 },
         l0 = { is_pointer = true, size = 2, offset = 1 }, -- size: list item size id, not actual size
-        t0 = { is_pointer = true, is_data = true, size = 2, offset = 2 },
-        e1 = { enum_name = "EnumType2", is_enum = true, size = 16, offset = 7 }
+        t0 = { is_text = true, size = 2, offset = 2 },
+        e1 = { is_enum = true, size = 16, offset = 7 }
     },
 
     new = function(self, segment)
-        -- FIXME size
-        --local segment = capnp.new_segment(8000)
         local struct = capnp.init_root(segment, self)
         struct.schema = _M
 
@@ -48,7 +43,6 @@ _M.T1 = {
             local data_pos = self.pointer_pos + 1 * 8 -- l0.offset * l0.size (pointer size is 8)
             local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
 
-            --print(num, data_off)
             capnp.write_listp(data_pos, 2, num,  data_off) -- 2: l0.size
 
             local l = capnp.write_list(segment, 2, num) -- 2: l0.size
@@ -69,6 +63,7 @@ _M.T1 = {
 
             --print(data_off)
             local s =  capnp.write_struct(segment, self.schema.T1.T2)
+
             local mt = {
                 __newindex =  capnp.struct_newindex
             }

@@ -253,12 +253,14 @@ function _M.struct_newindex(t, k, v)
 
     -- TODO deal with unknown value
     if field.is_enum then
-        --print(v, field.enum_name)
         v = _M.get_enum_val(v, field.enum_schema)
-        --print(v)
     end
 
-    if field.is_data or field.is_text  then
+    local size = assert(field.size)
+    local offset = assert(field.offset)
+    if field.is_pointer then
+        error("use init_<field_name> method")
+    elseif field.is_data or field.is_text then
         local segment = t.segment
         local data_pos = t.pointer_pos + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
         local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
@@ -274,15 +276,6 @@ function _M.struct_newindex(t, k, v)
         end
         if not ok then
             error(err)
-        end
-    end
-
-    local size = assert(field.size)
-    local offset = assert(field.offset)
-    if field.is_pointer then
-        ftype = fields[k].ftype
-        if ftype == "data" then
-            error("not implemented")
         end
     else
         _M.write_val(t.data_pos, v, size, offset)
