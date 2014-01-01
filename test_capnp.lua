@@ -15,27 +15,43 @@ end
 
 _M.T1 = {
     id = 13624321058757364083,
-    displayName = "test.capnp:T1",
+    displayName = "proto/test.capnp:T1",
     dataWordCount = 2,
     pointerCount = 3,
     fields = {
         i0 = { size = 32, offset = 0 },
         i1 = { size = 16, offset = 2 },
-        i2 = { size = 8, offset = 7 },
         b0 = { size = 1, offset = 48 },
+        i2 = { size = 8, offset = 7 },
         b1 = { size = 1, offset = 49 },
         i3 = { size = 32, offset = 2 },
-        e0 = { is_enum = true, size = 16, offset = 6 }, -- enum size 16
-        s0 = { is_pointer = true, offset = 0 },
-        l0 = { is_pointer = true, size = 2, offset = 1 }, -- size: list item size id, not actual size
-        t0 = { is_text = true, size = 2, offset = 2 },
-        e1 = { is_enum = true, size = 16, offset = 7 }
+        s0 = { size = 8, offset = 0, is_pointer = true, },
+        e0 = { size = 16, offset = 6, is_enum = true,  }, -- enum size 16
+        l0 = { size = 2, offset = 1, is_pointer = true,  }, -- size: list item size id, not actual size
+        t0 = { size = 2, offset = 2, is_text = true,  },
+        e1 = { size = 16, offset = 7, is_enum = true,  }
     },
 
     new = function(self, segment)
         local struct = capnp.init_root(segment, self)
         struct.schema = _M
 
+        -- sub struct
+        struct.init_s0 = function(self)
+            local segment = self.segment
+
+            local data_pos = self.pointer_pos + 0 * 8 -- s0.offset * s0.size (pointer size is 8)
+            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - struct pointer end pos
+            capnp.write_structp(data_pos, self.schema.T1.T2, data_off)
+
+            --print(data_off)
+            local s =  capnp.write_struct(segment, self.schema.T1.T2)
+
+            local mt = {
+                __newindex =  capnp.struct_newindex
+            }
+            return setmetatable(s, mt)
+        end
         -- list
         struct.init_l0 = function(self, num)
             assert(num)
@@ -53,22 +69,26 @@ _M.T1 = {
             return setmetatable(l, mt)
         end
 
-        -- sub struct
-        struct.init_s0 = function(self)
-            local segment = self.segment
 
-            local data_pos = self.pointer_pos + 0 * 8 -- s0.offset * s0.size (pointer size is 8) 
-            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - struct pointer end pos
-            capnp.write_structp(data_pos, self.schema.T1.T2, data_off)
+        return capnp.init_new_struct(struct)
+    end
+}
 
-            --print(data_off)
-            local s =  capnp.write_struct(segment, self.schema.T1.T2)
 
-            local mt = {
-                __newindex =  capnp.struct_newindex
-            }
-            return setmetatable(s, mt)
-        end
+
+_M.T1.T2 = {
+    id = 17202330444354522981,
+    displayName = "proto/test.capnp:T1.T2",
+    dataWordCount = 2,
+    pointerCount = 0,
+    fields = {
+        f0 = { size = 32, offset = 0 },
+        f1 = { size = 64, offset = 1 },
+    },
+
+    new = function(self, segment)
+        local struct = capnp.init_root(segment, self)
+        struct.schema = _M
 
         return capnp.init_new_struct(struct)
     end
@@ -79,33 +99,13 @@ _M.T1.EnumType1 = {
     enum2 = 1,
     enum3 = 2,
 }
-
-_M.T1.fields.e0.enum_schema = _M.T1.EnumType1
-
-_M.T1.T2 = {
-    id = 13624321058757364083,
-    displayName = "test.capnp:T1.T2",
-    dataWordCount = 2,
-    pointerCount = 0,
-    fields = {
-        f0 = { size = 32, offset = 0 },
-        f1 = { size = 64, offset = 1 },
-    },
-
-    new = function(self)
-        local struct = capnp.init_root(segment, self)
-        struct.schema = _M
-
-        return capnp.init_new_struct(struct)
-    end
-}
-
 _M.EnumType2 = {
     enum5 = 0,
     enum6 = 1,
     enum7 = 2,
 }
 
+_M.T1.fields.e0.enum_schema = _M.T1.EnumType1
 _M.T1.fields.e1.enum_schema = _M.EnumType2
 
 return _M

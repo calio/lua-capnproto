@@ -1,4 +1,4 @@
-local test_capnp = require "test_capnp"
+local test_capnp = require "test"
 
 local msg = test_capnp.init(test_capnp.T1)
 
