@@ -144,7 +144,7 @@ end
 
 function _M.get_enum_val(v, enum_name, T)
     assert(enum_name)
-    return T[enum_name][v]
+    return assert(T[enum_name][v])
 end
 
 function _M.write_listp(buf, size_type, num, data_off)
@@ -253,7 +253,9 @@ function _M.struct_newindex(t, k, v)
 
     -- TODO deal with unknown value
     if field.is_enum then
+        --print(v, field.enum_name)
         v = _M.get_enum_val(v, field.enum_name, schema)
+        --print(v)
     end
 
     if field.is_data or field.is_text  then

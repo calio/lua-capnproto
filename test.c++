@@ -28,6 +28,8 @@ void writeT1(int fd) {
 
     t1.setT0("hello");
 
+    t1.setE1(::EnumType2::ENUM7);
+
     writeMessageToFd(fd, message);
 }
 

@@ -21,7 +21,7 @@ l0[2] = 29
 
 msg.t0 = "hello"
 
-msg.e1 = "enum5"
+msg.e1 = "enum7"
 
 local f = io.open(file, "w")
 f:write(msg:serialize())
