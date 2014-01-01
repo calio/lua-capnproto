@@ -1,12 +1,5 @@
 local ffi = require "ffi"
-local bit = require "bit"
 local capnp = require "capnp"
-local cjson = require "cjson"
-
-local tobit = bit.tobit
-local bnot = bit.bnot
-local band, bor, bxor = bit.band, bit.bor, bit.bxor
-local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 
 local ok, new_tab = pcall(require, "table.new")
@@ -16,27 +9,6 @@ end
 
 local _M = new_tab(2, 8)
 
-
-function serialize_header(segs, sizes)
-    assert(type(sizes) == "table")
-    -- in bytes
-    local size = 4 + segs * 4
-    local words = math.ceil(size / 64)
-    local buf = ffi.new("int32_t[?]", words * 2)
-
-    buf[0] = segs - 1
-    for i=1, segs do
-        buf[i] = assert(math.ceil(sizes[i]/8))
-    end
-
-    return ffi.string(ffi.cast("char *", buf), size)
-end
-
-_M.serialize = function (msg)
-    local segment = msg.segment
-    --local msg_size = (T.dataWordCount + 1) * 8
-    return serialize_header(1, { segment.pos }) .. ffi.string(segment.data, segment.pos)
-end
 
 
 ------------------------------------------------------------------
@@ -113,6 +85,10 @@ _M.T1 = {
                 __newindex =  capnp.struct_newindex
             }
             return setmetatable(s, mt)
+        end
+
+        struct.serialize = function(self)
+            return capnp.serialize(self)
         end
 
         local mt = {

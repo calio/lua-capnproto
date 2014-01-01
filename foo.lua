@@ -22,5 +22,5 @@ l0[2] = 29
 msg.t0 = "hello"
 
 local f = io.open(file, "w")
-f:write(test_capnp.serialize(msg))
+f:write(msg:serialize())
 f:close()

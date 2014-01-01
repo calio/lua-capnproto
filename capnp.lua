@@ -286,4 +286,25 @@ function _M.struct_newindex(t, k, v)
     end
 end
 
+function _M.serialize_header(segs, sizes)
+    assert(type(sizes) == "table")
+    -- in bytes
+    local size = 4 + segs * 4
+    local words = math.ceil(size / 64)
+    local buf = ffi.new("int32_t[?]", words * 2)
+
+    buf[0] = segs - 1
+    for i=1, segs do
+        buf[i] = assert(math.ceil(sizes[i]/8))
+    end
+
+    return ffi.string(ffi.cast("char *", buf), size)
+end
+
+function _M.serialize(msg)
+    local segment = msg.segment
+    --local msg_size = (T.dataWordCount + 1) * 8
+    return _M.serialize_header(1, { segment.pos }) .. ffi.string(segment.data, segment.pos)
+end
+
 return _M
