@@ -20,9 +20,14 @@ typedef struct {
 } segment;
 ]]
 
--- FIXME prealloc
-local _M = {}
--- in bytes
+local ok, new_tab = pcall(require, "table.new")
+if not ok then
+    new_tab = function (narr, nrec) return {} end
+end
+
+local _M = new_tab(2, 32)
+
+-- segment.len in bytes
 function _M.new_segment(size)
     local segment = ffi.new("segment")
 --[[
@@ -122,7 +127,6 @@ function _M.write_struct(seg, T)
 
     local struct = {
         segment         = seg,
-        --header_pos      = buf,
         data_pos        = seg.data + seg.pos,
         pointer_pos     = seg.data + seg.pos + T.dataWordCount * 8,
         T               = T,
@@ -193,7 +197,6 @@ function _M.write_list(seg, size_type, num)
     end
 
     local list_size = round8(actual_size * num)
-    print("list size", list_size)
 
     seg.pos = seg.pos + list_size
 
@@ -216,17 +219,17 @@ end
 
 
 function _M.list_newindex(t, k, v)
-    local num = assert(rawget(t, "num"))
+    local num = t.num
 
     if k > num then
         error("access out of boundry")
     end
 
     assert(k > 0)
-    local data = assert(rawget(t, "data"))
-    local actual_size = assert(rawget(t, "actual_size"))
+    local data = t.data
+    local actual_size = t.actual_size
 
-    print("list_newindex", k, v, num, actual_size)
+    --print("list_newindex", k, v, num, actual_size)
 
     if actual_size == 0 then
         -- do nothing
@@ -243,7 +246,7 @@ end
 
 function _M.struct_newindex(t, k, v)
     --print(string.format("%s, %s\n", k, v))
-    local T = rawget(t, "T")
+    local T = t.T
     local schema = T.fields
     local field = schema[k]
 
@@ -253,11 +256,11 @@ function _M.struct_newindex(t, k, v)
     end
 
     if field.is_data or field.is_text  then
-        local segment = assert(rawget(t, "segment"))
-        local data_pos = assert(rawget(t, "pointer_pos")) + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
+        local segment = t.segment
+        local data_pos = t.pointer_pos + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
         local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
 
-        print("t0", data_off, #v)
+        --print("t0", data_off, #v)
         _M.write_listp(data_pos, 2, #v + 1,  data_off) -- 2: l0.size
 
         local ok, err
@@ -277,10 +280,9 @@ function _M.struct_newindex(t, k, v)
         ftype = schema[k].ftype
         if ftype == "data" then
             error("not implemented")
-            --bwrite_listp(rawget(t, "pointer_pos"), 1, #v, )
         end
     else
-        _M.write_val(rawget(t, "data_pos"), v, size, offset)
+        _M.write_val(t.data_pos, v, size, offset)
     end
 end
 

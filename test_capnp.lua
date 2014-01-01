@@ -8,11 +8,13 @@ local bnot = bit.bnot
 local band, bor, bxor = bit.band, bit.bor, bit.bxor
 local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
-local _M = {}
 
--- works only with Little Endian
-assert(ffi.abi("le") == true)
+local ok, new_tab = pcall(require, "table.new")
+if not ok then
+    new_tab = function (narr, nrec) return {} end
+end
 
+local _M = new_tab(2, 8)
 
 
 function serialize_header(segs, sizes)
@@ -31,24 +33,13 @@ function serialize_header(segs, sizes)
 end
 
 _M.serialize = function (msg)
-    local segment = assert(rawget(msg, "segment"))
+    local segment = msg.segment
     --local msg_size = (T.dataWordCount + 1) * 8
     return serialize_header(1, { segment.pos }) .. ffi.string(segment.data, segment.pos)
 end
 
-function bwrite_listp(buf, elm_size, nelm, offset)
-    buf.data[0] = 0x0000000000000001
-    local p = ffi.cast("int32_t *", buf.data)
-    --local offset = buf.offset -- FIXME
-    p[0] = bor(tonumber(p[0]), lshift(offset, 2))
-    p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
-
-    buf.offset = buf.offset + math.ceil(elm_size * nelm/64)
-end
-
 
 ------------------------------------------------------------------
-
 _M.T1 = {
     T2 = {
         id = 13624321058757364083,
@@ -83,11 +74,6 @@ _M.T1 = {
         t0 = { is_pointer = true, is_data = true, size = 2, offset = 2 },
     },
 
-    serialize = function(message)
-        return rawget(messaga)
-    end
-    ,
-
     new = function(self)
 
         -- FIXME size
@@ -97,11 +83,11 @@ _M.T1 = {
         -- list
         struct.init_l0 = function(self, num)
             assert(num)
-            local segment = assert(rawget(self, "segment"))
-            local data_pos = assert(rawget(self, "pointer_pos")) + 1 * 8 -- l0.offset * l0.size (pointer size is 8)
+            local segment = self.segment
+            local data_pos = self.pointer_pos + 1 * 8 -- l0.offset * l0.size (pointer size is 8)
             local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
 
-            print(num, data_off)
+            --print(num, data_off)
             capnp.write_listp(data_pos, 2, num,  data_off) -- 2: l0.size
 
             local l = capnp.write_list(segment, 2, num) -- 2: l0.size
@@ -114,13 +100,13 @@ _M.T1 = {
 
         -- sub struct
         struct.init_s0 = function(self)
-            local segment = assert(rawget(self, "segment"))
+            local segment = self.segment
 
-            local data_pos = assert(rawget(self, "pointer_pos")) + 0 * 8 -- s0.offset * s0.size (pointer size is 8) 
+            local data_pos = self.pointer_pos + 0 * 8 -- s0.offset * s0.size (pointer size is 8) 
             local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - struct pointer end pos
             capnp.write_structp(data_pos, self.T.T2, data_off)
 
-            print(data_off)
+            --print(data_off)
             --local s = init_root(segment, self.T2)
             local s =  capnp.write_struct(segment, self.T.T2)
             local mt = {
