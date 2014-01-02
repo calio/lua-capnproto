@@ -120,11 +120,6 @@ end
 
 -- allocate space for struct body
 function _M.write_struct(seg, T)
-    local buf = seg.data + seg.pos
-
-    --local offset = seg.data + seg.offset - buf
-    --_M.write_structp_seg(buf, T, offset)
-
     local struct = {
         segment         = seg,
         data_pos        = seg.data + seg.pos,
@@ -137,7 +132,7 @@ function _M.write_struct(seg, T)
 end
 
 function _M.init_root(segment, T)
-    assert(T)
+    --assert(T)
     _M.write_structp_seg(segment, T, 0) -- offset 0 (in words)
     return _M.write_struct(segment, T)
 end

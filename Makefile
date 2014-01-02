@@ -28,6 +28,6 @@ test:
 all: main
 
 clean:
-	-rm proto/example.capnp.c++ proto/example.capnp.h *.o main
+	-rm proto/example.capnp.c++ proto/example.capnp.h *.o main test.schema.lua example_capnp.lua a.data c.data test.schema.txt
 
 .PHONY: all clean test
