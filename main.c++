@@ -1,4 +1,4 @@
-#include "test.capnp.h"
+#include "example.capnp.h"
 #include <capnp/message.h>
 #include <capnp/serialize-packed.h>
 #include <iostream>

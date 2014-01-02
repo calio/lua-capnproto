@@ -1,5 +1,9 @@
 #!/bin/bash
 
+export PATH=$(pwd)/bin:$PATH
+
+echo $PATH
+
 make all || exit
 ./main > a.data || exit
 make test.schema.txt || exit
@@ -8,4 +12,4 @@ xxd -g 1 a.data || exit
 echo
 xxd -g 1 c.data || exit
 diff a.data c.data
-lunit.sh -i `which luajit` test/sanity.lua
+

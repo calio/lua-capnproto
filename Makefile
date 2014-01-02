@@ -1,15 +1,12 @@
-CXXFLAGS:=-std=gnu++11 -g -Iproto
-LDFLAGS:=-lcapnp -lkj -pthread
-CXX:=g++-4.7
+CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
+LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
+#CXX:=g++-4.7
 
 
-compiled: proto/example.capnp
-	capnp compile -oc++ proto/*.capnp
+compiled: proto/example.capnp proto/enums.capnp
+	capnp compile -oc++ $+
 
-#proto/%.capnp.c++: proto/%.capnp
-#	capnp compile -oc++ $<
-
-test.schema.txt: proto/enums.capnp proto/example.capnp 
+test.schema.txt: proto/enums.capnp proto/example.capnp
 	capnp compile -oecho $+ > /tmp/capnp.bin
 	capnp decode /home/calio/code/c-capnproto/compiler/schema.capnp CodeGeneratorRequest > $@ < /tmp/capnp.bin
 
@@ -25,9 +22,12 @@ main.o: main.c++ compiled
 main: main.o example_capnp.o enums_capnp.o
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
 
+test:
+	lunit.sh -i `which luajit` test/sanity.lua
+
 all: main
 
 clean:
 	-rm proto/example.capnp.c++ proto/example.capnp.h *.o main
 
-.PHONY: all
+.PHONY: all clean test

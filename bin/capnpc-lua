@@ -1,4 +1,6 @@
+#!/bin/bash
 
+echo $(readlink -f $0)
 cat - > /tmp/schema.bin
 capnp decode proto/schema.capnp CodeGeneratorRequest > /tmp/schema.txt < /tmp/schema.bin
 lua compile.lua /tmp/schema.txt
