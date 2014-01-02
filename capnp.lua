@@ -1,10 +1,13 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
-local tobit = bit.tobit
-local bnot = bit.bnot
+local tobit     = bit.tobit
+local bnot      = bit.bnot
 local band, bor, bxor = bit.band, bit.bor, bit.bxor
 local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
+
+local format    = string.format
+local lower     = string.lower
 
 -- works only with Little Endian
 assert(ffi.abi("le") == true)
@@ -12,13 +15,20 @@ assert(ffi.sizeof("float") == 4)
 assert(ffi.sizeof("double") == 8)
 
 
-ffi.cdef[[
-typedef struct {
-    int     pos;
-    int     len;
-    char   *data;
+local round8 = function(size)
+    return math.ceil(size / 8) * 8
+end
+
+local SEGMENT_SIZE = 4096
+
+ffi.cdef([[
+typedef struct seg {
+    int         pos;
+    int         len;
+    char       data[]] .. SEGMENT_SIZE .. [[];
+    struct seg *next;
 } segment;
-]]
+]])
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -28,7 +38,7 @@ end
 local _M = new_tab(2, 32)
 
 -- segment.len in bytes
-function _M.new_segment(size)
+function _M.new_segment()
     local segment = ffi.new("segment")
 --[[
     local segment = {
@@ -37,13 +47,11 @@ function _M.new_segment(size)
         len = 0,
     }
 ]]
-    if size % 8 ~= 0 then
-        error("size should be devided by 8")
-    end
     -- set segment size
     --local word_size = 1 + T.dataWordCount + T.pointerCount
-    segment.data = ffi.new("char[?]", size)
-    segment.len = size
+    --segment.data = ffi.new("char[?]", size)
+    segment.pos = 0
+    segment.len = SEGMENT_SIZE
 
     return segment
 end
@@ -53,6 +61,7 @@ end
 
 -- segment size in word
 function _M.write_val(buf, val, size, off)
+--print(tonumber(ffi.cast("intptr_t", buf)), val, size, off)
 
     local p = ffi.cast("int32_t *", buf)
 
@@ -111,10 +120,8 @@ function _M.write_structp(buf, T, data_off)
 end
 
 function _M.write_structp_seg(seg, T, data_off)
-    local p = ffi.cast("int32_t *", seg.data + seg.pos)
-
     -- A = 0
-    _M.write_structp(p, T, data_off)
+    _M.write_structp(seg.data + seg.pos, T, data_off)
     seg.pos = seg.pos + 8 -- 64 bits -> 8 bytes
 end
 
@@ -168,10 +175,6 @@ local list_size_map = {
     -- 7 = ?,
 }
 
-local round8 = function(size)
-    return math.ceil(size / 8) * 8
-end
-
 -- in here size is not the actual size, use list_size_map to get actual size
 function _M.write_list(seg, size_type, num)
     local buf = seg.data + seg.pos
@@ -211,10 +214,13 @@ end
 
 function _M.write_data(seg, str)
     if seg.len - seg.pos < #str then
-        return nil, "not enough space in segment"
+        return nil, format("not enough space in segment, pos:%d len:%d",
+                seg.pos, seg.len)
     end
     ffi.copy(seg.data + seg.pos, str)
-    seg.pos = seg.pos + round8(#str + 1) -- include trailing NULL
+
+    -- include trailing NULL, align to word boundry
+    seg.pos = seg.pos + round8(#str + 1)
     return true
 end
 
@@ -247,7 +253,6 @@ end
 
 function _M.struct_newindex(t, k, v)
     --print(string.format("%s, %s\n", k, v))
-    local schema = t.schema
     local T = t.T
     local fields = T.fields
     local field = fields[k]
@@ -269,7 +274,7 @@ function _M.struct_newindex(t, k, v)
         error("use init_<field_name> method")
     elseif field.is_data or field.is_text then
         local segment = t.segment
-        local data_pos = t.pointer_pos + field.offset * 8 -- l0.offset * l0.size (pointer size is 8)
+        local data_pos = t.pointer_pos + field.offset * 8 -- pointer size is 8
         local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
 
         --print("t0", data_off, #v)
@@ -289,25 +294,38 @@ function _M.struct_newindex(t, k, v)
     end
 end
 
-function _M.serialize_header(segs, sizes)
-    assert(type(sizes) == "table")
-    -- in bytes
-    local size = 4 + segs * 4
-    local words = math.ceil(size / 64)
-    local buf = ffi.new("int32_t[?]", words * 2)
+function _M.serialize_header(seg_sizes)
+    assert(type(seg_sizes) == "table")
+    local num = #seg_sizes
 
-    buf[0] = segs - 1
-    for i=1, segs do
-        buf[i] = assert(math.ceil(sizes[i]/8))
+    assert(num > 0)
+    local size = 4 + num * 4    -- in bytes
+    size = round8(size)         -- align to word boundry
+--print(size, num, "\n")
+
+    local buf   = ffi.new("char[?]", size)
+    local p     = ffi.cast("int32_t *", buf)
+
+    p[0] = num - 1
+    for i=1, num do
+        p[i] = round8(seg_sizes[i])/8
     end
 
-    return ffi.string(ffi.cast("char *", buf), size)
+    return ffi.string(buf), size
+end
+
+local _debug_segment_info = function(segment)
+    print(string.format("data: %d, pos: %d, len: %d", tonumber(ffi.cast("intptr_t", segment.data)), segment.pos, segment.len))
 end
 
 function _M.serialize(msg)
     local segment = msg.segment
+    --_debug_segment_info(segment)
     --local msg_size = (T.dataWordCount + 1) * 8
-    return _M.serialize_header(1, { segment.pos }) .. ffi.string(segment.data, segment.pos)
+    --FIXME multi header
+    return _M.serialize_header({ segment.pos }) .. ffi.string(segment.data, segment.pos)
+    --return ffi.string(segment.data, segment.pos) .. ""
+    --return ffi.string(segment.data, segment.pos)
 end
 
 function _M.init_new_struct(struct)

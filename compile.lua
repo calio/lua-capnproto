@@ -42,8 +42,8 @@ end
 local _M = new_tab(2, 8)
 
 function _M.init(T)
-    -- FIXME size
-    local segment = capnp.new_segment(8000)
+    -- suggested first segment size 4k
+    local segment = capnp.new_segment(4096)
     return T:new(segment)
 end
 

@@ -10,7 +10,7 @@ end
 
 local to_hex_string = function(seg)
     local t = {}
-    for i = 1, seg.len do
+    for i = 1, seg.pos do
         table.insert(t, bit.tohex(seg.data[i - 1], 2))
     end
     return table.concat(t, " ")
@@ -37,9 +37,9 @@ local T1 = {
 }
 
 function test_new_segment()
-    local seg = capnp.new_segment(8)
+    local seg = capnp.new_segment()
     assert_not_nil(seg)
-    assert_equal(8, seg.len)
+    assert_equal(4096, seg.len)
     assert_equal(0, seg.pos)
 end
 
@@ -56,21 +56,24 @@ function test_write_plain_val()
     capnp.write_val(seg.data, 1.41421, 32, 5)
     capnp.write_val(seg.data, 3.14159265358979, 64, 3)
 
+    seg.pos = seg.pos + 32
     assert_hex("01 08 ff ff 00 00 10 00 00 00 00 00 01 00 00 00 c3 f5 48 40 d5 04 b5 3f 11 2d 44 54 fb 21 09 40", seg)
 end
 
 function test_write_structp()
-    local seg = capnp.new_segment(8) -- 32 bytes
+    local seg = capnp.new_segment() -- 32 bytes
 
     capnp.write_structp(seg.data, T1, 0)
 
+    seg.pos = seg.pos + 8
     assert_hex("00 00 00 00 02 00 01 00", seg)
 end
 
 function test_write_structp1()
-    local seg = capnp.new_segment(16) -- 32 bytes
+    local seg = capnp.new_segment()
 
     capnp.write_structp(seg.data + 8, T1, 2)
+    seg.pos = seg.pos + 16
 
     assert_hex("00 00 00 00 00 00 00 00 08 00 00 00 02 00 01 00", seg)
 end
@@ -85,7 +88,7 @@ function test_write_structp_seg()
 end
 
 function test_init_root()
-    local seg = capnp.new_segment(32) -- 32 bytes
+    local seg = capnp.new_segment() -- 32 bytes
     capnp.init_root(seg, T1)
 
     assert_hex("00 00 00 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
@@ -97,11 +100,12 @@ function test_write_listp()
     -- write_listp = function (buf, size, num, data_off)
     capnp.write_listp(seg.data, 2, 1, 0)
 
+    seg.pos = seg.pos + 8
     assert_hex("01 00 00 00 0a 00 00 00", seg)
 end
 
 function test_write_list()
-    local seg = capnp.new_segment(8)
+    local seg = capnp.new_segment()
 
     -- write_list = function (seg, size_type, num)
     local l = capnp.write_list(seg, 2, 8)
@@ -112,7 +116,7 @@ function test_write_list()
 end
 
 function test_write_text()
-    local seg = capnp.new_segment(16)
+    local seg = capnp.new_segment()
 
     -- write_text = function(seg, str)
     capnp.write_text(seg, "To err is human")
@@ -120,15 +124,15 @@ function test_write_text()
 end
 
 function test_write_data()
-    local seg = capnp.new_segment(8)
+    local seg = capnp.new_segment()
 
     -- write_text = function(seg, str)
-    capnp.write_text(seg, "\0\1\2\3\4\5\6\7")
-    assert_hex("00 01 02 03 04 05 06 07", seg)
+    capnp.write_text(seg, "\0\1\2\3\4\5\6")
+    assert_hex("00 01 02 03 04 05 06 00", seg)
 end
 
 function test_list_newindex()
-    local seg = capnp.new_segment(16)
+    local seg = capnp.new_segment()
 
     local num = 5
     local size_type =2
@@ -151,7 +155,7 @@ function test_list_newindex()
 end
 
 function test_struct_newindex()
-    local seg = capnp.new_segment(24)
+    local seg = capnp.new_segment()
 
     local s = capnp.init_root(seg, T1)
     local mt = {
@@ -159,19 +163,12 @@ function test_struct_newindex()
     }
 
     local struct = setmetatable(s, mt)
---[[
-        i0 = { size = 32, offset = 0 },
-        i1 = { size = 16, offset = 2 },
-        i2 = { size = 8, offset = 7 },
-        b0 = { size = 1, offset = 48 },
-        b1 = { size = 1, offset = 49 },
-        i3 = { size = 32, offset = 2 },
-        ]]
+
     struct.i0 = 8
     struct.i1 = 7
     struct.b0 = true
     struct.b1 = false
     struct.i3 = 9
 
-    assert_hex("00 00 00 00 02 00 01 00 08 00 00 00 07 00 01 00 09 00 00 00 00 00 00 00", seg)
+    assert_hex("00 00 00 00 02 00 01 00 08 00 00 00 07 00 01 00 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
