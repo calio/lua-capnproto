@@ -23,7 +23,7 @@ main: main.o example_capnp.o enums_capnp.o
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
 
 test:
-	lunit.sh -i `which luajit` test/sanity.lua
+	luajit test/sanity.lua
 
 all: main
 

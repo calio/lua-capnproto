@@ -308,10 +308,10 @@ function _M.serialize_header(seg_sizes)
 
     p[0] = num - 1
     for i=1, num do
-        p[i] = round8(seg_sizes[i])/8
+        p[i] = round8(seg_sizes[i]) / 8
     end
 
-    return ffi.string(buf), size
+    return ffi.string(buf, size)
 end
 
 local _debug_segment_info = function(segment)
