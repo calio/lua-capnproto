@@ -19,7 +19,9 @@
 
 # Project temp files
 *.data
-test.capnp.c++
-test.capnp.h
+proto/example.capnp.c++
+proto/example.capnp.h
+proto/enums.capnp.c++
+proto/enums.capnp.h
 test.schema.txt
 main
