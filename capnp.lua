@@ -144,7 +144,13 @@ end
 
 function _M.get_enum_val(v, enum_schema)
     assert(enum_schema)
-    return assert(enum_schema[v])
+    v = string.lower(v)
+    local r = enum_schema[v]
+    if not r then
+        v = 
+        error("Unknown enum val:" .. v)
+    end
+    return r
 end
 
 function _M.write_listp(buf, size_type, num, data_off)
@@ -250,9 +256,15 @@ function _M.struct_newindex(t, k, v)
     local T = t.T
     local fields = T.fields
     local field = fields[k]
+    if not field then
+        error("Field not fount: " .. k)
+    end
 
     -- TODO deal with unknown value
     if field.is_enum then
+        if not field.enum_schema then
+            error("No enum schema: " .. field.name)
+        end
         v = _M.get_enum_val(v, field.enum_schema)
     end
 

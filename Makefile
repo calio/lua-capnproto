@@ -9,8 +9,8 @@ compiled: proto/example.capnp
 #proto/%.capnp.c++: proto/%.capnp
 #	capnp compile -oc++ $<
 
-test.schema.txt: proto/example.capnp
-	capnp compile -oecho $< > /tmp/capnp.bin
+test.schema.txt: proto/enums.capnp proto/example.capnp 
+	capnp compile -oecho $+ > /tmp/capnp.bin
 	capnp decode /home/calio/code/c-capnproto/compiler/schema.capnp CodeGeneratorRequest > $@ < /tmp/capnp.bin
 
 example_capnp.o: proto/example.capnp.c++ compiled

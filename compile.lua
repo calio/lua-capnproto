@@ -31,7 +31,8 @@ end
 function comp_header(res, nodes)
     --print("header")
     table.insert(res, [[
-local ffi = require "ffi" local capnp = require "capnp" 
+local ffi = require "ffi"
+local capnp = require "capnp"
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -182,9 +183,17 @@ function comp_list_init_func(res, name, offset, size)
 ]])
 end
 
+function format_enum_name(name)
+    -- TODO control this using annotation
+    return string.lower(string.gsub(name, "(%u)", "_%1"))
+end
+
 function comp_node(res, nodes, node, name)
-    assert(node)
-    ---print("node", name)
+    if not node then
+        print("Ignoring node: ", name)
+        return
+    end
+    print("node", name)
 
     table.insert(res, string.format([[
 _M.%s = {
@@ -216,11 +225,9 @@ _M.%s = {
             table.insert(res, "    fields = {\n")
             for i, field in ipairs(s.fields) do
                 comp_field(res, nodes, field)
-                print(field.type_name)
                 if field.type_name == "enum" then
                     local key = "_M." .. name .. ".fields." .. field.name
                     missing_enums[key] = field.enum_id
-                    print("inserted: ", key, field.enum_id)
                 end
             end
             table.insert(res, "    },\n")
@@ -253,7 +260,7 @@ _M.%s = {
             if not v.codeOrder then
                 v.codeOrder = 0
             end
-            table.insert(res, string.format("    %s = %s,\n", v.name, v.codeOrder))
+            table.insert(res, string.format("    [\"%s\"] = %s,\n", format_enum_name(v.name), v.codeOrder))
         end
     end
 
@@ -266,7 +273,7 @@ _M.%s = {
 end
 
 function comp_body(res, schema)
-    --print("body")
+    print("body")
     local nodes = schema.nodes
     for i, v in ipairs(nodes) do
         nodes[v.id] = v
@@ -278,22 +285,32 @@ function comp_body(res, schema)
         comp_file(res, nodes, file)
 
         local imports = file.imports
-        for i, file in ipairs(imports) do
-            comp_file(res, nodes, file)
+        for i, import in ipairs(imports) do
+            comp_import(res, nodes, import)
         end
     end
 
     for k, v in pairs(missing_enums) do
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        print(k)
         table.insert(res, k .. ".enum_schema = _M." .. get_name(nodes[v].displayName .. "\n"))
     end
 
     table.insert(res, "\nreturn _M\n")
 end
 
+function comp_import(res, nodes, import)
+    print("import", import.name)
+    local id = import.id
+
+    local import_node = nodes[id]
+    --print(root_id)
+    --print(nodes[root_id].displayName)
+    for i, node in ipairs(import_node.nestedNodes) do
+        comp_node(res, nodes, nodes[node.id], node.name)
+    end
+end
+
 function comp_file(res, nodes, file)
-    --print("file", file.filename)
+    print("file", file.filename)
     local id = file.id
 
     local file_node = nodes[id]
@@ -305,13 +322,17 @@ function comp_file(res, nodes, file)
 end
 
 function compile(schema)
-    --print("compile")
+    print("compile")
     local res = {}
 
     comp_header(res, schema.nodes)
     comp_body(res, schema)
 
     return table.concat(res)
+end
+
+function get_output_name(schema)
+    return string.gsub(schema.requestedFiles[1].filename, "%.", "_") .. ".lua"
 end
 
 local f = arg[1]
@@ -328,11 +349,9 @@ file:close()
 
 local schema = assert(loadstring(t))()
 
-local outfile = string.sub(f, 1, string.find(f, "%.")) .. "lua"
-
+local outfile = get_output_name(schema)
+print(outfile)
 local res = compile(schema)
-print()
-print(res)
 
 local file = io.open(outfile, "w")
 file:write(res)
