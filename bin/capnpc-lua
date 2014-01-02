@@ -1,6 +1,12 @@
 #!/bin/bash
 
-echo $(readlink -f $0)
+if [ $(uname) != "Linux" ]; then
+    echo "Only linux is supported currently"
+    exit 1
+fi
+
+BASE=$(dirname $(readlink -f $0))/..
+
 cat - > /tmp/schema.bin
-capnp decode proto/schema.capnp CodeGeneratorRequest > /tmp/schema.txt < /tmp/schema.bin
-lua compile.lua /tmp/schema.txt
+capnp decode $BASE/proto/schema.capnp CodeGeneratorRequest > /tmp/schema.txt < /tmp/schema.bin
+lua $BASE/compile.lua /tmp/schema.txt

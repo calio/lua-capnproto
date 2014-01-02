@@ -4,9 +4,14 @@ export PATH=$(pwd)/bin:$PATH
 
 echo $PATH
 
-make all || exit
+CXX=g++-4.7 make all || exit
 ./main > a.data || exit
+
 make test.schema.txt || exit
+
+capnp compile -olua proto/example.capnp || exit
+mv proto/example_capnp.lua .
+
 luajit foo.lua c.data || exit
 xxd -g 1 a.data || exit
 echo
