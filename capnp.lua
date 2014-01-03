@@ -8,6 +8,8 @@ local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 local format    = string.format
 local lower     = string.lower
+local ceil      = math.ceil
+local floor     = math.floor
 
 -- works only with Little Endian
 assert(ffi.abi("le") == true)
@@ -16,7 +18,7 @@ assert(ffi.sizeof("double") == 8)
 
 
 local round8 = function(size)
-    return math.ceil(size / 8) * 8
+    return ceil(size / 8) * 8
 end
 
 local SEGMENT_SIZE = 4096
@@ -40,53 +42,34 @@ local _M = new_tab(2, 32)
 -- segment.len in bytes
 function _M.new_segment()
     local segment = ffi.new("segment")
---[[
-    local segment = {
-        pos = 0, -- point to free space
-        --used = 0, -- bytes used
-        len = 0,
-    }
-]]
-    -- set segment size
-    --local word_size = 1 + T.dataWordCount + T.pointerCount
-    --segment.data = ffi.new("char[?]", size)
+
     segment.pos = 0
     segment.len = SEGMENT_SIZE
 
     return segment
 end
 
-function _M.read_val(buf, vtype, size, off)
-end
-
--- segment size in word
 function _M.write_val(buf, val, size, off)
---print(tonumber(ffi.cast("intptr_t", buf)), val, size, off)
-
     local p = ffi.cast("int32_t *", buf)
 
     if type(val) == "boolean" then
-        --print("boolean")
         val = val and 1 or 0
     else
         local i, f = math.modf(val)
         -- float number
         if (f ~= 0) then
             if size == 32 then
-        --print("float32")
                 p = ffi.cast("float *", p)
             elseif size == 64 then
-        --print("float64")
                 p = ffi.cast("double *", p)
             else
                 error("float size other than 32 and 64")
             end
         else
             if size == 64 then
-        --print("int64")
                 p = ffi.cast("int64_t *", buf)
             else
-        --print("int32")
+                --print("int32")
             end
         end
     end
@@ -95,10 +78,10 @@ function _M.write_val(buf, val, size, off)
     local bit_off = size * off -- offset in bits
     local n, s
     if size <= 32 then
-        n = math.floor(bit_off / 32) -- offset in 4 bytes
+        n = floor(bit_off / 32) -- offset in 4 bytes
         s = bit_off % 32     -- offset within 4 bytes
     elseif size == 64 then
-        n = math.floor(bit_off / 64) -- offset in 8 bytes
+        n = floor(bit_off / 64) -- offset in 8 bytes
         s = bit_off % 64     -- offset within 8 bytes
     end
 
@@ -146,7 +129,7 @@ end
 
 function _M.get_enum_val(v, enum_schema)
     assert(enum_schema)
-    v = string.lower(v)
+    v = lower(v)
     local r = enum_schema[v]
     if not r then
         v = 
@@ -242,7 +225,7 @@ function _M.list_newindex(t, k, v)
         -- do nothing
     elseif actual_size == 0.125 then
         if v == 1 then
-            local n = math.floor(k / 8)
+            local n = floor(k / 8)
             local s = k % 8
             data[n] = bor(data[n], lshift(1, s))
         end
@@ -252,10 +235,12 @@ function _M.list_newindex(t, k, v)
 end
 
 function _M.struct_newindex(t, k, v)
-    --print(string.format("%s, %s\n", k, v))
     local T = t.T
     local fields = T.fields
     local field = fields[k]
+    local size = assert(field.size)
+    local offset = assert(field.offset)
+
     if not field then
         error("Field not fount: " .. k)
     end
@@ -268,14 +253,15 @@ function _M.struct_newindex(t, k, v)
         v = _M.get_enum_val(v, field.enum_schema)
     end
 
-    local size = assert(field.size)
-    local offset = assert(field.offset)
     if field.is_pointer then
         error("use init_<field_name> method")
     elseif field.is_data or field.is_text then
         local segment = t.segment
         local data_pos = t.pointer_pos + field.offset * 8 -- pointer size is 8
-        local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
+
+        -- unused memory pos - list pointer end pos, result in bytes.
+        -- We need to divide this value by 8 to get word offset
+        local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8
 
         --print("t0", data_off, #v)
         _M.write_listp(data_pos, 2, #v + 1,  data_off) -- 2: l0.size
@@ -315,17 +301,16 @@ function _M.serialize_header(seg_sizes)
 end
 
 local _debug_segment_info = function(segment)
-    print(string.format("data: %d, pos: %d, len: %d", tonumber(ffi.cast("intptr_t", segment.data)), segment.pos, segment.len))
+    print(format("data: %d, pos: %d, len: %d",
+            tonumber(ffi.cast("intptr_t", segment.data)),
+            segment.pos, segment.len))
 end
 
 function _M.serialize(msg)
     local segment = msg.segment
-    --_debug_segment_info(segment)
-    --local msg_size = (T.dataWordCount + 1) * 8
     --FIXME multi header
-    return _M.serialize_header({ segment.pos }) .. ffi.string(segment.data, segment.pos)
-    --return ffi.string(segment.data, segment.pos) .. ""
-    --return ffi.string(segment.data, segment.pos)
+    return _M.serialize_header({ segment.pos })
+            .. ffi.string(segment.data, segment.pos)
 end
 
 function _M.init_new_struct(struct)
