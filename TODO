@@ -1,6 +1,7 @@
 * default values
 * performance turing
 * camel case problem (use annotation to control output)
-* setter
 * multiple files input
 * fixed memory
+* remove setmetatable
+* compile none-setmetatable code
