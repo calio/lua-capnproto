@@ -33,12 +33,31 @@ _M.T1 = {
     },
 
     new = function(self, segment)
-        local struct = capnp.write_struct(segment, self)
+        local struct = capnp.write_struct(segment, self, 0)
         struct.schema = _M
 
         struct.set_i0 = function(self, val)
-            -- TODO get this value
-            _M.write_val(self.data_pos, val, size, offset)
+            capnp.write_val(self.data_pos, val, 32, 0)
+        end
+        -- list
+        struct.set_i1 = function(self, val)
+            capnp.write_val(self.data_pos, val, 16, 2)
+        end
+        -- list
+        struct.set_b0 = function(self, val)
+            capnp.write_val(self.data_pos, val, 1, 48)
+        end
+        -- list
+        struct.set_i2 = function(self, val)
+            capnp.write_val(self.data_pos, val, 8, 7)
+        end
+        -- list
+        struct.set_b1 = function(self, val)
+            capnp.write_val(self.data_pos, val, 1, 49)
+        end
+        -- list
+        struct.set_i3 = function(self, val)
+            capnp.write_val(self.data_pos, val, 32, 2)
         end
         -- sub struct
         struct.init_s0 = function(self)

@@ -122,7 +122,9 @@ function _M.write_structd(seg, T)
 end
 
 function _M.write_struct(segment, T, offset)
-    --assert(T)
+    assert(T)
+    assert(segment)
+    assert(offset)
     _M.write_structp_seg(segment, T, offset) -- offset 0 (in words)
     return _M.write_structd(segment, T)
 end

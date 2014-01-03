@@ -45,7 +45,7 @@ local _M = new_tab(2, 8)
 function _M.init(T)
     -- suggested first segment size 4k
     local segment = capnp.new_segment(4096)
-    return T:new(segment)
+    return T:new(segment, 0)
 end
 
 ]])
@@ -144,12 +144,13 @@ function comp_struct_init_func(res, name, offset, size, type_name)
         -- sub struct
         struct.init_]] .. name ..[[ = function(self)
             local segment = self.segment
-
+            -- unused memory pos - struct pointer end pos
             -- s0.offset * s0.size (pointer size is 8)
             local data_pos = self.pointer_pos + ]].. offset .." * " .. size ..[[
-
-            -- unused memory pos - struct pointer end pos
             local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8
+            print("]] .. name ..[[", data_off)
+            return self.schema.]] .. type_name .. [[:new(segment, data_off)
+--[=[
             capnp.write_structp(data_pos, self.schema.]].. type_name
             .. [[, data_off)
 
@@ -161,6 +162,7 @@ function comp_struct_init_func(res, name, offset, size, type_name)
                 __newindex =  capnp.struct_newindex
             }
             return setmetatable(s, mt)
+            ]=]
         end
 ]])
 end
@@ -236,8 +238,11 @@ function comp_struct(res, nodes, struct, name)
         end
 
         table.insert(res, [[
-    new = function(self, segment)
-        local struct = capnp.write_struct(segment, self, 0)
+    new = function(self, segment, offset)
+        if not offset then
+            offset = 0
+        end
+        local struct = capnp.write_struct(segment, self, offset)
         struct.schema = _M
 ]])
         if struct.fields then

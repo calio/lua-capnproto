@@ -1,4 +1,4 @@
-local test_capnp = require "example_capnp"
+local test_capnp = require "handwrite_capnp"
 
 local msg = test_capnp.init(test_capnp.T1)
 
