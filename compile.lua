@@ -7,6 +7,7 @@ end
 
 local missing_enums = {}
 
+
 function get_schema_text(file)
     local f = io.open(file)
     if not f then
@@ -59,9 +60,6 @@ end
 function get_name(display_name)
     local n = string.find(display_name, ":")
     return string.sub(display_name, n + 1)
-end
-
-function comp_struct(res, nodes, struct)
 end
 
 size_map = {
@@ -147,12 +145,17 @@ function comp_struct_init_func(res, name, offset, size, type_name)
         struct.init_]] .. name ..[[ = function(self)
             local segment = self.segment
 
-            local data_pos = self.pointer_pos + ]].. offset .." * " .. size ..[[ -- s0.offset * s0.size (pointer size is 8)
-            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - struct pointer end pos
-            capnp.write_structp(data_pos, self.schema.]].. type_name ..[[, data_off)
+            -- s0.offset * s0.size (pointer size is 8)
+            local data_pos = self.pointer_pos + ]].. offset .." * " .. size ..[[
+
+            -- unused memory pos - struct pointer end pos
+            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8
+            capnp.write_structp(data_pos, self.schema.]].. type_name
+            .. [[, data_off)
 
             --print(data_off)
-            local s =  capnp.write_struct(segment, self.schema.]].. type_name ..[[)
+            local s =  capnp.write_struct(segment, self.schema.]].. type_name
+            .. [[)
 
             local mt = {
                 __newindex =  capnp.struct_newindex
@@ -168,12 +171,18 @@ function comp_list_init_func(res, name, offset, size)
         struct.init_]] .. name .. [[ = function(self, num)
             assert(num)
             local segment = self.segment
-            local data_pos = self.pointer_pos + ]] .. offset .. " * 8 " .. [[ -- l0.offset * 8 (pointer size is 8)
-            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
+            local data_pos = self.pointer_pos + ]] .. offset .. " * 8 "
+            .. [[ -- l0.offset * 8 (pointer size is 8)
 
-            capnp.write_listp(data_pos, ]] .. size .. [[, num,  data_off) -- 2: l0.size
+            -- unused memory pos - list pointer end pos, result in bytes.
+            -- We need to divide this value by 8 to get word offset
+            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8
 
-            local l = capnp.write_list(segment, ]].. size .. [[, num) -- 2: l0.size
+            capnp.write_listp(data_pos, ]] .. size
+            .. [[, num,  data_off) -- 2: l0.size
+
+            local l = capnp.write_list(segment, ]] .. size
+            .. [[, num) -- 2: l0.size
 
             local mt = {
                 __newindex =  capnp.list_newindex
@@ -186,6 +195,68 @@ end
 function format_enum_name(name)
     -- TODO control this using annotation
     return string.lower(string.gsub(name, "(%u)", "_%1"))
+end
+
+function comp_struct(res, nodes, struct, name)
+
+        if not struct.dataWordCount then
+            struct.dataWordCount = 0
+        end
+        if not struct.pointerCount then
+            struct.pointerCount = 0
+        end
+
+        table.insert(res, "    dataWordCount = ")
+        table.insert(res, struct.dataWordCount)
+        table.insert(res, ",\n")
+
+        table.insert(res, "    pointerCount = ")
+        table.insert(res, struct.pointerCount)
+        table.insert(res, ",\n")
+
+        if struct.fields then
+            table.insert(res, "    fields = {\n")
+            for i, field in ipairs(struct.fields) do
+                comp_field(res, nodes, field)
+                if field.type_name == "enum" then
+                    local key = "_M." .. name .. ".fields." .. field.name
+                    missing_enums[key] = field.enum_id
+                end
+            end
+            table.insert(res, "    },\n")
+        end
+
+        table.insert(res, [[
+    new = function(self, segment)
+        local struct = capnp.init_root(segment, self)
+        struct.schema = _M
+]])
+        if struct.fields then
+            for i, field in ipairs(struct.fields) do
+                if field.type_name == "list" then
+                    comp_list_init_func(res, field.name, field.slot.offset,
+                            field.size)
+                elseif field.type_name == "struct" then
+                    comp_struct_init_func(res, field.name, field.slot.offset,
+                            field.size, field.type_display_name)
+                end
+            end
+        end
+
+        table.insert(res, [[
+        return capnp.init_new_struct(struct)
+    end
+]])
+end
+
+function comp_enum(res, enum)
+    for i, v in ipairs(enum.enumerants) do
+        if not v.codeOrder then
+            v.codeOrder = 0
+        end
+        table.insert(res, string.format("    [\"%s\"] = %s,\n",
+                format_enum_name(v.name), v.codeOrder))
+    end
 end
 
 function comp_node(res, nodes, node, name)
@@ -205,63 +276,12 @@ _M.%s = {
     id = %s,
     displayName = "%s",
 ]], node.id, node.displayName))
-
-        if not s.dataWordCount then
-            s.dataWordCount = 0
-        end
-        if not s.pointerCount then
-            s.pointerCount = 0
-        end
-
-        table.insert(res, "    dataWordCount = ")
-        table.insert(res, s.dataWordCount)
-        table.insert(res, ",\n")
-
-        table.insert(res, "    pointerCount = ")
-        table.insert(res, s.pointerCount)
-        table.insert(res, ",\n")
-
-        if s.fields then
-            table.insert(res, "    fields = {\n")
-            for i, field in ipairs(s.fields) do
-                comp_field(res, nodes, field)
-                if field.type_name == "enum" then
-                    local key = "_M." .. name .. ".fields." .. field.name
-                    missing_enums[key] = field.enum_id
-                end
-            end
-            table.insert(res, "    },\n")
-        end
-
-        table.insert(res, [[
-    new = function(self, segment)
-        local struct = capnp.init_root(segment, self)
-        struct.schema = _M
-]])
-        if s.fields then
-            for i, field in ipairs(s.fields) do
-                if field.type_name == "list" then
-                    comp_list_init_func(res, field.name, field.slot.offset, field.size)
-                elseif field.type_name == "struct" then
-                    comp_struct_init_func(res, field.name, field.slot.offset, field.size, field.type_display_name)
-                end
-            end
-        end
-
-        table.insert(res, [[
-        return capnp.init_new_struct(struct)
+        comp_struct(res, nodes, s, name)
     end
-]])
-    end
+
     local e = node.enum
     if e then
-
-        for i, v in ipairs(e.enumerants) do
-            if not v.codeOrder then
-                v.codeOrder = 0
-            end
-            table.insert(res, string.format("    [\"%s\"] = %s,\n", format_enum_name(v.name), v.codeOrder))
-        end
+        comp_enum(res, e)
     end
 
     table.insert(res, "\n}\n")
@@ -291,7 +311,8 @@ function comp_body(res, schema)
     end
 
     for k, v in pairs(missing_enums) do
-        table.insert(res, k .. ".enum_schema = _M." .. get_name(nodes[v].displayName .. "\n"))
+        table.insert(res, k .. ".enum_schema = _M." ..
+                get_name(nodes[v].displayName .. "\n"))
     end
 
     table.insert(res, "\nreturn _M\n")
