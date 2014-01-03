@@ -8,9 +8,8 @@ end
 local _M = new_tab(2, 8)
 
 function _M.init(T)
-    -- FIXME size
-    local segment = capnp.new_segment(8000)
-    return T:new(segment)
+    local segment = capnp.new_segment()
+    return T:init(segment)
 end
 
 _M.T1 = {
@@ -32,9 +31,9 @@ _M.T1 = {
         e1 = { size = 16, offset = 7, is_enum = true,  }
     },
 
-    new = function(self, segment)
-        local struct = capnp.write_struct(segment, self, 0)
-        struct.schema = _M
+    init = function(self, segment)
+        segment.pos = segment.pos + 8
+        local struct = capnp.write_struct(segment.data, segment, self)
 
         struct.set_i0 = function(self, val)
             capnp.write_val(self.data_pos, val, 32, 0)
@@ -64,16 +63,9 @@ _M.T1 = {
             local segment = self.segment
 
             local data_pos = self.pointer_pos + 0 * 8 -- s0.offset * s0.size (pointer size is 8)
-            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - struct pointer end pos
-            capnp.write_structp(data_pos, self.schema.T1.T2, data_off)
+            local s = capnp.write_struct(data_pos, segment, self.schema.T1.T2)
 
-            --print(data_off)
-            local s =  capnp.write_structd(segment, self.schema.T1.T2)
-
-            local mt = {
-                __newindex =  capnp.struct_newindex
-            }
-            return setmetatable(s, mt)
+            return capnp.init_new_struct(s, self.schema)
         end
         -- list
         struct.init_l0 = function(self, num)
@@ -92,8 +84,7 @@ _M.T1 = {
             return setmetatable(l, mt)
         end
 
-
-        return capnp.init_new_struct(struct)
+        return capnp.init_new_struct(struct, _M)
     end
 }
 
@@ -109,11 +100,11 @@ _M.T1.T2 = {
         f1 = { size = 64, offset = 1 },
     },
 
-    new = function(self, segment)
-        local struct = capnp.write_struct(segment, self)
-        struct.schema = _M
+    init = function(self, segment)
+        segment.pos = segment.pos + 8
+        local struct = capnp.write_struct(segment.data, segment, self)
 
-        return capnp.init_new_struct(struct)
+        return capnp.init_new_struct(struct, _M)
     end
 }
 

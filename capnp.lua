@@ -121,11 +121,15 @@ function _M.write_structd(seg, T)
     return struct
 end
 
-function _M.write_struct(segment, T, offset)
+-- head_pos must point to a writable word
+function _M.write_struct(head_pos, segment, T)
     assert(T)
     assert(segment)
-    assert(offset)
-    _M.write_structp_seg(segment, T, offset) -- offset 0 (in words)
+    assert(head_pos)
+
+    local offset = (segment.data + segment.pos - (head_pos + 8)) / 8 -- in words
+    print(offset)
+    _M.write_structp(head_pos, T, offset)
     return _M.write_structd(segment, T)
 end
 
@@ -315,7 +319,9 @@ function _M.serialize(msg)
             .. ffi.string(segment.data, segment.pos)
 end
 
-function _M.init_new_struct(struct)
+function _M.init_new_struct(struct, schema)
+    struct.schema = schema
+
     struct.serialize = function(self)
         return _M.serialize(self)
     end

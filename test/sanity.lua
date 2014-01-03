@@ -89,7 +89,9 @@ end
 
 function test_write_struct()
     local seg = capnp.new_segment() -- 32 bytes
-    capnp.write_struct(seg, T1, 0)
+
+    seg.pos = seg.pos + 8
+    capnp.write_struct(seg.data, seg, T1)
 
     assert_hex("00 00 00 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
@@ -157,7 +159,9 @@ end
 function test_struct_newindex()
     local seg = capnp.new_segment()
 
-    local s = capnp.write_struct(seg, T1, 0)
+    -- allocate a word for struct pointer
+    seg.pos = seg.pos + 8
+    local s = capnp.write_struct(seg.data, seg, T1)
     local mt = {
         __newindex = capnp.struct_newindex
     }
