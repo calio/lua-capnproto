@@ -43,7 +43,7 @@ _M.T1 = {
     init = function(self, segment, data_pos)
         if not data_pos then
             data_pos = segment.data
-            segment.pos = segment.pos + 8
+            segment.pos = 8
         end
         local struct = capnp.write_struct(data_pos, segment, self)
 
@@ -133,10 +133,15 @@ _M.T1 = {
 
             end
 
-            return capnp.init_new_list(l, _M)
+            l.schema = _M
+            return l
+            --return capnp.init_new_list(l, _M)
         end
 
-        return capnp.init_new_struct(struct, _M)
+        struct.schema = _M
+        struct.serialize = capnp.serialize
+        return struct
+        --return capnp.init_new_struct(struct, _M)
     end
 }
 
@@ -167,7 +172,10 @@ _M.T1.T2 = {
             capnp.write_val(self.data_pos, val, 64, 1)
         end
 
-        return capnp.init_new_struct(struct, _M)
+        struct.schema = _M
+        struct.serialize = capnp.serialize
+        return struct
+        --return capnp.init_new_struct(struct, _M)
     end
 }
 

@@ -123,17 +123,12 @@ end
 
 -- head_pos must point to a writable word
 function _M.write_struct(head_pos, segment, T)
-    assert(T)
-    assert(segment)
-    assert(head_pos)
-
     local offset = (segment.data + segment.pos - (head_pos + 8)) / 8 -- in words
     _M.write_structp(head_pos, T, offset)
     return _M.write_structd(segment, T)
 end
 
 function _M.get_enum_val(v, enum_schema)
-    assert(enum_schema)
     v = lower(v)
     local r = enum_schema[v]
     if not r then
@@ -164,8 +159,6 @@ local list_size_map = {
 }
 
 function _M.write_list(head_pos, segment, size_type, num)
-    assert(segment)
-    assert(head_pos)
 
     local offset = (segment.data + segment.pos - (head_pos + 8)) / 8 -- in words
     _M.write_listp(head_pos, size_type, num, offset)
@@ -330,11 +323,13 @@ end
 
 function _M.init_new_list(list, schema)
     list.schema = schema
-
+--[[
     local mt = {
         __newindex = _M.list_newindex
     }
     return setmetatable(list, mt)
+    ]]
+    return list
 end
 
 function _M.init_new_struct(struct, schema)
@@ -343,10 +338,12 @@ function _M.init_new_struct(struct, schema)
     struct.serialize = function(self)
         return _M.serialize(self)
     end
-
+--[[
     local mt = {
         __newindex = _M.struct_newindex
     }
     return setmetatable(struct, mt)
+    ]]
+    return struct
 end
 return _M
