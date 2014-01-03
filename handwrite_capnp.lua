@@ -1,8 +1,16 @@
 local ffi = require "ffi" local capnp = require "capnp" 
-local cjson = require("cjson")
+
+local ceil      = math.ceil
+local floor     = math.floor
+
 local ok, new_tab = pcall(require, "table.new")
+
 if not ok then
     new_tab = function (narr, nrec) return {} end
+end
+
+local round8 = function(size)
+    return ceil(size / 8) * 8
 end
 
 local _M = new_tab(2, 8)
@@ -71,6 +79,13 @@ _M.T1 = {
         struct.set_e1 = function(self, val)
             val = capnp.get_enum_val(val, _M.EnumType2)
             capnp.write_val(self.data_pos, val, 16, 7)
+        end
+        ------------------ text ----------------------
+        struct.set_t0 = function(self, val)
+            local data_pos = self.pointer_pos + 2 * 8 -- pointer size is 8
+            -- list data includes the trailing NULL
+            local l = capnp.write_list(data_pos, self.segment, 2, #val + 1)
+            ffi.copy(l.data, val)
         end
         -- sub struct
         struct.init_s0 = function(self)

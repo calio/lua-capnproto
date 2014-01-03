@@ -19,7 +19,7 @@ local l0 = msg:init_l0(2)
 l0[1] = 28
 l0[2] = 29
 
-msg.t0 = "hello"
+msg:set_t0("hello")
 
 msg:set_e1("enum7")
 
