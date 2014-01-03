@@ -352,4 +352,42 @@ function _M.init_new_struct(struct, schema)
     ]]
     return struct
 end
+----------------------------------------------
+-- not including struct pointer
+function _M.calc_struct_size(T, data)
+    -- TODO list of struct
+    local size = 0
+
+    if not data then
+        return size
+    end
+
+    for k, v in pairs(T.fields) do
+        if v.is_struct then
+            if data[k] then
+                print("struct")
+                size = size + _M.calc_struct_size(v.struct_schema, data[k])
+            end
+        elseif v.is_text or v.is_datt then
+            if data[k] then
+                print("data")
+                size = size + 8 + round8(#data[k] + 1) -- include trailing 0
+            end
+        elseif v.is_list then
+            if data[k] then
+                print("list")
+                local num = #data[k]
+                size = size + round8(list_size_map(v.size) * num)
+            end
+        end
+    end
+
+    return (T.dataWordCount + T.pointerCount) * 8 + size
+end
+
+function _M.calc_size(T, data)
+    return 8 + _M.calc_struct_size(T, data)
+end
+
+
 return _M

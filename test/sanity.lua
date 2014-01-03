@@ -21,6 +21,17 @@ local assert_hex = function (expected, actual)
 end
 
 local T1 = {
+    T2 = {
+        id = 17202330444354522981,
+        displayName = "proto/test.capnp:T1.T2",
+        dataWordCount = 2,
+        pointerCount = 0,
+        fields = {
+            f0 = { size = 32, offset = 0 },
+            f1 = { size = 64, offset = 1 },
+        },
+    },
+
     id = 13624321058757364083,
     displayName = "test.capnp:T1",
     dataWordCount = 2,
@@ -32,9 +43,10 @@ local T1 = {
         b0 = { size = 1, offset = 48 },
         b1 = { size = 1, offset = 49 },
         i3 = { size = 32, offset = 2 },
-        s1 = { is_pointer = true }
+        s0 = { size = 8, offset = 0, is_pointer = true, is_struct = true }
     },
 }
+T1.fields.s0.struct_schema = T1.T2
 
 function test_new_segment()
     local seg = capnp.new_segment()
@@ -175,4 +187,23 @@ function test_struct_newindex()
     struct.i3 = 9
 
     assert_hex("00 00 00 00 02 00 01 00 08 00 00 00 07 00 01 00 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
+end
+
+function test_calc_size()
+    local data = {
+        i0 = 1,
+    }
+
+    assert_equal(32, capnp.calc_size(T1, data))
+end
+
+function test_calc_size1()
+    local data = {
+        i0 = 1,
+        s0 = {
+            f0 = 3.14
+        },
+    }
+
+    assert_equal(48, capnp.calc_size(T1, data))
 end

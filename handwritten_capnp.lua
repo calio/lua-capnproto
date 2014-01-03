@@ -33,9 +33,9 @@ _M.T1 = {
         i2 = { size = 8, offset = 7 },
         b1 = { size = 1, offset = 49 },
         i3 = { size = 32, offset = 2 },
-        s0 = { size = 8, offset = 0, is_pointer = true, },
+        s0 = { size = 8, offset = 0, is_pointer = true, is_struct = true },
         e0 = { size = 16, offset = 6, is_enum = true,  }, -- enum size 16
-        l0 = { size = 2, offset = 1, is_pointer = true,  }, -- size: list item size id, not actual size
+        l0 = { size = 2, offset = 1, is_pointer = true, is_list = true }, -- size: list item size id, not actual size
         t0 = { size = 2, offset = 2, is_text = true,  },
         e1 = { size = 16, offset = 7, is_enum = true,  }
     },
@@ -191,7 +191,12 @@ _M.EnumType2 = {
     enum7 = 2,
 }
 
+_M.T1.fields.s0.struct_schema = _M.T2
 _M.T1.fields.e0.enum_schema = _M.T1.EnumType1
 _M.T1.fields.e1.enum_schema = _M.EnumType2
 
+
+function _M.serialize(T, data)
+    local size = calc_size(T, data)
+end
 return _M
