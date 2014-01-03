@@ -1,5 +1,5 @@
 local ffi = require "ffi" local capnp = require "capnp" 
-
+local cjson = require("cjson")
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
     new_tab = function (narr, nrec) return {} end
@@ -38,28 +38,39 @@ _M.T1 = {
         end
         local struct = capnp.write_struct(data_pos, segment, self)
 
+        ------------------ structs -------------------
         struct.set_i0 = function(self, val)
             capnp.write_val(self.data_pos, val, 32, 0)
         end
-        -- list
+
         struct.set_i1 = function(self, val)
             capnp.write_val(self.data_pos, val, 16, 2)
         end
-        -- list
+
         struct.set_b0 = function(self, val)
             capnp.write_val(self.data_pos, val, 1, 48)
         end
-        -- list
+
         struct.set_i2 = function(self, val)
             capnp.write_val(self.data_pos, val, 8, 7)
         end
-        -- list
+
         struct.set_b1 = function(self, val)
             capnp.write_val(self.data_pos, val, 1, 49)
         end
-        -- list
+
         struct.set_i3 = function(self, val)
             capnp.write_val(self.data_pos, val, 32, 2)
+        end
+        ------------------ enums ---------------------
+        struct.set_e0 = function(self, val)
+            val = capnp.get_enum_val(val, _M.T1.EnumType1)
+            capnp.write_val(self.data_pos, val, 16, 6)
+        end
+
+        struct.set_e1 = function(self, val)
+            val = capnp.get_enum_val(val, _M.EnumType2)
+            capnp.write_val(self.data_pos, val, 16, 7)
         end
         -- sub struct
         struct.init_s0 = function(self)

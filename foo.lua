@@ -9,7 +9,7 @@ msg:set_b0(true)
 msg:set_b1(true)
 msg:set_i2(127)
 msg:set_i3(65536)
-msg.e0 = "enum3"
+msg:set_e0("enum3")
 
 local s0 = msg:init_s0()
 s0:set_f0(3.14)
@@ -21,7 +21,7 @@ l0[2] = 29
 
 msg.t0 = "hello"
 
-msg.e1 = "enum7"
+msg:set_e1("enum7")
 
 local f = io.open(file, "w")
 f:write(msg:serialize())
