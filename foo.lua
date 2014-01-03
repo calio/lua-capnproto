@@ -3,12 +3,12 @@ local test_capnp = require "example_capnp"
 local msg = test_capnp.init(test_capnp.T1)
 
 local file = arg[1] or "c.data"
-msg.i0 = 32
-msg.i1 = 16
-msg.b0 = true
-msg.b1 = true
-msg.i2 = 127
-msg.i3 = 65536
+msg:set_i0(32)
+msg:set_i1(16)
+msg:set_b0(true)
+msg:set_b1(true)
+msg:set_i2(127)
+msg:set_i3(65536)
 msg.e0 = "enum3"
 
 local s0 = msg:init_s0()

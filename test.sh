@@ -13,7 +13,7 @@ CXX=g++-4.7 make all
 capnp compile -olua proto/example.capnp || exit
 mv proto/example_capnp.lua .
 
-luajit foo.lua c.data
+luajit foo.lua c.data || exit
 xxd -g 1 a.data || exit
 echo
 xxd -g 1 c.data || exit

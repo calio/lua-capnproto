@@ -36,6 +36,10 @@ _M.T1 = {
         local struct = capnp.init_root(segment, self)
         struct.schema = _M
 
+        struct.set_i0 = function(self, val)
+            -- TODO get this value
+            _M.write_val(self.data_pos, val, size, offset)
+        end
         -- sub struct
         struct.init_s0 = function(self)
             local segment = self.segment

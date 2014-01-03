@@ -165,6 +165,15 @@ function comp_struct_init_func(res, name, offset, size, type_name)
 ]])
 end
 
+function comp_setter_func(res, name, offset, size)
+    table.insert(res, [[
+        -- list
+        struct.set_]] .. name .. [[ = function(self, val)
+            capnp.write_val(self.data_pos, val, ]] .. size .. ", " .. offset .. [[)
+        end
+]])
+end
+
 function comp_list_init_func(res, name, offset, size)
     table.insert(res, [[
         -- list
@@ -239,6 +248,14 @@ function comp_struct(res, nodes, struct, name)
                 elseif field.type_name == "struct" then
                     comp_struct_init_func(res, field.name, field.slot.offset,
                             field.size, field.type_display_name)
+                elseif field.type_name == "enum" then
+
+                elseif field.type_name == "text" or field.type_name == "data"
+                then
+
+                else
+                    comp_setter_func(res, field.name, field.slot.offset,
+                            field.size)
                 end
             end
         end
