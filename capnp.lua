@@ -109,7 +109,7 @@ function _M.write_structp_seg(seg, T, data_off)
 end
 
 -- allocate space for struct body
-function _M.write_struct(seg, T)
+function _M.write_structd(seg, T)
     local struct = {
         segment         = seg,
         data_pos        = seg.data + seg.pos,
@@ -121,10 +121,10 @@ function _M.write_struct(seg, T)
     return struct
 end
 
-function _M.init_root(segment, T)
+function _M.write_struct(segment, T, offset)
     --assert(T)
-    _M.write_structp_seg(segment, T, 0) -- offset 0 (in words)
-    return _M.write_struct(segment, T)
+    _M.write_structp_seg(segment, T, offset) -- offset 0 (in words)
+    return _M.write_structd(segment, T)
 end
 
 function _M.get_enum_val(v, enum_schema)

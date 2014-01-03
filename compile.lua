@@ -154,7 +154,7 @@ function comp_struct_init_func(res, name, offset, size, type_name)
             .. [[, data_off)
 
             --print(data_off)
-            local s =  capnp.write_struct(segment, self.schema.]].. type_name
+            local s =  capnp.write_structd(segment, self.schema.]].. type_name
             .. [[)
 
             local mt = {
@@ -237,7 +237,7 @@ function comp_struct(res, nodes, struct, name)
 
         table.insert(res, [[
     new = function(self, segment)
-        local struct = capnp.init_root(segment, self)
+        local struct = capnp.write_struct(segment, self, 0)
         struct.schema = _M
 ]])
         if struct.fields then

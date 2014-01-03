@@ -33,7 +33,7 @@ _M.T1 = {
     },
 
     new = function(self, segment)
-        local struct = capnp.init_root(segment, self)
+        local struct = capnp.write_struct(segment, self)
         struct.schema = _M
 
         struct.set_i0 = function(self, val)
@@ -49,7 +49,7 @@ _M.T1 = {
             capnp.write_structp(data_pos, self.schema.T1.T2, data_off)
 
             --print(data_off)
-            local s =  capnp.write_struct(segment, self.schema.T1.T2)
+            local s =  capnp.write_structd(segment, self.schema.T1.T2)
 
             local mt = {
                 __newindex =  capnp.struct_newindex
@@ -91,7 +91,7 @@ _M.T1.T2 = {
     },
 
     new = function(self, segment)
-        local struct = capnp.init_root(segment, self)
+        local struct = capnp.write_struct(segment, self)
         struct.schema = _M
 
         return capnp.init_new_struct(struct)

@@ -87,9 +87,9 @@ function test_write_structp_seg()
     assert_hex("00 00 00 00 00 00 00 00 08 00 00 00 02 00 01 00", seg)
 end
 
-function test_init_root()
+function test_write_struct()
     local seg = capnp.new_segment() -- 32 bytes
-    capnp.init_root(seg, T1)
+    capnp.write_struct(seg, T1, 0)
 
     assert_hex("00 00 00 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
@@ -157,7 +157,7 @@ end
 function test_struct_newindex()
     local seg = capnp.new_segment()
 
-    local s = capnp.init_root(seg, T1)
+    local s = capnp.write_struct(seg, T1, 0)
     local mt = {
         __newindex = capnp.struct_newindex
     }
