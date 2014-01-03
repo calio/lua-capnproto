@@ -31,9 +31,12 @@ _M.T1 = {
         e1 = { size = 16, offset = 7, is_enum = true,  }
     },
 
-    init = function(self, segment)
-        segment.pos = segment.pos + 8
-        local struct = capnp.write_struct(segment.data, segment, self)
+    init = function(self, segment, data_pos)
+        if not data_pos then
+            data_pos = segment.data
+            segment.pos = segment.pos + 8
+        end
+        local struct = capnp.write_struct(data_pos, segment, self)
 
         struct.set_i0 = function(self, val)
             capnp.write_val(self.data_pos, val, 32, 0)
@@ -61,11 +64,10 @@ _M.T1 = {
         -- sub struct
         struct.init_s0 = function(self)
             local segment = self.segment
+            local T = self.schema.T1.T2
 
             local data_pos = self.pointer_pos + 0 * 8 -- s0.offset * s0.size (pointer size is 8)
-            local s = capnp.write_struct(data_pos, segment, self.schema.T1.T2)
-
-            return capnp.init_new_struct(s, self.schema)
+            return T:init(segment, data_pos)
         end
         -- list
         struct.init_l0 = function(self, num)
@@ -93,9 +95,20 @@ _M.T1.T2 = {
         f1 = { size = 64, offset = 1 },
     },
 
-    init = function(self, segment)
-        segment.pos = segment.pos + 8
-        local struct = capnp.write_struct(segment.data, segment, self)
+    init = function(self, segment, data_pos)
+        if not data_pos then
+            data_pos = segment.data
+            segment.pos = segment.pos + 8
+        end
+        local struct = capnp.write_struct(data_pos, segment, self)
+
+        struct.set_f0 = function(self, val)
+            capnp.write_val(self.data_pos, val, 32, 0)
+        end
+
+        struct.set_f1 = function(self, val)
+            capnp.write_val(self.data_pos, val, 64, 1)
+        end
 
         return capnp.init_new_struct(struct, _M)
     end

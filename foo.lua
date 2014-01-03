@@ -12,8 +12,8 @@ msg:set_i3(65536)
 msg.e0 = "enum3"
 
 local s0 = msg:init_s0()
-s0.f0 = 3.14
-s0.f1 = 3.14159265358979
+s0:set_f0(3.14)
+s0:set_f1(3.14159265358979)
 
 local l0 = msg:init_l0(2)
 l0[1] = 28
