@@ -1,4 +1,5 @@
 local ffi = require "ffi" local capnp = require "capnp" 
+local cjson = require "cjson"
 
 local ceil      = math.ceil
 local floor     = math.floor
@@ -92,15 +93,45 @@ _M.T1 = {
             local segment = self.segment
             local T = self.schema.T1.T2
 
-            local data_pos = self.pointer_pos + 0 * 8 -- s0.offset * s0.size (pointer size is 8)
+            -- s0.offset * s0.size (pointer size is 8)
+            local data_pos = self.pointer_pos + 0 * 8
             return T:init(segment, data_pos)
         end
         -- list
         struct.init_l0 = function(self, num)
             assert(num)
             local segment = self.segment
-            local data_pos = self.pointer_pos + 1 * 8 -- l0.offset * l0.size (pointer size is 8)
-            local l = capnp.write_list(data_pos, segment, 2, num) -- 2: l0.size_type
+
+            -- l0.offset * l0.size (pointer size is 8)
+            local data_pos = self.pointer_pos + 1 * 8
+
+            -- 2: l0.size_type
+            local l = capnp.write_list(data_pos, segment, 2, num)
+
+            l.set = function(self, index, val)
+                assert(type(self) == "table")
+                local num = self.num
+                assert(index > 0)
+
+                local actual_size = self.actual_size
+                if index > num then
+                    error(format("access index [%d] out of boundry, array len:%d"
+                        , index, num))
+                end
+
+                if actual_size == 0 then
+                    -- do nothing
+                elseif actual_size == 0.125 then
+                    if val == 1 then
+                        local n = floor((index - 1) / 8)
+                        local s = index % 8
+                        data[n] = bor(data[n], lshift(1, s))
+                    end
+                else
+                    self.data[index - 1] = val
+                end
+
+            end
 
             return capnp.init_new_list(l, _M)
         end

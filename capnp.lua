@@ -128,7 +128,6 @@ function _M.write_struct(head_pos, segment, T)
     assert(head_pos)
 
     local offset = (segment.data + segment.pos - (head_pos + 8)) / 8 -- in words
-    print(offset)
     _M.write_structp(head_pos, T, offset)
     return _M.write_structd(segment, T)
 end

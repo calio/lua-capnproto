@@ -16,8 +16,8 @@ s0:set_f0(3.14)
 s0:set_f1(3.14159265358979)
 
 local l0 = msg:init_l0(2)
-l0[1] = 28
-l0[2] = 29
+l0:set(1, 28)
+l0:set(2, 29)
 
 msg:set_t0("hello")
 
