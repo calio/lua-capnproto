@@ -140,6 +140,7 @@ _M.T1 = {
 
         struct.schema = _M
         struct.serialize = capnp.serialize
+        struct.reset = capnp.reset
         return struct
         --return capnp.init_new_struct(struct, _M)
     end

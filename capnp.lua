@@ -89,7 +89,7 @@ function _M.write_val(buf, val, size, off)
 
     -- shift returns 32 bit number
     if (size < 32) then
-        p[n] = bor(tonumber(p[n]), lshift(val, s))
+        p[n] = bor(p[n], lshift(val, s))
     else
         -- 32 bit or 64 bit
         p[n] = val
@@ -117,6 +117,7 @@ function _M.write_structd(seg, T)
         T               = T,
     }
     seg.pos = seg.pos + T.dataWordCount * 8 + T.pointerCount * 8
+    struct.end_pos = seg.pos
 
     return struct
 end
@@ -312,6 +313,11 @@ local _debug_segment_info = function(segment)
     print(format("data: %d, pos: %d, len: %d",
             tonumber(ffi.cast("intptr_t", segment.data)),
             segment.pos, segment.len))
+end
+
+function _M.reset(msg)
+    local segment = msg.segment
+    segment.pos = msg.end_pos
 end
 
 function _M.serialize(msg)
