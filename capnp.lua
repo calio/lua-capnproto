@@ -164,8 +164,18 @@ local list_size_map = {
     -- 7 = ?,
 }
 
+function _M.write_list(head_pos, segment, size_type, num)
+    assert(segment)
+    assert(head_pos)
+
+    local offset = (segment.data + segment.pos - (head_pos + 8)) / 8 -- in words
+    _M.write_listp(head_pos, size_type, num, offset)
+    return _M.write_listd(segment, size_type, num)
+
+end
+
 -- in here size is not the actual size, use list_size_map to get actual size
-function _M.write_list(seg, size_type, num)
+function _M.write_listd(seg, size_type, num)
     local buf = seg.data + seg.pos
 
     local actual_size = assert(list_size_map[size_type])
@@ -317,6 +327,15 @@ function _M.serialize(msg)
     --FIXME multi header
     return _M.serialize_header({ segment.pos })
             .. ffi.string(segment.data, segment.pos)
+end
+
+function _M.init_new_list(list, schema)
+    list.schema = schema
+
+    local mt = {
+        __newindex = _M.list_newindex
+    }
+    return setmetatable(list, mt)
 end
 
 function _M.init_new_struct(struct, schema)

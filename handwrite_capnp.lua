@@ -72,16 +72,9 @@ _M.T1 = {
             assert(num)
             local segment = self.segment
             local data_pos = self.pointer_pos + 1 * 8 -- l0.offset * l0.size (pointer size is 8)
-            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8 -- unused memory pos - list pointer end pos, result in bytes. So we need to divide this value by 8 to get word offset
+            local l = capnp.write_list(data_pos, segment, 2, num) -- 2: l0.size_type
 
-            capnp.write_listp(data_pos, 2, num,  data_off) -- 2: l0.size
-
-            local l = capnp.write_list(segment, 2, num) -- 2: l0.size
-
-            local mt = {
-                __newindex =  capnp.list_newindex
-            }
-            return setmetatable(l, mt)
+            return capnp.init_new_list(l, _M)
         end
 
         return capnp.init_new_struct(struct, _M)

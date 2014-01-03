@@ -106,11 +106,11 @@ function test_write_listp()
     assert_hex("01 00 00 00 0a 00 00 00", seg)
 end
 
-function test_write_list()
+function test_write_listd()
     local seg = capnp.new_segment()
 
     -- write_list = function (seg, size_type, num)
-    local l = capnp.write_list(seg, 2, 8)
+    local l = capnp.write_listd(seg, 2, 8)
 
     assert_equal(2, l.size_type)
     assert_equal(1, l.actual_size)
@@ -140,7 +140,7 @@ function test_list_newindex()
     local size_type =2
     capnp.write_listp(seg.data, size_type, num, 0) -- 2: 1 byte, 8: 8 items, 0: offset
     seg.pos = seg.pos + 8 -- 8: list pointer size
-    local l = capnp.write_list(seg, size_type, num)
+    local l = capnp.write_listd(seg, size_type, num)
 
     local mt = {
         __newindex =  capnp.list_newindex
