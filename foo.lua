@@ -16,7 +16,7 @@ local data = {
     },
     l0 = { 28, 29 },
     t0 = "hello",
-    e0 = "enum7",
+    e1 = "enum7",
 }
 
 local file = arg[1] or "c.data"

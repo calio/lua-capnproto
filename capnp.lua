@@ -133,7 +133,6 @@ function _M.get_enum_val(v, enum_schema)
     v = lower(v)
     local r = enum_schema[v]
     if not r then
-        v = 
         error("Unknown enum val:" .. v)
     end
     return r
@@ -377,7 +376,7 @@ function _M.calc_struct_size(T, data)
             if data[k] then
                 print("list")
                 local num = #data[k]
-                size = size + round8(list_size_map(v.size) * num)
+                size = size + round8(list_size_map[v.size] * num)
             end
         end
     end
