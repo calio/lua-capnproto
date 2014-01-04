@@ -101,7 +101,8 @@ function _M.get_enum_val(v, enum_schema)
     v = lower(v)
     local r = enum_schema[v]
     if not r then
-        error("Unknown enum val:" .. v)
+        --error("Unknown enum val:" .. v)
+        return 0
     end
     return r
 end
