@@ -392,21 +392,25 @@ function _M.calc_size(T, data)
 end
 
 function _M.flat_serialize_struct(T, data, buf, pos)
+    local start = pos
     for k, v in pairs(data) do
         field = T.fields[k]
         if field then
             local child = data[k]
             if field.is_enum then
                 v = _M.get_enum_val(v, field.enum_schema)
-                _M.write_val(buf + pos, v, field.size, field.offset)
+                _M.write_val(buf + start, v, field.size, field.offset)
             elseif field.is_struct then
                 if child then
                     print("struct")
-                    local struct_pointer_offset = T.dataWordCount * 8 + field.offset * 8
-                    print(T.size, struct_pointer_offset)
-                    _M.write_structp(buf + pos + struct_pointer_offset, field.struct_schema,
-                            (T.size - struct_pointer_offset - 8) / 8)
-                    _M.flat_serialize_struct(field.struct_schema, child, buf, pos + T.size)
+                    local pointer_offset = start + T.dataWordCount * 8 + field.offset * 8
+                    local data_offset = pos + T.size
+                    local offset = (data_offset - pointer_offset - 8) / 8
+
+                    _M.write_structp(buf + pointer_offset, field.struct_schema,
+                            offset)
+                    _M.flat_serialize_struct(field.struct_schema, child, buf, data_offset)
+                    pos = pos + T.size
                 end
             elseif field.is_text or field.is_datt then
                 if child then
@@ -421,7 +425,7 @@ function _M.flat_serialize_struct(T, data, buf, pos)
                 end
             else
                 -- plain data
-                _M.write_val(buf + pos, v, field.size, field.offset)
+                _M.write_val(buf + start, v, field.size, field.offset)
             end
         end
     end
