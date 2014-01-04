@@ -386,8 +386,53 @@ function _M.calc_struct_size(T, data)
 end
 
 function _M.calc_size(T, data)
-    return 8 + _M.calc_struct_size(T, data)
+    return   8                                -- header
+           + 8                                 -- root struct pointer
+           + _M.calc_struct_size(T, data)
 end
 
+function _M.flat_serialize_struct(T, data, buf, pos)
+    for k, v in pairs(data) do
+        field = T.fields[k]
+        if field then
+            if field.is_struct then
+                if data[k] then
+                    print("struct")
+                    --size = size + _M.calc_struct_size(v.struct_schema, data[k])
+                end
+            elseif field.is_text or field.is_datt then
+                if data[k] then
+                    print("data")
+                    --size = size + 8 + round8(#data[k] + 1) -- include trailing 0
+                end
+            elseif field.is_list then
+                if data[k] then
+                    print("list")
+                    local num = #data[k]
+                    --size = size + round8(list_size_map(field.size) * num)
+                end
+            end
+
+            -- plain data
+            _M.write_val(buf + pos, v, field.size, field.offset)
+        end
+    end
+end
+
+function _M.flat_serialize(T, data)
+    local size = _M.calc_size(T, data)
+
+    local pos = 0
+    local buf = ffi.new("char[?]", size)
+
+    local p = ffi.cast("int32_t *", buf)
+    p[0] = 0                                    -- 1 segment
+    p[1] = (size - 8) / 8
+
+    _M.write_structp(buf + 8, T, 0)
+    _M.flat_serialize_struct(T, data, buf, 16) -- skip struct pointer
+
+    return ffi.string(buf, size)
+end
 
 return _M

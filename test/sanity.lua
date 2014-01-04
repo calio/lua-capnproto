@@ -20,12 +20,21 @@ local assert_hex = function (expected, actual)
     assert_equal(expected, to_hex_string(actual))
 end
 
+local function assert_hex_string(expected, actual)
+    local t = {}
+    for i = 1, #actual do
+        table.insert(t, bit.tohex(string.byte(actual, i), 2))
+    end
+    assert_equal(expected, table.concat(t, " "))
+end
+
 local T1 = {
     T2 = {
         id = 17202330444354522981,
         displayName = "proto/test.capnp:T1.T2",
         dataWordCount = 2,
         pointerCount = 0,
+        size = 16,
         fields = {
             f0 = { size = 32, offset = 0 },
             f1 = { size = 64, offset = 1 },
@@ -36,6 +45,7 @@ local T1 = {
     displayName = "test.capnp:T1",
     dataWordCount = 2,
     pointerCount = 1,
+    size = 24,
     fields = {
         i0 = { size = 32, offset = 0 },
         i1 = { size = 16, offset = 2 },
@@ -194,7 +204,7 @@ function test_calc_size()
         i0 = 1,
     }
 
-    assert_equal(32, capnp.calc_size(T1, data))
+    assert_equal(40, capnp.calc_size(T1, data))
 end
 
 function test_calc_size1()
@@ -205,5 +215,21 @@ function test_calc_size1()
         },
     }
 
-    assert_equal(48, capnp.calc_size(T1, data))
+    assert_equal(56, capnp.calc_size(T1, data))
 end
+
+function test_flat_serialize()
+    local data = {
+        i0 = 1,
+        i1 = 1,
+        i2 = 1,
+        b0 = true,
+        b1 = false,
+        i3 = 1,
+    }
+
+    local bin = capnp.flat_serialize(T1, data)
+    assert_equal(40, #bin)
+    assert_hex_string("00 00 00 00 04 00 00 00 00 00 00 00 02 00 01 00 01 00 00 00 01 00 01 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", bin)
+end
+
