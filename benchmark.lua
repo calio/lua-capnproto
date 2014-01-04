@@ -21,6 +21,10 @@ local data = {
     e1 = "enum7",
 }
 
+function run3()
+    return test_capnp.T1.serialize(data)
+end
+
 function run2()
     return capnp.flat_serialize(test_capnp.T1, data)
 end
@@ -92,8 +96,8 @@ end
 --bench(run)
 --bench(run1)
 bench(run2)
---[[
+bench(run3)
+
 local f = io.open("out.txt", "w")
 f:write(res)
 f:close()
-]]
