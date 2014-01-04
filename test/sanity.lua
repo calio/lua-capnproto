@@ -1,6 +1,9 @@
 
 local lunit = require "lunitx"
 local capnp = require "capnp"
+local handwritten = require "handwritten_capnp"
+
+local T1 = handwritten.T1
 
 if _VERSION >= 'Lua 5.2' then
     _ENV = lunit.module('simple','seeall')
@@ -28,6 +31,7 @@ local function assert_hex_string(expected, actual)
     assert_equal(expected, table.concat(t, " "))
 end
 
+--[[
 local T1 = {
     T2 = {
         id = 17202330444354522981,
@@ -57,6 +61,7 @@ local T1 = {
     },
 }
 T1.fields.s0.struct_schema = T1.T2
+]]
 
 function test_new_segment()
     local seg = capnp.new_segment()
@@ -88,7 +93,7 @@ function test_write_structp()
     capnp.write_structp(seg.data, T1, 0)
 
     seg.pos = seg.pos + 8
-    assert_hex("00 00 00 00 02 00 01 00", seg)
+    assert_hex("00 00 00 00 02 00 03 00", seg)
 end
 
 function test_write_structp1()
@@ -97,7 +102,7 @@ function test_write_structp1()
     capnp.write_structp(seg.data + 8, T1, 2)
     seg.pos = seg.pos + 16
 
-    assert_hex("00 00 00 00 00 00 00 00 08 00 00 00 02 00 01 00", seg)
+    assert_hex("00 00 00 00 00 00 00 00 08 00 00 00 02 00 03 00", seg)
 end
 
 function test_write_structp_seg()
@@ -106,7 +111,7 @@ function test_write_structp_seg()
 
     capnp.write_structp_seg(seg, T1, 2)
 
-    assert_hex("00 00 00 00 00 00 00 00 08 00 00 00 02 00 01 00", seg)
+    assert_hex("00 00 00 00 00 00 00 00 08 00 00 00 02 00 03 00", seg)
 end
 
 function test_write_struct()
@@ -115,7 +120,7 @@ function test_write_struct()
     seg.pos = seg.pos + 8
     capnp.write_struct(seg.data, seg, T1)
 
-    assert_hex("00 00 00 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
+    assert_hex("00 00 00 00 02 00 03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
 
 function test_write_listp()
@@ -196,7 +201,7 @@ function test_struct_newindex()
     struct.b1 = false
     struct.i3 = 9
 
-    assert_hex("00 00 00 00 02 00 01 00 08 00 00 00 07 00 01 00 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
+    assert_hex("00 00 00 00 02 00 03 00 08 00 00 00 07 00 01 00 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
 
 function test_calc_size()
@@ -204,7 +209,7 @@ function test_calc_size()
         i0 = 1,
     }
 
-    assert_equal(40, capnp.calc_size(T1, data))
+    assert_equal(56, capnp.calc_size(T1, data))
 end
 
 function test_calc_size1()
@@ -215,7 +220,24 @@ function test_calc_size1()
         },
     }
 
-    assert_equal(56, capnp.calc_size(T1, data))
+    assert_equal(72, capnp.calc_size(T1, data))
+end
+
+function test_calc_size2()
+    local data = {
+        i0 = 1,
+        s0 = {
+            f0 = 3.14
+        },
+        t0 = "1234567",
+    }
+
+    assert_equal(80, capnp.calc_size(T1, data))
+
+    data.t0 = "12345678"
+
+    assert_equal(88, capnp.calc_size(T1, data))
+
 end
 
 function test_flat_serialize()
@@ -229,7 +251,7 @@ function test_flat_serialize()
     }
 
     local bin = capnp.flat_serialize(T1, data)
-    assert_equal(40, #bin)
-    assert_hex_string("00 00 00 00 04 00 00 00 00 00 00 00 02 00 01 00 01 00 00 00 01 00 01 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", bin)
+    assert_equal(56, #bin)
+    assert_hex_string("00 00 00 00 06 00 00 00 00 00 00 00 02 00 03 00 01 00 00 00 01 00 01 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", bin)
 end
 

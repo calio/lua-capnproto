@@ -365,13 +365,13 @@ function _M.calc_struct_size(T, data)
     for k, v in pairs(T.fields) do
         if v.is_struct then
             if data[k] then
-                print("struct")
+                print("struct", k)
                 size = size + _M.calc_struct_size(v.struct_schema, data[k])
             end
         elseif v.is_text or v.is_datt then
             if data[k] then
                 print("data")
-                size = size + 8 + round8(#data[k] + 1) -- include trailing 0
+                size = size + round8(#data[k] + 1) -- include trailing 0
             end
         elseif v.is_list then
             if data[k] then

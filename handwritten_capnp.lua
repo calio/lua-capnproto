@@ -191,12 +191,9 @@ _M.EnumType2 = {
     enum7 = 2,
 }
 
-_M.T1.fields.s0.struct_schema = _M.T2
+_M.T1.fields.s0.struct_schema = _M.T1.T2
 _M.T1.fields.e0.enum_schema = _M.T1.EnumType1
 _M.T1.fields.e1.enum_schema = _M.EnumType2
 
 
-function _M.serialize(T, data)
-    local size = calc_size(T, data)
-end
 return _M
