@@ -20,22 +20,7 @@ _M.T1 = {
     displayName = "proto/test.capnp:T1",
     dataWordCount = 2,
     pointerCount = 3,
-    --[[
-    size = 40,
-    fields = {
-        i0 = { size = 32, offset = 0 },
-        i1 = { size = 16, offset = 2 },
-        b0 = { size = 1, offset = 48 },
-        i2 = { size = 8, offset = 7 },
-        b1 = { size = 1, offset = 49 },
-        i3 = { size = 32, offset = 2 },
-        s0 = { size = 8, offset = 0, is_pointer = true, is_struct = true },
-        e0 = { size = 16, offset = 6, is_enum = true,  }, -- enum size 16
-        l0 = { size = 2, offset = 1, is_pointer = true, is_list = true }, -- size: list item size id, not actual size
-        t0 = { size = 2, offset = 2, is_text = true,  },
-        e1 = { size = 16, offset = 7, is_enum = true,  }
-    },
-]]
+
     calc_size = function(data)
         local size = 16 -- header + root struct pointer
         if data.s0 then
@@ -50,9 +35,8 @@ _M.T1 = {
             size = size + round8(#data.t0 + 1) -- size 1, including trailing NULL
         end
         return size + 40 -- 5 words
-    end
+    end,
 
-    ,
     flat_serialize = function(data, buf)
         local pos = 40 -- 5 words
 
@@ -110,12 +94,14 @@ _M.T1 = {
         end
 
         return pos
-    end
-    ,
-    serialize = function(data)
-        local size = _M.T1.calc_size(data)
+    end,
 
-        local buf = ffi.new("char[?]", size)
+    serialize = function(data, buf, size)
+        if not buf then
+            size = _M.T1.calc_size(data)
+
+            buf = ffi.new("char[?]", size)
+        end
         local p = ffi.cast("int32_t *", buf)
 
         p[0] = 0                                    -- 1 segment
@@ -129,25 +115,17 @@ _M.T1 = {
 
 }
 
-
-
 _M.T1.T2 = {
     id = 17202330444354522981,
     displayName = "proto/test.capnp:T1.T2",
     dataWordCount = 2,
     pointerCount = 0,
-    --[[
-    size = 16,
-    fields = {
-        f0 = { size = 32, offset = 0 },
-        f1 = { size = 64, offset = 1 },
-    },
-    ]]
+
     calc_size = function(data)
         local size = 16
         return size + 16
-    end
-    ,
+    end,
+
     flat_serialize = function(data, buf)
         local pos = 16 -- 2 words
 
@@ -159,7 +137,6 @@ _M.T1.T2 = {
         end
         return pos
     end
-
 }
 
 _M.T1.EnumType1 = {
@@ -167,16 +144,11 @@ _M.T1.EnumType1 = {
     enum2 = 1,
     enum3 = 2,
 }
+
 _M.EnumType2 = {
     enum5 = 0,
     enum6 = 1,
     enum7 = 2,
 }
-
---_M.T1.fields.s0.struct_schema = _M.T1.T2
---_M.T1.fields.e0.enum_schema = _M.T1.EnumType1
---_M.T1.fields.e1.enum_schema = _M.EnumType2
-
-
 
 return _M
