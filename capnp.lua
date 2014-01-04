@@ -364,17 +364,14 @@ function _M.calc_struct_size(T, data)
     for k, v in pairs(T.fields) do
         if v.is_struct then
             if data[k] then
-                print("struct", k)
                 size = size + _M.calc_struct_size(v.struct_schema, data[k])
             end
         elseif v.is_text or v.is_datt then
             if data[k] then
-                print("data")
                 size = size + round8(#data[k] + 1) -- include trailing 0
             end
         elseif v.is_list then
             if data[k] then
-                print("list")
                 local num = #data[k]
                 size = size + round8(list_size_map[v.size] * num)
             end
@@ -401,7 +398,6 @@ function _M.flat_serialize_struct(T, data, buf, pos)
                 _M.write_val(buf + start, v, field.size, field.offset)
             elseif field.is_struct then
                 if child then
-                    print("struct")
                     local pointer_offset = start + T.dataWordCount * 8 + field.offset * 8
                     local data_offset = pos + T.size
                     local offset = (data_offset - pointer_offset - 8) / 8
@@ -420,14 +416,12 @@ function _M.flat_serialize_struct(T, data, buf, pos)
 
                     _M.write_listp(buf + pointer_offset, field.size, len,
                             offset)
-print(v, len, data_offset, offset)
                     -- TODO check utf8 for text
                     ffi.copy(buf + data_offset, v)
                     pos = pos + round8(len)
                 end
             elseif field.is_list then
                 if child then
-                    print("list")
                     local num = #data[k]
                     --size = size + round8(list_size_map(field.size) * num)
                 end
