@@ -1,5 +1,4 @@
 local ffi = require "ffi" local capnp = require "capnp" 
-local cjson = require "cjson"
 
 local ceil      = math.ceil
 local floor     = math.floor
@@ -16,16 +15,12 @@ end
 
 local _M = new_tab(2, 8)
 
-function _M.init(T)
-    local segment = capnp.new_segment()
-    return T:init(segment)
-end
-
 _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/test.capnp:T1",
     dataWordCount = 2,
     pointerCount = 3,
+    --[[
     size = 40,
     fields = {
         i0 = { size = 32, offset = 0 },
@@ -40,7 +35,7 @@ _M.T1 = {
         t0 = { size = 2, offset = 2, is_text = true,  },
         e1 = { size = 16, offset = 7, is_enum = true,  }
     },
-
+]]
     calc_size = function(data)
         local size = 16 -- header + root struct pointer
         if data.s0 then
@@ -58,7 +53,7 @@ _M.T1 = {
     end
 
     ,
-    flat_serialize = function(buf, data)
+    flat_serialize = function(data, buf)
         local pos = 40 -- 5 words
 
         if data.i0 then
@@ -90,7 +85,7 @@ _M.T1 = {
         if data.s0 then
             local data_off = capnp.get_data_off(_M.T1, 0, pos)
             capnp.write_structp_buf(buf, _M.T1.T2, 0, data_off)
-            local size = _M.T1.T2.flat_serialize(buf + pos, data.s0)
+            local size = _M.T1.T2.flat_serialize(data.s0, buf + pos)
             pos = pos + size
         end
         if data.l0 then
@@ -127,7 +122,7 @@ _M.T1 = {
         p[1] = (size - 8) / 8
 
         capnp.write_structp(buf + 8, _M.T1, 0)
-        _M.T1.flat_serialize(buf + 16, data)
+        _M.T1.flat_serialize(data, buf + 16)
 
         return ffi.string(buf, size)
     end
@@ -141,17 +136,19 @@ _M.T1.T2 = {
     displayName = "proto/test.capnp:T1.T2",
     dataWordCount = 2,
     pointerCount = 0,
+    --[[
     size = 16,
     fields = {
         f0 = { size = 32, offset = 0 },
         f1 = { size = 64, offset = 1 },
     },
+    ]]
     calc_size = function(data)
         local size = 16
         return size + 16
     end
     ,
-    flat_serialize = function(buf, data)
+    flat_serialize = function(data, buf)
         local pos = 16 -- 2 words
 
         if data.f0 then
@@ -176,9 +173,9 @@ _M.EnumType2 = {
     enum7 = 2,
 }
 
-_M.T1.fields.s0.struct_schema = _M.T1.T2
-_M.T1.fields.e0.enum_schema = _M.T1.EnumType1
-_M.T1.fields.e1.enum_schema = _M.EnumType2
+--_M.T1.fields.s0.struct_schema = _M.T1.T2
+--_M.T1.fields.e0.enum_schema = _M.T1.EnumType1
+--_M.T1.fields.e1.enum_schema = _M.EnumType2
 
 
 

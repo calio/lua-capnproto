@@ -21,6 +21,8 @@ local data = {
     e1 = "enum7",
 }
 
+local size = test_capnp.T1.calc_size(data)
+ffi.new
 function run3()
     return test_capnp.T1.serialize(data)
 end
@@ -95,7 +97,7 @@ end
 
 --bench(run)
 --bench(run1)
-bench(run2)
+--bench(run2)
 bench(run3)
 
 local f = io.open("out.txt", "w")
