@@ -89,11 +89,11 @@ function _M.write_structp(buf, T, data_off)
     p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
-function _M.write_structp_buf(buf, T, offset, data_off)
+function _M.write_structp_buf(buf, T, TSub, offset, data_off)
     local p = ffi.cast("int32_t *", buf)
     local base = T.dataWordCount * 2 + offset * 2
     p[base] = lshift(data_off, 2)
-    p[base + 1] = lshift(T.pointerCount, 16) + T.dataWordCount
+    p[base + 1] = lshift(TSub.pointerCount, 16) + TSub.dataWordCount
 end
 
 

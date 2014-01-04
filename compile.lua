@@ -37,7 +37,7 @@ function comp_header(res, nodes)
     --print("header")
     insert(res, [[
 local ffi = require "ffi"
-local capnp = require "capnp" 
+local capnp = require "capnp"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
@@ -206,11 +206,11 @@ function comp_flat_serialize(res, fields, size, name)
 
         if data.%s and type(data.%s) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
-            write_structp_buf(buf, _M.%s, %d, data_off)
+            write_structp_buf(buf, _M.%s, _M.%s, %d, data_off)
             local size = _M.%s.flat_serialize(data.%s, buf + pos)
             pos = pos + size
-        end]], field.name, field.name, name, off, field.type_display_name, off,
-                    field.type_display_name, field.name))
+        end]], field.name, field.name, name, off, name, field.type_display_name,
+                    off, field.type_display_name, field.name))
 
         elseif field.type_name == "text" or field.type_name == "data" then
             local off = field.slot.offset

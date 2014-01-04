@@ -72,7 +72,7 @@ _M.T1 = {
         end
         if data.s0 then
             local data_off = get_data_off(_M.T1, 0, pos)
-            write_structp_buf(buf, _M.T1.T2, 0, data_off)
+            write_structp_buf(buf, _M.T1, _M.T1.T2, 0, data_off)
             local size = _M.T1.T2.flat_serialize(data.s0, buf + pos)
             pos = pos + size
         end
