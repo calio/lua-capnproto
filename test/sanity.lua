@@ -255,3 +255,19 @@ function test_flat_serialize()
     assert_hex_string("00 00 00 00 06 00 00 00 00 00 00 00 02 00 03 00 01 00 00 00 01 00 01 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", bin)
 end
 
+function test_flat_serialize()
+    local data = {
+        i0 = 1,
+        i1 = 1,
+        i2 = 1,
+        b0 = true,
+        b1 = false,
+        i3 = 1,
+        e0 = "enum3",
+        e1 = "enum7",
+    }
+
+    local bin = capnp.flat_serialize(T1, data)
+    assert_equal(56, #bin)
+    assert_hex_string("00 00 00 00 06 00 00 00 00 00 00 00 02 00 03 00 01 00 00 00 01 00 01 01 01 00 00 00 02 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", bin)
+end

@@ -395,7 +395,10 @@ function _M.flat_serialize_struct(T, data, buf, pos)
     for k, v in pairs(data) do
         field = T.fields[k]
         if field then
-            if field.is_struct then
+            if field.is_enum then
+                v = _M.get_enum_val(v, field.enum_schema)
+                _M.write_val(buf + pos, v, field.size, field.offset)
+            elseif field.is_struct then
                 if data[k] then
                     print("struct")
                     --size = size + _M.calc_struct_size(v.struct_schema, data[k])
