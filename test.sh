@@ -18,7 +18,4 @@ xxd -g 1 a.data || exit
 echo
 xxd -g 1 c.data || exit
 diff a.data c.data
-echo
-xxd -g 1 flat.c.data
-diff c.data flat.c.data
 echo "[Done]"

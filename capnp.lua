@@ -96,6 +96,17 @@ function _M.write_val(buf, val, size, off)
     end
 end
 
+function _M.get_data_off(T, offset, pos)
+    return (pos - T.dataWordCount * 8 - offset * 8 - 8) / 8
+end
+
+function _M.write_structp_buf(buf, T, offset, data_off)
+    local p = ffi.cast("int32_t *", buf)
+    local base = T.dataWordCount * 2 + offset * 2
+    p[base] = lshift(data_off, 2)
+    p[base + 1] = lshift(T.pointerCount, 16) + T.dataWordCount
+end
+
 function _M.write_structp(buf, T, data_off)
     local p = ffi.cast("int32_t *", buf)
     p[0] = lshift(data_off, 2)
@@ -136,6 +147,14 @@ function _M.get_enum_val(v, enum_schema)
         error("Unknown enum val:" .. v)
     end
     return r
+end
+
+function _M.write_listp_buf(buf, T, offset, size_type, num, data_off)
+    local p = ffi.cast("int32_t *", buf)
+    local base = T.dataWordCount * 2 + offset * 2
+
+    p[base] = lshift(data_off, 2) + 1
+    p[base + 1] = lshift(num, 3) + size_type
 end
 
 function _M.write_listp(buf, size_type, num, data_off)
