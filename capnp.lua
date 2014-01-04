@@ -412,10 +412,18 @@ function _M.flat_serialize_struct(T, data, buf, pos)
                     _M.flat_serialize_struct(field.struct_schema, child, buf, data_offset)
                     pos = pos + T.size
                 end
-            elseif field.is_text or field.is_datt then
+            elseif field.is_text or field.is_data then
                 if child then
-                    print("data")
-                    --size = size + 8 + round8(#data[k] + 1) -- include trailing 0
+                    local len = #v + 1
+                    local pointer_offset = start + T.dataWordCount * 8 + field.offset * 8
+                    local data_offset = pos + T.size
+                    local offset = (data_offset - pointer_offset - 8) / 8
+
+                    _M.write_listp(buf + pointer_offset, field.size, len,
+                            offset)
+
+                    -- TODO check utf8 for text
+                    ffi.copy(buf + data_offset, v, len)
                 end
             elseif field.is_list then
                 if child then
