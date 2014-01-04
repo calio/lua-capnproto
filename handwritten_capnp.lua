@@ -26,6 +26,7 @@ _M.T1 = {
     displayName = "proto/test.capnp:T1",
     dataWordCount = 2,
     pointerCount = 3,
+    size = 40,
     fields = {
         i0 = { size = 32, offset = 0 },
         i1 = { size = 16, offset = 2 },
@@ -153,6 +154,7 @@ _M.T1.T2 = {
     displayName = "proto/test.capnp:T1.T2",
     dataWordCount = 2,
     pointerCount = 0,
+    size = 16,
     fields = {
         f0 = { size = 32, offset = 0 },
         f1 = { size = 64, offset = 1 },
