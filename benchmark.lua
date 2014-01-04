@@ -1,5 +1,6 @@
-jit.opt.start("loopunroll=1000")
-local test_capnp    = require "handwrite_capnp"
+jit.opt.start("loopunroll=1000", "maxrecord=5000", "maxmcode=1024")
+
+local test_capnp    = require "handwritten_capnp"
 
 local times         = arg[1] or 200000 * 10000
 
