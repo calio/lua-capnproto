@@ -114,6 +114,8 @@ function comp_field(res, nodes, field)
         slot.offset = 0
     end
 
+    field.name = underscore_naming(field.name)
+
     local type_name, default
     for k, v in pairs(slot["type"]) do
         type_name   = k
@@ -139,7 +141,7 @@ function comp_field(res, nodes, field)
 end
 
 
-function format_enum_name(name)
+function underscore_naming(name)
     -- TODO control this using annotation
     return string.lower(string.gsub(name, "(%u)", "_%1"))
 end
@@ -159,10 +161,10 @@ function comp_serialize(res, name)
         p[1] = (size - 8) / 8
 
         write_structp(buf + 8, _M.%s, 0)
-        _M.T1.flat_serialize(data, buf + 16)
+        _M.%s.flat_serialize(data, buf + 16)
 
         return ffi.string(buf, size)
-    end,]], name, name))
+    end,]], name, name, name))
 end
 
 function comp_flat_serialize(res, fields, size, name)
@@ -175,17 +177,17 @@ function comp_flat_serialize(res, fields, size, name)
         if field.type_name == "enum" then
             insert(res, format([[
 
-        if data.%s then
+        if data.%s and type(data.%s) == "string" then
             local val = get_enum_val(data.%s, _M.%s)
             write_val(buf, val, %d, %d)
-        end]], field.name, field.name, field.type_display_name, field.size,
-                    field.slot.offset))
+        end]], field.name, field.name, field.name, field.type_display_name,
+                    field.size, field.slot.offset))
 
         elseif field.type_name == "list" then
             local off = field.slot.offset
             insert(res, format([[
 
-        if data.%s then
+        if data.%s and type(data.%s) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
 
             local len = #data.%s
@@ -195,26 +197,26 @@ function comp_flat_serialize(res, fields, size, name)
                 write_val(buf + pos, data.%s[i], %d, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
-        end]], field.name, name, off, field.name, name, off, field.size,
-                    field.name, list_size_map[field.size] * 8))
+        end]], field.name, field.name, name, off, field.name, name, off,
+                    field.size, field.name, list_size_map[field.size] * 8))
 
         elseif field.type_name == "struct" then
             local off = field.slot.offset
             insert(res, format([[
 
-        if data.%s then
+        if data.%s and type(data.%s) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
             write_structp_buf(buf, _M.%s, %d, data_off)
             local size = _M.%s.flat_serialize(data.%s, buf + pos)
             pos = pos + size
-        end]], field.name, name, off, field.type_display_name, off,
+        end]], field.name, field.name, name, off, field.type_display_name, off,
                     field.type_display_name, field.name))
 
         elseif field.type_name == "text" or field.type_name == "data" then
             local off = field.slot.offset
             insert(res, format([[
 
-        if data.%s then
+        if data.%s and type(data.%s) == "string" then
             local data_off = get_data_off(_M.%s, %d, pos)
 
             local len = #data.%s + 1
@@ -222,14 +224,15 @@ function comp_flat_serialize(res, fields, size, name)
 
             ffi.copy(buf + pos, data.%s)
             pos = pos + round8(len)
-        end]], field.name, name, off, field.name, name, off, 2, field.name))
+        end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 
         else
             insert(res, format([[
 
-        if data.%s then
+        if data.%s and (type(data.%s) == "number" or type(data.%s) == "boolean") then
             write_val(buf, data.%s, %d, %d)
-        end]], field.name, field.name, field.size, field.slot.offset))
+        end]], field.name, field.name, field.name, field.name, field.size,
+                    field.slot.offset))
 
         end
 
@@ -318,7 +321,7 @@ function comp_enum(res, enum)
             v.codeOrder = 0
         end
         insert(res, format("    [\"%s\"] = %s,\n",
-                format_enum_name(v.name), v.codeOrder))
+                underscore_naming(v.name), v.codeOrder))
     end
 end
 
