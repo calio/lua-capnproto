@@ -292,3 +292,25 @@ function test_flat_serialize2()
     assert_equal(72, #bin)
     assert_hex_string("00 00 00 00 08 00 00 00 00 00 00 00 02 00 03 00 01 00 00 00 01 00 01 01 01 00 00 00 02 00 02 00 08 00 00 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 c3 f5 48 40 00 00 00 00 11 2d 44 54 fb 21 09 40", bin)
 end
+
+function test_flat_serialize3()
+    local data = {
+        i0 = 1,
+        i1 = 1,
+        i2 = 1,
+        b0 = true,
+        b1 = false,
+        i3 = 1,
+        e0 = "enum3",
+        s0 = {
+            f0 = 3.14,
+            f1 = 3.14159265358979,
+        },
+        e1 = "enum7",
+        t0 = "hello",
+    }
+
+    local bin = capnp.flat_serialize(T1, data)
+    assert_equal(80, #bin)
+    assert_hex_string("00 00 00 00 09 00 00 00 00 00 00 00 02 00 03 00 01 00 00 00 01 00 01 01 01 00 00 00 02 00 02 00 0c 00 00 00 02 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 32 00 00 00 68 65 6c 6c 6f 00 00 00 c3 f5 48 40 00 00 00 00 11 2d 44 54 fb 21 09 40", bin)
+end

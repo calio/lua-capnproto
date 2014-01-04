@@ -421,9 +421,10 @@ function _M.flat_serialize_struct(T, data, buf, pos)
 
                     _M.write_listp(buf + pointer_offset, field.size, len,
                             offset)
-
+print(v, len, data_offset, offset)
                     -- TODO check utf8 for text
-                    ffi.copy(buf + data_offset, v, len)
+                    ffi.copy(buf + data_offset, v)
+                    pos = pos + round8(len)
                 end
             elseif field.is_list then
                 if child then
