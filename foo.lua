@@ -1,4 +1,5 @@
-local test_capnp = require "handwritten_capnp"
+--local test_capnp = require "handwritten_capnp"
+local test_capnp = require "example_capnp"
 local capnp = require "capnp"
 
 local data = {

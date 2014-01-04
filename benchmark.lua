@@ -3,6 +3,7 @@ jit.opt.start("loopunroll=1000")
 local ffi           = require "ffi"
 local test_capnp    = require "handwritten_capnp"
 local capnp         = require "capnp"
+local cjson         = require "cjson"
 
 local times         = arg[1] or 200000
 
@@ -33,6 +34,9 @@ function run3()
     return test_capnp.T1.serialize(data)
 end
 
+function run2()
+    return cjson.encode(data)
+end
 
 print("Benchmarking ", times .. " times.")
 
@@ -48,7 +52,8 @@ function bench(func)
     print("Elapsed: ", os.clock() - t1)
 end
 
---bench(run3)
+bench(run2)
+bench(run3)
 bench(run4)
 
 local f = io.open("out.txt", "w")
