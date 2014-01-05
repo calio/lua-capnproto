@@ -1,6 +1,8 @@
 local ffi = require "ffi"
 local lunit = require "lunitx"
 local capnp = require "capnp"
+local util = require "util"
+
 local handwritten = require "handwritten_capnp"
 
 local T1 = handwritten.T1
@@ -79,3 +81,6 @@ function test_write_listp()
 end
 ]]
 
+function test_underscore_naming()
+    assert_equal("request_uri", util.underscore_naming("requestURI"))
+end

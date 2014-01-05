@@ -1,5 +1,6 @@
 local cjson = require("cjson")
 local encode = cjson.encode
+local util = require "util"
 
 local insert = table.insert
 local format = string.format
@@ -114,7 +115,7 @@ function comp_field(res, nodes, field)
         slot.offset = 0
     end
 
-    field.name = underscore_naming(field.name)
+    field.name = util.underscore_naming(field.name)
 
     local type_name, default
     for k, v in pairs(slot["type"]) do
@@ -140,11 +141,6 @@ function comp_field(res, nodes, field)
     field.size      = get_size(type_name)
 end
 
-
-function underscore_naming(name)
-    -- TODO control this using annotation
-    return string.lower(string.gsub(name, "(%u)", "_%1"))
-end
 
 function comp_serialize(res, name)
     insert(res, format([[
@@ -321,7 +317,7 @@ function comp_enum(res, enum)
             v.codeOrder = 0
         end
         insert(res, format("    [\"%s\"] = %s,\n",
-                underscore_naming(v.name), v.codeOrder))
+                util.underscore_naming(v.name), v.codeOrder))
     end
 end
 
