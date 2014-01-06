@@ -1,6 +1,7 @@
 @0xa0d78d3689d48a0b;
 
 using import "enums.capnp".EnumType2;
+using Lua = import "lua.capnp";
 
 struct T1 {
     struct T2 {
@@ -21,7 +22,7 @@ struct T1 {
     e1 @10 :EnumType2;
     #d0 @7 :Data;
 
-    enum EnumType1 {
+    enum EnumType1 $Lua.naming("lower_underscore") {
         enum1 @0;
         enum2 @1;
         enum3 @2;

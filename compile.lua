@@ -130,7 +130,7 @@ function comp_field(res, nodes, field)
         slot.offset = 0
     end
 
-    field.name = util.underscore_naming(field.name)
+    field.name = util.lower_underscore_naming(field.name)
 
     local type_name, default
     for k, v in pairs(slot["type"]) do
@@ -328,14 +328,39 @@ function comp_struct(res, nodes, struct, name)
         end
 end
 
-function comp_enum(res, enum)
+function comp_enum(res, enum, naming_func)
+    if not naming_func then
+        naming_func = util.lower_underscore_naming
+    end
+
     for i, v in ipairs(enum.enumerants) do
         if not v.codeOrder then
             v.codeOrder = 0
         end
         insert(res, format("    [\"%s\"] = %s,\n",
-                util.underscore_naming(v.name), v.codeOrder))
+                naming_func(v.name), v.codeOrder))
     end
+end
+
+naming_funcs = {
+    lower_underscore = util.lower_underscore_naming,
+    upper_underscore = util.upper_underscore_naming,
+    camel            = util.camel_naming,
+}
+
+function process_annotations(annos, nodes, res)
+    for i, anno in ipairs(annos) do
+        local id = anno.id
+        local anno_node = nodes[id]
+        if get_name(anno_node.displayName) == "naming" then
+            local func = naming_funcs[anno.value.text]
+            if func then
+                res.naming_func = func
+            end
+        end
+    end
+
+    return res
 end
 
 function comp_node(res, nodes, node, name)
@@ -362,7 +387,12 @@ _M.%s = {
 
     local e = node.enum
     if e then
-        comp_enum(res, e)
+        local anno_res = {}
+        if node.annotations then
+            process_annotations(node.annotations, nodes, anno_res)
+        end
+
+        comp_enum(res, e, anno_res.naming_func)
     end
 
     insert(res, "\n}\n")

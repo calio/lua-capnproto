@@ -82,5 +82,7 @@ end
 ]]
 
 function test_underscore_naming()
-    assert_equal("request_uri", util.underscore_naming("requestURI"))
+    assert_equal("request_uri", util.lower_underscore_naming("requestURI"))
+    assert_equal("REQUEST_URI", util.upper_underscore_naming("requestURI"))
+    assert_equal("TEST_RES", util.upper_underscore_naming("testRes"))
 end
