@@ -19,6 +19,20 @@ local round8 = function(size)
     return ceil(size / 8) * 8
 end
 
+local str_buf
+local default_segment_size = 4096
+
+local function get_str_buf(size)
+    if size > default_segment_size then
+        return ffi.new("char[?]", size)
+    end
+
+    if not str_buf then
+        str_buf = ffi.new("char[?]", default_segment_size)
+    end
+    return str_buf
+end
+
 local _M = new_tab(2, 8)
 
 _M.T1 = {
@@ -112,7 +126,7 @@ _M.T1 = {
         if not buf then
             size = _M.T1.calc_size(data)
 
-            buf = ffi.new("char[?]", size)
+            buf = get_str_buf(size)
         end
         local p = ffi.cast("int32_t *", buf)
 
