@@ -40,6 +40,7 @@ function comp_header(res, nodes)
 local ffi = require "ffi"
 local capnp = require "capnp"
 
+local type              = type
 local ceil              = math.ceil
 local write_val         = capnp.write_val
 local get_enum_val      = capnp.get_enum_val
@@ -239,7 +240,9 @@ function comp_flat_serialize(res, fields, size, name)
         else
             insert(res, format([[
 
-        if data.%s and (type(data.%s) == "number" or type(data.%s) == "boolean") then
+        if data.%s and (type(data.%s) == "number"
+                or type(data.%s) == "boolean") then
+
             write_val(buf, data.%s, %d, %d)
         end]], field.name, field.name, field.name, field.name, field.size,
                     field.slot.offset))

@@ -11,6 +11,8 @@ local lower     = string.lower
 local ceil      = math.ceil
 local floor     = math.floor
 local byte      = string.byte
+local type      = type
+local modf      = math.modf
 
 -- works only with Little Endian
 assert(ffi.abi("le") == true)
@@ -39,7 +41,7 @@ function _M.write_val(buf, val, size, off)
     if type(val) == "boolean" then
         val = val and 1 or 0
     else
-        local i, f = math.modf(val)
+        local i, f = modf(val)
         -- float number
         if (f ~= 0) then
             if size == 32 then
