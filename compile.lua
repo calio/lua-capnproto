@@ -370,6 +370,11 @@ function comp_node(res, nodes, node, name)
     end
     print("node", name)
 
+    if node.annotation then
+        -- do not need to generation any code for annotations
+        return
+    end
+
     node.type_name = get_name(node.displayName)
     insert(res, format([[
 _M.%s = {
