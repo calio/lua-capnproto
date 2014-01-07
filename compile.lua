@@ -330,7 +330,7 @@ end
 
 function comp_enum(res, enum, naming_func)
     if not naming_func then
-        naming_func = util.lower_underscore_naming
+        naming_func = util.upper_underscore_naming
     end
 
     for i, v in ipairs(enum.enumerants) do

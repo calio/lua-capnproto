@@ -101,16 +101,6 @@ end
 
 
 function _M.get_enum_val(v, enum_schema)
-    local len = #v
-
-    for i = 1, len do
-        local code = byte(v, i)
-        if code >= 65 and code <= 90 then --  'A' <= code <= 'Z'
-            v = lower(v)
-            break
-        end
-    end
-
     local r = enum_schema[v]
     if not r then
         --error("Unknown enum val:" .. v)
