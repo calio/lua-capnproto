@@ -10,6 +10,9 @@ local format    = string.format
 local lower     = string.lower
 local ceil      = math.ceil
 local floor     = math.floor
+local byte      = string.byte
+local type      = type
+local modf      = math.modf
 
 -- works only with Little Endian
 assert(ffi.abi("le") == true)
@@ -23,14 +26,6 @@ end
 
 local SEGMENT_SIZE = 4096
 
-ffi.cdef([[
-typedef struct seg {
-    int         pos;
-    int         len;
-    char       data[]] .. SEGMENT_SIZE .. [[];
-    struct seg *next;
-} segment;
-]])
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
@@ -39,15 +34,6 @@ end
 
 local _M = new_tab(2, 32)
 
--- segment.len in bytes
-function _M.new_segment()
-    local segment = ffi.new("segment")
-
-    segment.pos = 0
-    segment.len = SEGMENT_SIZE
-
-    return segment
-end
 
 function _M.write_val(buf, val, size, off)
     local p = ffi.cast("int32_t *", buf)
@@ -55,7 +41,7 @@ function _M.write_val(buf, val, size, off)
     if type(val) == "boolean" then
         val = val and 1 or 0
     else
-        local i, f = math.modf(val)
+        local i, f = modf(val)
         -- float number
         if (f ~= 0) then
             if size == 32 then
@@ -96,55 +82,39 @@ function _M.write_val(buf, val, size, off)
     end
 end
 
+function _M.get_data_off(T, offset, pos)
+    return (pos - T.dataWordCount * 8 - offset * 8 - 8) / 8
+end
+
 function _M.write_structp(buf, T, data_off)
     local p = ffi.cast("int32_t *", buf)
     p[0] = lshift(data_off, 2)
     p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
-function _M.write_structp_seg(seg, T, data_off)
-    -- A = 0
-    _M.write_structp(seg.data + seg.pos, T, data_off)
-    seg.pos = seg.pos + 8 -- 64 bits -> 8 bytes
+function _M.write_structp_buf(buf, T, TSub, offset, data_off)
+    local p = ffi.cast("int32_t *", buf)
+    local base = T.dataWordCount * 2 + offset * 2
+    p[base] = lshift(data_off, 2)
+    p[base + 1] = lshift(TSub.pointerCount, 16) + TSub.dataWordCount
 end
 
--- allocate space for struct body
-function _M.write_structd(seg, T)
-    local struct = {
-        segment         = seg,
-        data_pos        = seg.data + seg.pos,
-        pointer_pos     = seg.data + seg.pos + T.dataWordCount * 8,
-        T               = T,
-    }
-    seg.pos = seg.pos + T.dataWordCount * 8 + T.pointerCount * 8
-    struct.end_pos = seg.pos
-
-    return struct
-end
-
--- head_pos must point to a writable word
-function _M.write_struct(head_pos, segment, T)
-    local offset = (segment.data + segment.pos - (head_pos + 8)) / 8 -- in words
-    _M.write_structp(head_pos, T, offset)
-    return _M.write_structd(segment, T)
-end
 
 function _M.get_enum_val(v, enum_schema)
-    v = lower(v)
     local r = enum_schema[v]
     if not r then
-        v = 
-        error("Unknown enum val:" .. v)
+        --error("Unknown enum val:" .. v)
+        return 0
     end
     return r
 end
 
-function _M.write_listp(buf, size_type, num, data_off)
+function _M.write_listp_buf(buf, T, offset, size_type, num, data_off)
     local p = ffi.cast("int32_t *", buf)
-    assert(size_type <= 7)
-    -- List: A = 1
-    p[0] = lshift(data_off, 2) + 1
-    p[1] = lshift(num, 3) + size_type
+    local base = T.dataWordCount * 2 + offset * 2
+
+    p[base] = lshift(data_off, 2) + 1
+    p[base + 1] = lshift(num, 3) + size_type
 end
 
 -- see http://kentonv.github.io/_Mroto/encoding.html#lists
@@ -159,197 +129,4 @@ local list_size_map = {
     -- 7 = ?,
 }
 
-function _M.write_list(head_pos, segment, size_type, num)
-
-    local offset = (segment.data + segment.pos - (head_pos + 8)) / 8 -- in words
-    _M.write_listp(head_pos, size_type, num, offset)
-    return _M.write_listd(segment, size_type, num)
-
-end
-
--- in here size is not the actual size, use list_size_map to get actual size
-function _M.write_listd(seg, size_type, num)
-    local buf = seg.data + seg.pos
-
-    local actual_size = assert(list_size_map[size_type])
-    local list = {
-        segment         = seg,
-        data            = seg.data + seg.pos,
-        size_type       = size_type,
-        actual_size     = actual_size,
-        num             = num,
-    }
-
-    if actual_size == 64 then
-        list.data = ffi.cast("int64_t *", list.data)
-    elseif actual_size == 32 then
-        list.data = ffi.cast("int32_t *", list.data)
-    elseif actual_size == 16 then
-        list.data = ffi.cast("int16_t *", list.data)
-    elseif actual_size <= 8 then
-        list.data = ffi.cast("int8_t *", list.data)
-    else
-        error("unsupported size: " .. tostring(actual_size))
-    end
-
-    local list_size = round8(actual_size * num)
-
-    seg.pos = seg.pos + list_size
-
-    return list
-end
-
-function _M.write_text(seg, str)
-    -- TODO check if str is valid utf8
-    return _M.write_data(seg, str)
-end
-
-function _M.write_data(seg, str)
-    if seg.len - seg.pos < #str then
-        return nil, format("not enough space in segment, pos:%d len:%d",
-                seg.pos, seg.len)
-    end
-    ffi.copy(seg.data + seg.pos, str)
-
-    -- include trailing NULL, align to word boundry
-    seg.pos = seg.pos + round8(#str + 1)
-    return true
-end
-
-
-function _M.list_newindex(t, k, v)
-    local num = t.num
-
-    if k > num then
-        error("access out of boundry")
-    end
-
-    assert(k > 0)
-    local data = t.data
-    local actual_size = t.actual_size
-
-    --print("list_newindex", k, v, num, actual_size)
-
-    if actual_size == 0 then
-        -- do nothing
-    elseif actual_size == 0.125 then
-        if v == 1 then
-            local n = floor(k / 8)
-            local s = k % 8
-            data[n] = bor(data[n], lshift(1, s))
-        end
-    else
-        data[k - 1] = v
-    end
-end
-
-function _M.struct_newindex(t, k, v)
-    local T = t.T
-    local fields = T.fields
-    local field = fields[k]
-    local size = assert(field.size)
-    local offset = assert(field.offset)
-
-    if not field then
-        error("Field not fount: " .. k)
-    end
-
-    -- TODO deal with unknown value
-    if field.is_enum then
-        if not field.enum_schema then
-            error("No enum schema: " .. field.name)
-        end
-        v = _M.get_enum_val(v, field.enum_schema)
-    end
-
-    if field.is_pointer then
-        error("use init_<field_name> method")
-    elseif field.is_data or field.is_text then
-        local segment = t.segment
-        local data_pos = t.pointer_pos + field.offset * 8 -- pointer size is 8
-
-        -- unused memory pos - list pointer end pos, result in bytes.
-        -- We need to divide this value by 8 to get word offset
-        local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8
-
-        --print("t0", data_off, #v)
-        _M.write_listp(data_pos, 2, #v + 1,  data_off) -- 2: l0.size
-
-        local ok, err
-        if field.is_data then
-            ok, err = _M.write_data(segment, v) -- 2: l0.size
-        else
-            ok, err = _M.write_text(segment, v)
-        end
-        if not ok then
-            error(err)
-        end
-    else
-        _M.write_val(t.data_pos, v, size, offset)
-    end
-end
-
-function _M.serialize_header(seg_sizes)
-    assert(type(seg_sizes) == "table")
-    local num = #seg_sizes
-
-    assert(num > 0)
-    local size = 4 + num * 4    -- in bytes
-    size = round8(size)         -- align to word boundry
---print(size, num, "\n")
-
-    local buf   = ffi.new("char[?]", size)
-    local p     = ffi.cast("int32_t *", buf)
-
-    p[0] = num - 1
-    for i=1, num do
-        p[i] = round8(seg_sizes[i]) / 8
-    end
-
-    return ffi.string(buf, size)
-end
-
-local _debug_segment_info = function(segment)
-    print(format("data: %d, pos: %d, len: %d",
-            tonumber(ffi.cast("intptr_t", segment.data)),
-            segment.pos, segment.len))
-end
-
-function _M.reset(msg)
-    local segment = msg.segment
-    segment.pos = msg.end_pos
-end
-
-function _M.serialize(msg)
-    local segment = msg.segment
-    --FIXME multi header
-    return _M.serialize_header({ segment.pos })
-            .. ffi.string(segment.data, segment.pos)
-end
-
-function _M.init_new_list(list, schema)
-    list.schema = schema
---[[
-    local mt = {
-        __newindex = _M.list_newindex
-    }
-    return setmetatable(list, mt)
-    ]]
-    return list
-end
-
-function _M.init_new_struct(struct, schema)
-    struct.schema = schema
-
-    struct.serialize = function(self)
-        return _M.serialize(self)
-    end
---[[
-    local mt = {
-        __newindex = _M.struct_newindex
-    }
-    return setmetatable(struct, mt)
-    ]]
-    return struct
-end
 return _M

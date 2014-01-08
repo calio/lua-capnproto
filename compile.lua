@@ -1,5 +1,11 @@
 local cjson = require("cjson")
 local encode = cjson.encode
+local util = require "util"
+
+local insert = table.insert
+local format = string.format
+local lower = string.lower
+local gsub = string.gsub
 
 function usage()
     print("lua compile.lua [schema.txt]")
@@ -31,36 +37,64 @@ end
 
 function comp_header(res, nodes)
     --print("header")
-    table.insert(res, [[
+    insert(res, [[
 local ffi = require "ffi"
 local capnp = require "capnp"
 
+local type              = type
+local ceil              = math.ceil
+local write_val         = capnp.write_val
+local get_enum_val      = capnp.get_enum_val
+local get_data_off      = capnp.get_data_off
+local write_listp_buf   = capnp.write_listp_buf
+local write_structp_buf = capnp.write_structp_buf
+local write_structp     = capnp.write_structp
+
 local ok, new_tab = pcall(require, "table.new")
+
 if not ok then
     new_tab = function (narr, nrec) return {} end
 end
 
+local round8 = function(size)
+    return ceil(size / 8) * 8
+end
+
+local str_buf
+local default_segment_size = 4096
+
+local function get_str_buf(size)
+    if size > default_segment_size then
+        return ffi.new("char[?]", size)
+    end
+
+    if not str_buf then
+        str_buf = ffi.new("char[?]", default_segment_size)
+    end
+    return str_buf
+end
+
 local _M = new_tab(2, 8)
 
-function _M.init(T)
-    -- suggested first segment size 4k
-    local segment = capnp.new_segment(4096)
-    return T:new(segment, 0)
-end
-
 ]])
-end
-
-function get_number(num)
-    if not num then
-        return 0
-    end
 end
 
 function get_name(display_name)
     local n = string.find(display_name, ":")
     return string.sub(display_name, n + 1)
 end
+
+-- see http://kentonv.github.io/_Mroto/encoding.html#lists
+local list_size_map = {
+    [0] = 0,
+    [1] = 0.125,
+    [2] = 1,
+    [3] = 2,
+    [4] = 4,
+    [5] = 8,
+    [6] = 8,
+    -- 7 = ?,
+}
 
 size_map = {
     void    = 0,
@@ -97,6 +131,8 @@ function comp_field(res, nodes, field)
         slot.offset = 0
     end
 
+    field.name = util.lower_underscore_naming(field.name)
+
     local type_name, default
     for k, v in pairs(slot["type"]) do
         type_name   = k
@@ -107,6 +143,7 @@ function comp_field(res, nodes, field)
             default     = "opaque object"
         elseif type_name == "enum" then
             field.enum_id = v.typeId
+            field.type_display_name = get_name(nodes[v.typeId].displayName)
         else
             default     = v
         end
@@ -118,94 +155,148 @@ function comp_field(res, nodes, field)
     end
 
     field.size      = get_size(type_name)
-
-    table.insert(res, "        ")
-    table.insert(res, field.name)
-    table.insert(res, " = {")
-    table.insert(res, " size = " .. field.size .. ",")
-    table.insert(res, " offset = " .. slot.offset .. ",")
-    if type_name == "enum" then
-        table.insert(res, " is_enum = true,")
-    end
-    if type_name == "text" then
-        table.insert(res, " is_text = true,")
-    end
-    if type_name == "data" then
-        table.insert(res, " is_data = true,")
-    end
-    if type_name == "struct" or type_name == "list" then
-        table.insert(res, " is_pointer = true,")
-    end
-    table.insert(res, " },\n")
 end
 
-function comp_struct_init_func(res, name, offset, size, type_name)
-    table.insert(res, [[
-        -- sub struct
-        struct.init_]] .. name ..[[ = function(self)
-            local segment = self.segment
-            -- unused memory pos - struct pointer end pos
-            -- s0.offset * s0.size (pointer size is 8)
-            local data_pos = self.pointer_pos + ]].. offset .." * " .. size ..[[
-            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8
-            print("]] .. name ..[[", data_off)
-            return self.schema.]] .. type_name .. [[:new(segment, data_off)
---[=[
-            capnp.write_structp(data_pos, self.schema.]].. type_name
-            .. [[, data_off)
 
-            --print(data_off)
-            local s =  capnp.write_structd(segment, self.schema.]].. type_name
-            .. [[)
+function comp_serialize(res, name)
+    insert(res, format([[
 
-            local mt = {
-                __newindex =  capnp.struct_newindex
-            }
-            return setmetatable(s, mt)
-            ]=]
+    serialize = function(data, buf, size)
+        if not buf then
+            size = _M.%s.calc_size(data)
+
+            buf = get_str_buf(size)
         end
-]])
+        local p = ffi.cast("int32_t *", buf)
+
+        p[0] = 0                                    -- 1 segment
+        p[1] = (size - 8) / 8
+
+        write_structp(buf + 8, _M.%s, 0)
+        _M.%s.flat_serialize(data, buf + 16)
+
+        return ffi.string(buf, size)
+    end,]], name, name, name))
 end
 
-function comp_setter_func(res, name, offset, size)
-    table.insert(res, [[
-        -- list
-        struct.set_]] .. name .. [[ = function(self, val)
-            capnp.write_val(self.data_pos, val, ]] .. size .. ", " .. offset .. [[)
+function comp_flat_serialize(res, fields, size, name)
+    insert(res, format([[
+
+    flat_serialize = function(data, buf)
+        local pos = %d]], size))
+
+    for i, field in ipairs(fields) do
+        if field.type_name == "enum" then
+            insert(res, format([[
+
+        if data.%s and type(data.%s) == "string" then
+            local val = get_enum_val(data.%s, _M.%s)
+            write_val(buf, val, %d, %d)
+        end]], field.name, field.name, field.name, field.type_display_name,
+                    field.size, field.slot.offset))
+
+        elseif field.type_name == "list" then
+            local off = field.slot.offset
+            insert(res, format([[
+
+        if data.%s and type(data.%s) == "table" then
+            local data_off = get_data_off(_M.%s, %d, pos)
+
+            local len = #data.%s
+            write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
+
+            for i=1, len do
+                write_val(buf + pos, data.%s[i], %d, i - 1) -- 8 bits
+            end
+            pos = pos + round8(len * 1) -- 1 ** actual size
+        end]], field.name, field.name, name, off, field.name, name, off,
+                    field.size, field.name, list_size_map[field.size] * 8))
+
+        elseif field.type_name == "struct" then
+            local off = field.slot.offset
+            insert(res, format([[
+
+        if data.%s and type(data.%s) == "table" then
+            local data_off = get_data_off(_M.%s, %d, pos)
+            write_structp_buf(buf, _M.%s, _M.%s, %d, data_off)
+            local size = _M.%s.flat_serialize(data.%s, buf + pos)
+            pos = pos + size
+        end]], field.name, field.name, name, off, name, field.type_display_name,
+                    off, field.type_display_name, field.name))
+
+        elseif field.type_name == "text" or field.type_name == "data" then
+            local off = field.slot.offset
+            insert(res, format([[
+
+        if data.%s and type(data.%s) == "string" then
+            local data_off = get_data_off(_M.%s, %d, pos)
+
+            local len = #data.%s + 1
+            write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
+
+            ffi.copy(buf + pos, data.%s)
+            pos = pos + round8(len)
+        end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
+
+        else
+            insert(res, format([[
+
+        if data.%s and (type(data.%s) == "number"
+                or type(data.%s) == "boolean") then
+
+            write_val(buf, data.%s, %d, %d)
+        end]], field.name, field.name, field.name, field.name, field.size,
+                    field.slot.offset))
+
         end
-]])
+
+    end
+
+    insert(res, [[
+
+        return pos
+    end,]])
 end
 
-function comp_list_init_func(res, name, offset, size)
-    table.insert(res, [[
-        -- list
-        struct.init_]] .. name .. [[ = function(self, num)
-            assert(num)
-            local segment = self.segment
-            local data_pos = self.pointer_pos + ]] .. offset .. " * 8 "
-            .. [[ -- l0.offset * 8 (pointer size is 8)
 
-            -- unused memory pos - list pointer end pos, result in bytes.
-            -- We need to divide this value by 8 to get word offset
-            local data_off = ((segment.data + segment.pos) - (data_pos + 8)) / 8
+function comp_calc_size(res, fields, size, name)
+    insert(res, format([[
+    calc_size_struct = function(data)
+        local size = %d]], size))
 
-            capnp.write_listp(data_pos, ]] .. size
-            .. [[, num,  data_off) -- 2: l0.size
+    for i, field in ipairs(fields) do
+        if field.type_name == "list" then
+            insert(res, format([[
 
-            local l = capnp.write_list(segment, ]] .. size
-            .. [[, num) -- 2: l0.size
+        if data.%s then
+            size = size + round8(#data.%s * %d)
+        end]], field.name, field.name, list_size_map[field.size]))
+        elseif field.type_name == "struct" then
+            insert(res, format([[
 
-            local mt = {
-                __newindex =  capnp.list_newindex
-            }
-            return setmetatable(l, mt)
+        if data.%s then
+            size = size + _M.%s.calc_size_struct(data.%s)
+        end]], field.name, field.type_display_name, field.name))
+        elseif field.type_name == "text" or field.type_name == "data" then
+            insert(res, format([[
+
+        if data.%s then
+            size = size + round8(#data.%s + 1)
+        end]], field.name, field.name))
+
         end
-]])
-end
 
-function format_enum_name(name)
-    -- TODO control this using annotation
-    return string.lower(string.gsub(name, "(%u)", "_%1"))
+    end
+
+    insert(res, format([[
+
+        return size
+    end,
+
+    calc_size = function(data)
+        local size = 16 -- header + root struct pointer
+        return size + _M.%s.calc_size_struct(data)
+    end,]], name))
 end
 
 function comp_struct(res, nodes, struct, name)
@@ -217,68 +308,60 @@ function comp_struct(res, nodes, struct, name)
             struct.pointerCount = 0
         end
 
-        table.insert(res, "    dataWordCount = ")
-        table.insert(res, struct.dataWordCount)
-        table.insert(res, ",\n")
+        insert(res, "    dataWordCount = ")
+        insert(res, struct.dataWordCount)
+        insert(res, ",\n")
 
-        table.insert(res, "    pointerCount = ")
-        table.insert(res, struct.pointerCount)
-        table.insert(res, ",\n")
+        insert(res, "    pointerCount = ")
+        insert(res, struct.pointerCount)
+        insert(res, ",\n")
+
+        struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
-            table.insert(res, "    fields = {\n")
             for i, field in ipairs(struct.fields) do
                 comp_field(res, nodes, field)
-                if field.type_name == "enum" then
-                    local key = "_M." .. name .. ".fields." .. field.name
-                    missing_enums[key] = field.enum_id
-                end
             end
-            table.insert(res, "    },\n")
+            comp_calc_size(res, struct.fields, struct.size, struct.type_name)
+            comp_flat_serialize(res, struct.fields, struct.size,
+                    struct.type_name)
+            comp_serialize(res, struct.type_name)
         end
-
-        table.insert(res, [[
-    new = function(self, segment, offset)
-        if not offset then
-            offset = 0
-        end
-        local struct = capnp.write_struct(segment, self, offset)
-        struct.schema = _M
-]])
-        if struct.fields then
-            for i, field in ipairs(struct.fields) do
-                if field.type_name == "list" then
-                    comp_list_init_func(res, field.name, field.slot.offset,
-                            field.size)
-                elseif field.type_name == "struct" then
-                    comp_struct_init_func(res, field.name, field.slot.offset,
-                            field.size, field.type_display_name)
-                elseif field.type_name == "enum" then
-
-                elseif field.type_name == "text" or field.type_name == "data"
-                then
-
-                else
-                    comp_setter_func(res, field.name, field.slot.offset,
-                            field.size)
-                end
-            end
-        end
-
-        table.insert(res, [[
-        return capnp.init_new_struct(struct)
-    end
-]])
 end
 
-function comp_enum(res, enum)
+function comp_enum(res, enum, naming_func)
+    if not naming_func then
+        naming_func = util.upper_underscore_naming
+    end
+
     for i, v in ipairs(enum.enumerants) do
         if not v.codeOrder then
             v.codeOrder = 0
         end
-        table.insert(res, string.format("    [\"%s\"] = %s,\n",
-                format_enum_name(v.name), v.codeOrder))
+        insert(res, format("    [\"%s\"] = %s,\n",
+                naming_func(v.name), v.codeOrder))
     end
+end
+
+naming_funcs = {
+    lower_underscore = util.lower_underscore_naming,
+    upper_underscore = util.upper_underscore_naming,
+    camel            = util.camel_naming,
+}
+
+function process_annotations(annos, nodes, res)
+    for i, anno in ipairs(annos) do
+        local id = anno.id
+        local anno_node = nodes[id]
+        if get_name(anno_node.displayName) == "naming" then
+            local func = naming_funcs[anno.value.text]
+            if func then
+                res.naming_func = func
+            end
+        end
+    end
+
+    return res
 end
 
 function comp_node(res, nodes, node, name)
@@ -288,13 +371,21 @@ function comp_node(res, nodes, node, name)
     end
     print("node", name)
 
-    table.insert(res, string.format([[
+    if node.annotation then
+        -- do not need to generation any code for annotations
+        return
+    end
+
+    node.name = name
+    node.type_name = get_name(node.displayName)
+    insert(res, format([[
 _M.%s = {
 ]], name))
 
     local s = node.struct
     if s then
-        table.insert(res, string.format([[
+        s.type_name = node.type_name
+        insert(res, format([[
     id = %s,
     displayName = "%s",
 ]], node.id, node.displayName))
@@ -303,10 +394,15 @@ _M.%s = {
 
     local e = node.enum
     if e then
-        comp_enum(res, e)
+        local anno_res = {}
+        if node.annotations then
+            process_annotations(node.annotations, nodes, anno_res)
+        end
+
+        comp_enum(res, e, anno_res.naming_func)
     end
 
-    table.insert(res, "\n}\n")
+    insert(res, "\n}\n")
     if node.nestedNodes then
         for i, child in ipairs(node.nestedNodes) do
             comp_node(res, nodes, nodes[child.id], name .. "." .. child.name)
@@ -333,11 +429,11 @@ function comp_body(res, schema)
     end
 
     for k, v in pairs(missing_enums) do
-        table.insert(res, k .. ".enum_schema = _M." ..
+        insert(res, k .. ".enum_schema = _M." ..
                 get_name(nodes[v].displayName .. "\n"))
     end
 
-    table.insert(res, "\nreturn _M\n")
+    insert(res, "\nreturn _M\n")
 end
 
 function comp_import(res, nodes, import)
@@ -362,6 +458,83 @@ function comp_file(res, nodes, file)
     for i, node in ipairs(file_node.nestedNodes) do
         comp_node(res, nodes, nodes[node.id], node.name)
     end
+end
+
+function comp_dg_node(res, nodes, node)
+    if not node.struct then
+        return
+    end
+
+    local name = gsub(lower(node.name), "%.", "_")
+    insert(res, format([[
+function gen_%s()
+
+]], name))
+print("comp_dg_node", name)
+    for i, child in ipairs(node.nestedNodes) do
+        comp_dg_node(res, nodes, nodes[child.id])
+    end
+
+    insert(res, format("    local %s  = {}\n", name))
+    for i, field in ipairs(node.struct.fields) do
+        if field.type_name == "struct" then
+            insert(res, format("    %s.%s = gen_%s()\n", name,
+                    field.name,
+                    gsub(lower(field.type_display_name), "%.", "_")))
+
+        elseif field.type_name == "enum" then
+        elseif field.type_name == "list" then
+            local list_type
+            for k, v in pairs(field.slot["type"].list.elementType) do
+                list_type = k
+                break
+            end
+            insert(res, format("    %s.%s = rand.%s(rand.uint8(), rand.%s)\n", name,
+                    field.name, field.type_name, list_type))
+
+        else
+            insert(res, format("    %s.%s = rand.%s()\n", name,
+                    field.name, field.type_name))
+        end
+    end
+
+
+    insert(res, format([[
+    return %s
+end
+
+]], name))
+end
+
+function compile_data_generator(schema)
+    local res = {}
+    insert(res, [[
+
+local rand = require("random")
+local cjson = require("cjson")
+local pairs = pairs
+
+local ok, new_tab = pcall(require, "table.new")
+
+if not ok then
+    new_tab = function (narr, nrec) return {} end
+end
+
+module(...)
+]])
+
+    local files = schema.requestedFiles
+    local nodes = schema.nodes
+
+    for i, file in ipairs(files) do
+        local file_node = nodes[file.id]
+
+        for i, node in ipairs(file_node.nestedNodes) do
+            comp_dg_node(res, nodes, nodes[node.id])
+        end
+    end
+
+    return table.concat(res)
 end
 
 function compile(schema)
@@ -393,9 +566,18 @@ file:close()
 local schema = assert(loadstring(t))()
 
 local outfile = get_output_name(schema)
-print(outfile)
+
 local res = compile(schema)
 
 local file = io.open(outfile, "w")
 file:write(res)
 file:close()
+
+
+local outfile = "data_generator.lua"
+local res = compile_data_generator(schema)
+
+local file = assert(io.open(outfile, "w"))
+file:write(res)
+file:close()
+

@@ -6,6 +6,7 @@ if [ $(uname) != "Linux" ]; then
 fi
 
 BASE=$(dirname $(readlink -f $0))/..
+export LUA_PATH="$BASE/?.lua;$LUA_PATH"
 
 cat - > /tmp/schema.bin
 capnp decode $BASE/proto/schema.capnp CodeGeneratorRequest > /tmp/schema.txt < /tmp/schema.bin

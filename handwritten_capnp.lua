@@ -1,8 +1,13 @@
-local ffi = require "ffi" local capnp = require "capnp" 
-local cjson = require "cjson"
+local ffi = require "ffi"
+local capnp = require "capnp" 
 
-local ceil      = math.ceil
-local floor     = math.floor
+local ceil              = math.ceil
+local write_val         = capnp.write_val
+local get_enum_val      = capnp.get_enum_val
+local get_data_off      = capnp.get_data_off
+local write_listp_buf   = capnp.write_listp_buf
+local write_structp_buf = capnp.write_structp_buf
+local write_structp     = capnp.write_structp
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -14,169 +19,154 @@ local round8 = function(size)
     return ceil(size / 8) * 8
 end
 
-local _M = new_tab(2, 8)
+local str_buf
+local default_segment_size = 4096
 
-function _M.init(T)
-    local segment = capnp.new_segment()
-    return T:init(segment)
+local function get_str_buf(size)
+    if size > default_segment_size then
+        return ffi.new("char[?]", size)
+    end
+
+    if not str_buf then
+        str_buf = ffi.new("char[?]", default_segment_size)
+    end
+    return str_buf
 end
+
+local _M = new_tab(2, 8)
 
 _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/test.capnp:T1",
     dataWordCount = 2,
     pointerCount = 3,
-    fields = {
-        i0 = { size = 32, offset = 0 },
-        i1 = { size = 16, offset = 2 },
-        b0 = { size = 1, offset = 48 },
-        i2 = { size = 8, offset = 7 },
-        b1 = { size = 1, offset = 49 },
-        i3 = { size = 32, offset = 2 },
-        s0 = { size = 8, offset = 0, is_pointer = true, },
-        e0 = { size = 16, offset = 6, is_enum = true,  }, -- enum size 16
-        l0 = { size = 2, offset = 1, is_pointer = true,  }, -- size: list item size id, not actual size
-        t0 = { size = 2, offset = 2, is_text = true,  },
-        e1 = { size = 16, offset = 7, is_enum = true,  }
-    },
 
-    init = function(self, segment, data_pos)
-        if not data_pos then
-            data_pos = segment.data
-            segment.pos = 8
-        end
-        local struct = capnp.write_struct(data_pos, segment, self)
-
-        ------------------ structs -------------------
-        struct.set_i0 = function(self, val)
-            capnp.write_val(self.data_pos, val, 32, 0)
-        end
-
-        struct.set_i1 = function(self, val)
-            capnp.write_val(self.data_pos, val, 16, 2)
-        end
-
-        struct.set_b0 = function(self, val)
-            capnp.write_val(self.data_pos, val, 1, 48)
-        end
-
-        struct.set_i2 = function(self, val)
-            capnp.write_val(self.data_pos, val, 8, 7)
-        end
-
-        struct.set_b1 = function(self, val)
-            capnp.write_val(self.data_pos, val, 1, 49)
-        end
-
-        struct.set_i3 = function(self, val)
-            capnp.write_val(self.data_pos, val, 32, 2)
-        end
-        ------------------ enums ---------------------
-        struct.set_e0 = function(self, val)
-            val = capnp.get_enum_val(val, _M.T1.EnumType1)
-            capnp.write_val(self.data_pos, val, 16, 6)
-        end
-
-        struct.set_e1 = function(self, val)
-            val = capnp.get_enum_val(val, _M.EnumType2)
-            capnp.write_val(self.data_pos, val, 16, 7)
-        end
-        ------------------ text ----------------------
-        struct.set_t0 = function(self, val)
-            local data_pos = self.pointer_pos + 2 * 8 -- pointer size is 8
-            -- list data includes the trailing NULL
-            local l = capnp.write_list(data_pos, self.segment, 2, #val + 1)
-            ffi.copy(l.data, val)
-        end
-        -- sub struct
-        struct.init_s0 = function(self)
-            local segment = self.segment
-            local T = self.schema.T1.T2
-
-            -- s0.offset * s0.size (pointer size is 8)
-            local data_pos = self.pointer_pos + 0 * 8
-            return T:init(segment, data_pos)
+    calc_size_struct = function(data)
+        local size = 40 -- 5 words
+        -- struct
+        if data.s0 then
+            size = size + _M.T1.T2.calc_size_struct(data.s0)
         end
         -- list
-        struct.init_l0 = function(self, num)
-            assert(num)
-            local segment = self.segment
+        if data.l0 then
+            size = size + round8(#data.l0 * 1) -- num * acutal size
+        end
+        -- text
+        if data.t0 then
+            size = size + round8(#data.t0 + 1) -- size 1, including trailing NULL
+        end
+        return size
+    end,
 
-            -- l0.offset * l0.size (pointer size is 8)
-            local data_pos = self.pointer_pos + 1 * 8
+    calc_size = function(data)
+        local size = 16 -- header + root struct pointer
+        return size + _M.T1.calc_size_struct(data)
+    end,
 
-            -- 2: l0.size_type
-            local l = capnp.write_list(data_pos, segment, 2, num)
+    flat_serialize = function(data, buf)
+        local pos = 40 -- 5 words
 
-            l.set = function(self, index, val)
-                assert(type(self) == "table")
-                local num = self.num
-                assert(index > 0)
+        if data.i0 then
+            write_val(buf, data.i0, 32, 0)
+        end
+        if data.i1 then
+            write_val(buf, data.i1, 16, 2)
+        end
+        if data.b0 then
+            write_val(buf, data.b0, 1, 48)
+        end
+        if data.i2 then
+            write_val(buf, data.i2, 8, 7)
+        end
+        if data.b1 then
+            write_val(buf, data.b1, 1, 49)
+        end
+        if data.i3 then
+            write_val(buf, data.i3, 32, 2)
+        end
+        if data.s0 then
+            local data_off = get_data_off(_M.T1, 0, pos)
+            write_structp_buf(buf, _M.T1, _M.T1.T2, 0, data_off)
+            local size = _M.T1.T2.flat_serialize(data.s0, buf + pos)
+            pos = pos + size
+        end
+        if data.e0 then
+            local val = get_enum_val(data.e0, _M.T1.EnumType1)
+            write_val(buf, val, 16, 6)
+        end
+        if data.l0 then
+            local data_off = get_data_off(_M.T1, 1, pos)
 
-                local actual_size = self.actual_size
-                if index > num then
-                    error(format("access index [%d] out of boundry, array len:%d"
-                        , index, num))
-                end
+            local len = #data.l0
+            write_listp_buf(buf, _M.T1, 1, 2, len, data_off)
 
-                if actual_size == 0 then
-                    -- do nothing
-                elseif actual_size == 0.125 then
-                    if val == 1 then
-                        local n = floor((index - 1) / 8)
-                        local s = index % 8
-                        data[n] = bor(data[n], lshift(1, s))
-                    end
-                else
-                    self.data[index - 1] = val
-                end
-
+            for i=1, len do
+                write_val(buf + pos, data.l0[i], 8, i - 1) -- 8 bits
             end
+            pos = pos + round8(len * 1) -- 1 ** actual size
+        end
+        if data.t0 then
+            local data_off = get_data_off(_M.T1, 2, pos)
 
-            l.schema = _M
-            return l
-            --return capnp.init_new_list(l, _M)
+            local len = #data.t0 + 1
+            write_listp_buf(buf, _M.T1, 2, 2, len, data_off)
+
+            ffi.copy(buf + pos, data.t0)
+            pos = pos + round8(len)
         end
 
-        struct.schema = _M
-        struct.serialize = capnp.serialize
-        struct.reset = capnp.reset
-        return struct
-        --return capnp.init_new_struct(struct, _M)
-    end
+        if data.e1 then
+            local val = get_enum_val(data.e1, _M.EnumType2)
+            write_val(buf, val, 16, 7)
+        end
+        return pos
+    end,
+
+    serialize = function(data, buf, size)
+        if not buf then
+            size = _M.T1.calc_size(data)
+
+            buf = get_str_buf(size)
+        end
+        local p = ffi.cast("int32_t *", buf)
+
+        p[0] = 0                                    -- 1 segment
+        p[1] = (size - 8) / 8
+
+        write_structp(buf + 8, _M.T1, 0)
+        _M.T1.flat_serialize(data, buf + 16)
+
+        return ffi.string(buf, size)
+    end,
+
 }
-
-
 
 _M.T1.T2 = {
     id = 17202330444354522981,
     displayName = "proto/test.capnp:T1.T2",
     dataWordCount = 2,
     pointerCount = 0,
-    fields = {
-        f0 = { size = 32, offset = 0 },
-        f1 = { size = 64, offset = 1 },
-    },
 
-    init = function(self, segment, data_pos)
-        if not data_pos then
-            data_pos = segment.data
-            segment.pos = segment.pos + 8
+    calc_size_struct = function(data)
+        local size = 16
+        return size
+    end,
+
+    calc_size = function(data)
+        local size = 16
+        return size + _M.T1.T2.calc_size_struct(data)
+    end,
+
+    flat_serialize = function(data, buf)
+        local pos = 16 -- 2 words
+
+        if data.f0 then
+            write_val(buf, data.f0, 32, 0)
         end
-        local struct = capnp.write_struct(data_pos, segment, self)
-
-        struct.set_f0 = function(self, val)
-            capnp.write_val(self.data_pos, val, 32, 0)
+        if data.f1 then
+            write_val(buf, data.f1, 64, 1)
         end
-
-        struct.set_f1 = function(self, val)
-            capnp.write_val(self.data_pos, val, 64, 1)
-        end
-
-        struct.schema = _M
-        struct.serialize = capnp.serialize
-        return struct
-        --return capnp.init_new_struct(struct, _M)
+        return pos
     end
 }
 
@@ -185,13 +175,11 @@ _M.T1.EnumType1 = {
     enum2 = 1,
     enum3 = 2,
 }
+
 _M.EnumType2 = {
     enum5 = 0,
     enum6 = 1,
     enum7 = 2,
 }
-
-_M.T1.fields.e0.enum_schema = _M.T1.EnumType1
-_M.T1.fields.e1.enum_schema = _M.EnumType2
 
 return _M

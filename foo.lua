@@ -1,28 +1,37 @@
-local test_capnp = require "handwrite_capnp"
+--local test_capnp = require "handwritten_capnp"
+local data_generator = require "data_generator"
+local test_capnp = require "example_capnp"
+local capnp = require "capnp"
+local cjson = require "cjson"
 
-local msg = test_capnp.init(test_capnp.T1)
+local data = {
+    i0 = 32,
+    i1 = 16,
+    i2 = 127,
+    b0 = true,
+    b1 = true,
+    i3 = 65536,
+    e0 = "enum3",
+    s0 = {
+        f0 = 3.14,
+        f1 = 3.14159265358979,
+    },
+    l0 = { 28, 29 },
+    t0 = "hello",
+    e1 = "enum7",
+}
 
-local file = arg[1] or "c.data"
-msg:set_i0(32)
-msg:set_i1(16)
-msg:set_b0(true)
-msg:set_b1(true)
-msg:set_i2(127)
-msg:set_i3(65536)
-msg:set_e0("enum3")
-
-local s0 = msg:init_s0()
-s0:set_f0(3.14)
-s0:set_f1(3.14159265358979)
-
-local l0 = msg:init_l0(2)
-l0:set(1, 28)
-l0:set(2, 29)
-
-msg:set_t0("hello")
-
-msg:set_e1("enum7")
-
+local file = arg[1]
 local f = io.open(file, "w")
-f:write(msg:serialize())
+f:write(test_capnp.T1.serialize(data))
 f:close()
+
+
+local generated_data = data_generator.gen_t1()
+local f = io.open("random.data", "w")
+f:write(test_capnp.T1.serialize(generated_data))
+f:close()
+local f = io.open("random.cjson.data", "w")
+f:write(cjson.encode(generated_data))
+f:close()
+
