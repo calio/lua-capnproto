@@ -1,6 +1,8 @@
 --local test_capnp = require "handwritten_capnp"
+local data_generator = require "data_generator"
 local test_capnp = require "example_capnp"
 local capnp = require "capnp"
+local cjson = require "cjson"
 
 local data = {
     i0 = 32,
@@ -23,3 +25,13 @@ local file = arg[1]
 local f = io.open(file, "w")
 f:write(test_capnp.T1.serialize(data))
 f:close()
+
+
+local generated_data = data_generator.gen_t1()
+local f = io.open("random.data", "w")
+f:write(test_capnp.T1.serialize(generated_data))
+f:close()
+local f = io.open("random.cjson.data", "w")
+f:write(cjson.encode(generated_data))
+f:close()
+

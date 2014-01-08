@@ -4,7 +4,8 @@ local util = require "util"
 
 local insert = table.insert
 local format = string.format
-
+local lower = string.lower
+local gsub = string.gsub
 
 function usage()
     print("lua compile.lua [schema.txt]")
@@ -375,6 +376,7 @@ function comp_node(res, nodes, node, name)
         return
     end
 
+    node.name = name
     node.type_name = get_name(node.displayName)
     insert(res, format([[
 _M.%s = {
@@ -458,6 +460,83 @@ function comp_file(res, nodes, file)
     end
 end
 
+function comp_dg_node(res, nodes, node)
+    if not node.struct then
+        return
+    end
+
+    local name = gsub(lower(node.name), "%.", "_")
+    insert(res, format([[
+function gen_%s()
+
+]], name))
+print("comp_dg_node", name)
+    for i, child in ipairs(node.nestedNodes) do
+        comp_dg_node(res, nodes, nodes[child.id])
+    end
+
+    insert(res, format("    local %s  = {}\n", name))
+    for i, field in ipairs(node.struct.fields) do
+        if field.type_name == "struct" then
+            insert(res, format("    %s.%s = gen_%s()\n", name,
+                    field.name,
+                    gsub(lower(field.type_display_name), "%.", "_")))
+
+        elseif field.type_name == "enum" then
+        elseif field.type_name == "list" then
+            local list_type
+            for k, v in pairs(field.slot["type"].list.elementType) do
+                list_type = k
+                break
+            end
+            insert(res, format("    %s.%s = rand.%s(rand.uint8(), rand.%s)\n", name,
+                    field.name, field.type_name, list_type))
+
+        else
+            insert(res, format("    %s.%s = rand.%s()\n", name,
+                    field.name, field.type_name))
+        end
+    end
+
+
+    insert(res, format([[
+    return %s
+end
+
+]], name))
+end
+
+function compile_data_generator(schema)
+    local res = {}
+    insert(res, [[
+
+local rand = require("random")
+local cjson = require("cjson")
+local pairs = pairs
+
+local ok, new_tab = pcall(require, "table.new")
+
+if not ok then
+    new_tab = function (narr, nrec) return {} end
+end
+
+module(...)
+]])
+
+    local files = schema.requestedFiles
+    local nodes = schema.nodes
+
+    for i, file in ipairs(files) do
+        local file_node = nodes[file.id]
+
+        for i, node in ipairs(file_node.nestedNodes) do
+            comp_dg_node(res, nodes, nodes[node.id])
+        end
+    end
+
+    return table.concat(res)
+end
+
 function compile(schema)
     print("compile")
     local res = {}
@@ -487,9 +566,18 @@ file:close()
 local schema = assert(loadstring(t))()
 
 local outfile = get_output_name(schema)
-print(outfile)
+
 local res = compile(schema)
 
 local file = io.open(outfile, "w")
 file:write(res)
 file:close()
+
+
+local outfile = "data_generator.lua"
+local res = compile_data_generator(schema)
+
+local file = assert(io.open(outfile, "w"))
+file:write(res)
+file:close()
+
