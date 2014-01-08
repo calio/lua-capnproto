@@ -544,6 +544,7 @@ if not f then
     return
 end
 
+--[[
 local t = get_schema_text(f)
 
 local file = io.open("test.schema.lua", "w")
@@ -551,7 +552,9 @@ file:write(t)
 file:close()
 
 local schema = assert(loadstring(t))()
+]]
 
+local schema = util.parse_capnp_decode(f, "test.schema.lua")
 local outfile = get_output_name(schema)
 
 local res = compile(schema)

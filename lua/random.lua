@@ -3,6 +3,8 @@ local random = math.random
 local modf = math.modf
 local char = string.char
 local concat = table.concat
+local print = print
+local byte = string.byte
 
 math.randomseed(os.time())
 
@@ -62,7 +64,10 @@ function text()
 
     local t = {}
     for i=1, n do
-        t[i] = char(random(32, 126))
+        t[i] = char(random(35, 122))
+        while t[i] == 92 do
+            t[i] = char(random(35, 122))
+        end
     end
     return concat(t)
 end

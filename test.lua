@@ -5,7 +5,10 @@ local data_generator = require "data_generator"
 local test_capnp = require "example_capnp"
 local capnp = require "capnp"
 local cjson = require "cjson"
+local util = require "util"
 
+local format = string.format
+--[[
 local data = {
     i0 = 32,
     i1 = 16,
@@ -36,4 +39,58 @@ f:close()
 local f = io.open("random.cjson.data", "w")
 f:write(cjson.encode(generated_data))
 f:close()
+]]
 
+function table_diff(t1, t2, namespace)
+    local keys = {}
+
+    for k, v in pairs(t1) do
+        keys[k] = true
+    end
+
+    for k, v in pairs(t2) do
+        keys[k] = true
+    end
+
+    for k, v in pairs(keys) do
+        local name = namespace .. "." .. k
+        local v1 = t1[k]
+        local v2 = t2[k]
+
+        local t1 = type(v1)
+        local t2 = type(v2)
+
+        if t1 ~= t2 then
+            print(format("%s: different type: %s %s", name,
+                    t1, t2))
+        elseif t1 == "table" then
+            table_diff(v1, v2, namespace .. "." .. k)
+        elseif v1 ~= v2 then
+            print(format("%s: different value: %s %s", name,
+                    tostring(v1), tostring(v2)))
+        end
+    end
+end
+
+function random_test()
+    local generated_data = data_generator.gen_t1()
+
+    local bin = test_capnp.T1.serialize(generated_data)
+
+    local outfile = "/tmp/T1.txt"
+    os.execute("rm " .. outfile)
+    local fh = assert(io.popen("capnp decode proto/example.capnp T1 > "
+            .. outfile, "w"))
+    fh:write(bin)
+    fh:close()
+
+    local decoded = util.parse_capnp_decode(outfile, "debug.txt")
+
+    print(cjson.encode(generated_data))
+    print(cjson.encode(decoded))
+
+    table_diff(generated_data, decoded, "")
+end
+
+random_test()
+print("Done")
