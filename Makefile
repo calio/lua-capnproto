@@ -10,24 +10,24 @@ test.schema.txt: proto/enums.capnp proto/example.capnp
 	capnp compile -oecho $+ > /tmp/capnp.bin
 	capnp decode /home/calio/code/c-capnproto/compiler/schema.capnp CodeGeneratorRequest > $@ < /tmp/capnp.bin
 
-example_capnp.o: proto/example.capnp.c++ compiled
+cpp/example_capnp.o: proto/example.capnp.c++ compiled
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-enums_capnp.o: proto/enums.capnp.c++ compiled
+cpp/enums_capnp.o: proto/enums.capnp.c++ compiled
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-main.o: main.c++ compiled
+cpp/main.o: cpp/main.c++ compiled
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-main: main.o example_capnp.o enums_capnp.o
+cpp/main: cpp/main.o cpp/example_capnp.o cpp/enums_capnp.o
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
 
 test:
 	luajit test/sanity.lua
 
-all: main
+all: cpp/main
 
 clean:
-	-rm proto/example.capnp.c++ proto/example.capnp.h *.o main test.schema.lua example_capnp.lua a.data c.data test.schema.txt
+	-rm proto/example.capnp.c++ proto/example.capnp.h cpp/*.o cpp/main test.schema.lua example_capnp.lua a.data c.data test.schema.txt
 
 .PHONY: all clean test
