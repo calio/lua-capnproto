@@ -25,3 +25,8 @@ proto/enums.capnp.c++
 proto/enums.capnp.h
 test.schema.txt
 main
+*.bak
+test.schema.lua
+CLIP
+example_capnp.lua
+data_generator.lua
