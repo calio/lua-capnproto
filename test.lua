@@ -8,7 +8,7 @@ local cjson = require "cjson"
 local util = require "util"
 
 local format = string.format
---[[
+
 local data = {
     i0 = 32,
     i1 = 16,
@@ -39,7 +39,7 @@ f:close()
 local f = io.open("random.cjson.data", "w")
 f:write(cjson.encode(generated_data))
 f:close()
-]]
+
 
 function table_diff(t1, t2, namespace)
     local keys = {}
@@ -72,6 +72,12 @@ function table_diff(t1, t2, namespace)
     end
 end
 
+function write_file(name, content)
+    local f = assert(io.open(name, "w"))
+    f:write(content)
+    f:close()
+end
+
 function random_test()
     local generated_data = data_generator.gen_t1()
 
@@ -83,6 +89,8 @@ function random_test()
             .. outfile, "w"))
     fh:write(bin)
     fh:close()
+
+    write_file("T1.capnp.bin", bin)
 
     local decoded = util.parse_capnp_decode(outfile, "debug.txt")
 

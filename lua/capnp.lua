@@ -35,11 +35,20 @@ end
 local _M = new_tab(2, 32)
 
 
+local function get_bit_offset(bit_off, size)
+    local n, s
+    n = floor(bit_off / size)
+    s = bit_off % size
+
+    return n, s
+end
+
 function _M.write_val(buf, val, size, off)
-    local p = ffi.cast("int32_t *", buf)
+    local p = ffi.cast("uint32_t *", buf)
 
     if type(val) == "boolean" then
         val = val and 1 or 0
+        p = ffi.cast("uint8_t *", buf)
     else
         local i, f = modf(val)
         -- float number
@@ -53,33 +62,28 @@ function _M.write_val(buf, val, size, off)
             end
         else
             if size == 64 then
-                p = ffi.cast("int64_t *", buf)
+                p = ffi.cast("uint64_t *", buf)
+            elseif size == 32 then
+                p = ffi.cast("uint32_t *", buf)
+            elseif size == 16 then
+                p = ffi.cast("uint16_t *", buf)
+            elseif size == 8 then
+                p = ffi.cast("uint8_t *", buf)
             else
-                --print("int32")
+                error("unknown in size " .. size)
             end
         end
     end
 
-
-    local bit_off = size * off -- offset in bits
-    local n, s
-    if size <= 32 then
-        n = floor(bit_off / 32) -- offset in 4 bytes
-        s = bit_off % 32     -- offset within 4 bytes
-    elseif size == 64 then
-        n = floor(bit_off / 64) -- offset in 8 bytes
-        s = bit_off % 64     -- offset within 8 bytes
+    if size >= 8 then
+        local n, s = get_bit_offset(size * off, size)
+        p[n] = val
+    else
+        local n, s = get_bit_offset(size * off, 8)
+        p[n] = bor(p[n], lshift(val, s))
     end
-
     --print(string.format("n %d, s %d, %d\n", n, s, val))
 
-    -- shift returns 32 bit number
-    if (size < 32) then
-        p[n] = bor(p[n], lshift(val, s))
-    else
-        -- 32 bit or 64 bit
-        p[n] = val
-    end
 end
 
 function _M.get_data_off(T, offset, pos)
