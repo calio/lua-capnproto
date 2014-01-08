@@ -46,20 +46,16 @@ print("Benchmarking ", times .. " times.")
 
 local res
 
-function bench(func)
+function bench(name, func)
     local t1 = os.clock()
 
     for i=1, times do
         res = func()
     end
 
-    print("Elapsed: ", os.clock() - t1)
+    print(name, " Elapsed: ", os.clock() - t1)
 end
 
-bench(run2)
-bench(run3)
-bench(run4)
-
-local f = io.open("out.txt", "w")
-f:write(res)
-f:close()
+bench("cjson", run2)
+bench("capnp", run3)
+bench("capnp-noalloc", run4)

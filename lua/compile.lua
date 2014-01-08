@@ -36,7 +36,6 @@ function get_schema_text(file)
 end
 
 function comp_header(res, nodes)
-    --print("header")
     insert(res, [[
 local ffi = require "ffi"
 local capnp = require "capnp"
@@ -137,8 +136,6 @@ function comp_field(res, nodes, field)
     for k, v in pairs(slot["type"]) do
         type_name   = k
         if type_name == "struct" then
-            --print(v.typeId)
-            --print(nodes[v.typeId].displayName)
             field.type_display_name = get_name(nodes[v.typeId].displayName)
             default     = "opaque object"
         elseif type_name == "enum" then
@@ -369,7 +366,6 @@ function comp_node(res, nodes, node, name)
         print("Ignoring node: ", name)
         return
     end
-    print("node", name)
 
     if node.annotation then
         -- do not need to generation any code for annotations
@@ -411,7 +407,6 @@ _M.%s = {
 end
 
 function comp_body(res, schema)
-    print("body")
     local nodes = schema.nodes
     for i, v in ipairs(nodes) do
         nodes[v.id] = v
@@ -437,24 +432,18 @@ function comp_body(res, schema)
 end
 
 function comp_import(res, nodes, import)
-    print("import", import.name)
     local id = import.id
 
     local import_node = nodes[id]
-    --print(root_id)
-    --print(nodes[root_id].displayName)
     for i, node in ipairs(import_node.nestedNodes) do
         comp_node(res, nodes, nodes[node.id], node.name)
     end
 end
 
 function comp_file(res, nodes, file)
-    print("file", file.filename)
     local id = file.id
 
     local file_node = nodes[id]
-    --print(root_id)
-    --print(nodes[root_id].displayName)
     for i, node in ipairs(file_node.nestedNodes) do
         comp_node(res, nodes, nodes[node.id], node.name)
     end
@@ -470,7 +459,6 @@ function comp_dg_node(res, nodes, node)
 function gen_%s()
 
 ]], name))
-print("comp_dg_node", name)
     for i, child in ipairs(node.nestedNodes) do
         comp_dg_node(res, nodes, nodes[child.id])
     end
@@ -538,7 +526,6 @@ module(...)
 end
 
 function compile(schema)
-    print("compile")
     local res = {}
 
     comp_header(res, schema.nodes)

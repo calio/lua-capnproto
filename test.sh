@@ -12,8 +12,10 @@ CXX=g++-4.7 make all
 cpp/main > a.data || exit
 capnp compile -olua proto/example.capnp || exit
 luajit test.lua c.data || exit
-xxd -g 1 a.data || exit
 echo
+echo "capnp c++ result:"
+xxd -g 1 a.data || exit
+echo "capnp lua result:"
 xxd -g 1 c.data || exit
 diff a.data c.data
 
