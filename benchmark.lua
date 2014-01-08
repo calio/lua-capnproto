@@ -1,5 +1,7 @@
 jit.opt.start("loopunroll=1000", "maxrecord=5000", "maxmcode=1024")
 
+package.path = "lua/?.lua;proto/?.lua;" .. package.path
+
 local test_capnp    = require "handwritten_capnp"
 
 local ffi           = require "ffi"

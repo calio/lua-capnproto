@@ -1,4 +1,6 @@
 --local test_capnp = require "handwritten_capnp"
+package.path = "lua/?.lua;proto/?.lua;" .. package.path
+
 local data_generator = require "data_generator"
 local test_capnp = require "example_capnp"
 local capnp = require "capnp"

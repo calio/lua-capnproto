@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export PATH=$(pwd)/bin:$PATH
+export LUA_PATH="lua/?.lua;proto/?.lua;$LUA_PATH;;"
 
 echo "[Unit test...]"
 make test || exit
@@ -8,14 +9,12 @@ make test || exit
 echo
 echo "[Serialization test...]"
 CXX=g++-4.7 make all
-./main > a.data || exit
-
+cpp/main > a.data || exit
 capnp compile -olua proto/example.capnp || exit
-mv proto/example_capnp.lua .
-
-luajit foo.lua c.data || exit
+luajit test.lua c.data || exit
 xxd -g 1 a.data || exit
 echo
 xxd -g 1 c.data || exit
 diff a.data c.data
+
 echo "[Done]"

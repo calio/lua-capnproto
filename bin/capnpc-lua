@@ -1,13 +1,13 @@
 #!/bin/bash
-
 if [ $(uname) != "Linux" ]; then
     echo "Only linux is supported currently"
     exit 1
 fi
 
 BASE=$(dirname $(readlink -f $0))/..
-export LUA_PATH="$BASE/?.lua;$LUA_PATH"
+
+export LUA_PATH="$BASE/lua/?.lua;$BASE/proto/?.lua;$LUA_PATH;;"
 
 cat - > /tmp/schema.bin
 capnp decode $BASE/proto/schema.capnp CodeGeneratorRequest > /tmp/schema.txt < /tmp/schema.bin
-lua $BASE/compile.lua /tmp/schema.txt
+lua $BASE/lua/compile.lua /tmp/schema.txt
