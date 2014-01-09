@@ -174,6 +174,25 @@ _M.T1.T2 = {
         end
         return pos
     end
+
+    serialize = function(data, buf, size)
+        if not buf then
+            size = _M.T1.T2.calc_size(data)
+
+            buf = get_str_buf(size)
+        end
+        ffi_fill(buf, size)
+        local p = ffi_cast("int32_t *", buf)
+
+        p[0] = 0                                    -- 1 segment
+        p[1] = (size - 8) / 8
+
+        write_structp(buf + 8, _M.T1.T2, 0)
+        _M.T1.flat_serialize(data, buf + 16)
+
+        return ffi_string(buf, size)
+    end,
+
 }
 
 _M.T1.EnumType1 = {
