@@ -2,7 +2,7 @@
 package.path = "lua/?.lua;proto/?.lua;" .. package.path
 
 local data_generator = require "data_generator"
-local test_capnp = require "example_capnp"
+local test_capnp = require "log_capnp"
 local capnp = require "capnp"
 local cjson = require "cjson"
 local util = require "util"
@@ -28,16 +28,7 @@ local data = {
 
 local file = arg[1]
 local f = io.open(file, "w")
-f:write(test_capnp.T1.serialize(data))
-f:close()
-
-
-local generated_data = data_generator.gen_t1()
-local f = io.open("random.data", "w")
-f:write(test_capnp.T1.serialize(generated_data))
-f:close()
-local f = io.open("random.cjson.data", "w")
-f:write(cjson.encode(generated_data))
+--f:write(test_capnp.T1.serialize(data))
 f:close()
 
 
@@ -45,11 +36,15 @@ function table_diff(t1, t2, namespace)
     local keys = {}
 
     for k, v in pairs(t1) do
+        k = util.lower_underscore_naming(k)
         keys[k] = true
+        t1[k] = v
     end
 
     for k, v in pairs(t2) do
+        k = util.lower_underscore_naming(k)
         keys[k] = true
+        t2[k] = v
     end
 
     for k, v in pairs(keys) do
@@ -73,19 +68,19 @@ function table_diff(t1, t2, namespace)
 end
 
 function write_file(name, content)
-    local f = assert(io.open(name, "w"))
+    local f = assert(io.open(name, "a"))
     f:write(content)
     f:close()
 end
 
 function random_test()
-    local generated_data = data_generator.gen_t1()
+    local generated_data = data_generator.gen_log()
 
-    local bin = test_capnp.T1.serialize(generated_data)
+    local bin = test_capnp.Log.serialize(generated_data)
 
     local outfile = "/tmp/T1.txt"
     os.execute("rm " .. outfile)
-    local fh = assert(io.popen("capnp decode proto/example.capnp T1 > "
+    local fh = assert(io.popen("capnp decode /home/calio/code/dollar-store-fork/proto/log.capnp Log > "
             .. outfile, "w"))
     fh:write(bin)
     fh:close()
@@ -101,4 +96,39 @@ function random_test()
 end
 
 random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+random_test()
+
 print("Done")

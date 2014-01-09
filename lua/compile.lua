@@ -457,6 +457,9 @@ function comp_dg_node(res, nodes, node)
     local name = gsub(lower(node.name), "%.", "_")
     insert(res, format([[
 function gen_%s()
+    if rand.random_nil() then
+        return nil
+    end
 
 ]], name))
     for i, child in ipairs(node.nestedNodes) do
