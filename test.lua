@@ -2,7 +2,8 @@
 package.path = "lua/?.lua;proto/?.lua;" .. package.path
 
 local data_generator = require "data_generator"
-local test_capnp = require "log_capnp"
+local test_capnp = require "example_capnp"
+local log_capnp = require "log_capnp"
 local capnp = require "capnp"
 local cjson = require "cjson"
 local util = require "util"
@@ -28,7 +29,7 @@ local data = {
 
 local file = arg[1]
 local f = io.open(file, "w")
---f:write(test_capnp.T1.serialize(data))
+f:write(test_capnp.T1.serialize(data))
 f:close()
 
 
@@ -76,16 +77,16 @@ end
 function random_test()
     local generated_data = data_generator.gen_log()
 
-    local bin = test_capnp.Log.serialize(generated_data)
+    local bin = log_capnp.Log.serialize(generated_data)
 
-    local outfile = "/tmp/T1.txt"
+    local outfile = "/tmp/Log.txt"
     os.execute("rm " .. outfile)
     local fh = assert(io.popen("capnp decode /home/calio/code/dollar-store-fork/proto/log.capnp Log > "
             .. outfile, "w"))
     fh:write(bin)
     fh:close()
 
-    write_file("T1.capnp.bin", bin)
+    write_file("Log.capnp.bin", bin)
 
     local decoded = util.parse_capnp_decode(outfile, "debug.txt")
 
@@ -95,40 +96,6 @@ function random_test()
     table_diff(generated_data, decoded, "")
 end
 
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
-random_test()
 random_test()
 
 print("Done")

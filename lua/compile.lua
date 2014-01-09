@@ -48,6 +48,11 @@ local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
+local ffi_new           = ffi.new
+local ffi_string        = ffi.string
+local ffi_cast          = ffi.cast
+local ffi_copy          = ffi.copy
+local ffi_fill          = ffi.fill
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -64,11 +69,11 @@ local default_segment_size = 4096
 
 local function get_str_buf(size)
     if size > default_segment_size then
-        return ffi.new("char[?]", size)
+        return ffi_new("char[?]", size)
     end
 
     if not str_buf then
-        str_buf = ffi.new("char[?]", default_segment_size)
+        str_buf = ffi_new("char[?]", default_segment_size)
     end
     return str_buf
 end
@@ -164,7 +169,8 @@ function comp_serialize(res, name)
 
             buf = get_str_buf(size)
         end
-        local p = ffi.cast("int32_t *", buf)
+        ffi_fill(buf, size)
+        local p = ffi_cast("int32_t *", buf)
 
         p[0] = 0                                    -- 1 segment
         p[1] = (size - 8) / 8
@@ -172,7 +178,7 @@ function comp_serialize(res, name)
         write_structp(buf + 8, _M.%s, 0)
         _M.%s.flat_serialize(data, buf + 16)
 
-        return ffi.string(buf, size)
+        return ffi_string(buf, size)
     end,]], name, name, name))
 end
 
@@ -231,7 +237,7 @@ function comp_flat_serialize(res, fields, size, name)
             local len = #data.%s + 1
             write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
 
-            ffi.copy(buf + pos, data.%s)
+            ffi_copy(buf + pos, data.%s)
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 

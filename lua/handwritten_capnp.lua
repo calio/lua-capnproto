@@ -1,5 +1,5 @@
 local ffi = require "ffi"
-local capnp = require "capnp" 
+local capnp = require "capnp"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
@@ -8,6 +8,11 @@ local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
+local ffi_new           = ffi.new
+local ffi_string        = ffi.string
+local ffi_cast          = ffi.cast
+local ffi_copy          = ffi.copy
+local ffi_fill          = ffi.fill
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -24,11 +29,11 @@ local default_segment_size = 4096
 
 local function get_str_buf(size)
     if size > default_segment_size then
-        return ffi.new("char[?]", size)
+        return ffi_new("char[?]", size)
     end
 
     if not str_buf then
-        str_buf = ffi.new("char[?]", default_segment_size)
+        str_buf = ffi_new("char[?]", default_segment_size)
     end
     return str_buf
 end
@@ -111,7 +116,7 @@ _M.T1 = {
             local len = #data.t0 + 1
             write_listp_buf(buf, _M.T1, 2, 2, len, data_off)
 
-            ffi.copy(buf + pos, data.t0)
+            ffi_copy(buf + pos, data.t0)
             pos = pos + round8(len)
         end
 
@@ -128,7 +133,8 @@ _M.T1 = {
 
             buf = get_str_buf(size)
         end
-        local p = ffi.cast("int32_t *", buf)
+        ffi_fill(buf, size)
+        local p = ffi_cast("int32_t *", buf)
 
         p[0] = 0                                    -- 1 segment
         p[1] = (size - 8) / 8
@@ -136,7 +142,7 @@ _M.T1 = {
         write_structp(buf + 8, _M.T1, 0)
         _M.T1.flat_serialize(data, buf + 16)
 
-        return ffi.string(buf, size)
+        return ffi_string(buf, size)
     end,
 
 }
