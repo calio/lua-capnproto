@@ -104,9 +104,10 @@ function _M.write_structp_buf(buf, T, TSub, offset, data_off)
 end
 
 
-function _M.get_enum_val(v, enum_schema)
+function _M.get_enum_val(v, enum_schema, name)
     local r = enum_schema[v]
     if not r then
+        print("Unknown enum val: " .. v)
         --error("Unknown enum val:" .. v)
         return 0
     end

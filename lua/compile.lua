@@ -193,10 +193,10 @@ function comp_flat_serialize(res, fields, size, name)
             insert(res, format([[
 
         if data.%s and type(data.%s) == "string" then
-            local val = get_enum_val(data.%s, _M.%s)
+            local val = get_enum_val(data.%s, _M.%s, "%s.%s")
             write_val(buf, val, %d, %d)
         end]], field.name, field.name, field.name, field.type_display_name,
-                    field.size, field.slot.offset))
+                     name, field.name, field.size, field.slot.offset))
 
         elseif field.type_name == "list" then
             local off = field.slot.offset

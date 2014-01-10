@@ -96,6 +96,6 @@ function random_test()
     table_diff(generated_data, decoded, "")
 end
 
-random_test()
+--random_test()
 
 print("Done")
