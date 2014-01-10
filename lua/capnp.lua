@@ -107,7 +107,7 @@ end
 function _M.get_enum_val(v, enum_schema, name)
     local r = enum_schema[v]
     if not r then
-        print("Unknown enum val: " .. v)
+        print(name, "Unknown enum val: " .. v)
         --error("Unknown enum val:" .. v)
         return 0
     end
