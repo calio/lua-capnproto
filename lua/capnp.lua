@@ -43,11 +43,23 @@ local function get_bit_offset(bit_off, size)
     return n, s
 end
 
-function _M.write_val(buf, val, size, off)
-    local p = ffi.cast("uint32_t *", buf)
+local pointer_map {
+    int8    = "int8_t *",
+    int16   = "int16_t *",
+    int32   = "int32_t *",
+    int64   = "int64_t *",
+    uint8   = "uint8_t *",
+    uint16  = "uint16_t *",
+    uint32  = "uint32_t *",
+    uint64  = "uint64_t *",
+    bool    = "uint8_t *",
+}
+local function get_pointer_from_type(buf, field_type)
+end
 
-    if type(val) == "boolean" then
-        val = val and 1 or 0
+local function get_pointer_from_val(buf, size, val)
+    local p = buf
+    if size == 1 then
         p = ffi.cast("uint8_t *", buf)
     else
         local i, f = modf(val)
@@ -73,6 +85,30 @@ function _M.write_val(buf, val, size, off)
                 error("unknown in size " .. size)
             end
         end
+    end
+    return p
+end
+
+function _M.read_val(buf, field_type, size, off)
+    local p = get_pointer_from_type(buf, field_type)
+
+    local val
+    if size >= 8 then
+        local n, s = get_bit_offset(size * off, size)
+        val = p[n]
+    else
+        local n, s = get_bit_offset(size * off, 8)
+        local mask = 2^size - 1
+        mask = lshift(mask, s)
+        val = rshift(band(mask, p[n]), n)
+    end
+end
+
+function _M.write_val(buf, val, size, off)
+    local p = get_pointer_from_val(buf, size, val)
+
+    if type(val) == "boolean" then
+        val = val and 1 or 0
     end
 
     if size >= 8 then

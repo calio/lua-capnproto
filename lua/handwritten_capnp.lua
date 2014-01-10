@@ -145,6 +145,44 @@ _M.T1 = {
         return ffi_string(buf, size)
     end,
 
+    parse_struct_data = function(buf, data_word_count, pointer_count)
+
+    end,
+
+    parse_struct = function(buf)
+        local p = buf
+        local sig = band(p[0], 0xff)
+
+        if sig ~= 0 then
+            error("corrupt data, expected struct signiture 0 but have " .. sig)
+        end
+
+        local offset = rshift(p[0], 2)
+        local data_word_count = band(p[1], 0xffff)
+        local pointer_count = rshift(p[1], 16)
+
+        return parse_struct_data(p + 2 + offset * 2, data_word_count,
+                pointer_count)
+    end,
+
+    parse = function(bin)
+        if #bin < 16 then
+            return nil, "message too short"
+        end
+
+        local p = ffi_cast("uint32_t *", bin)
+        local nsegs = p[0] + 1
+        local sizes = {}
+        for i=1, nsegs do
+            sizes[i] = p[i] * 8
+        end
+
+        local pos = round8(4 + segs * 4)
+
+        p = p + pos/4
+
+        return parse_struct(p)
+    end
 }
 
 _M.T1.T2 = {
@@ -173,7 +211,7 @@ _M.T1.T2 = {
             write_val(buf, data.f1, 64, 1)
         end
         return pos
-    end
+    end,
 
     serialize = function(data, buf, size)
         if not buf then
