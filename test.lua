@@ -74,6 +74,7 @@ function write_file(name, content)
     f:close()
 end
 
+--[[
 function random_test()
     local generated_data = data_generator.gen_log()
 
@@ -97,5 +98,5 @@ function random_test()
 end
 
 random_test()
-
+]]
 print("Done")
