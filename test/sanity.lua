@@ -71,6 +71,23 @@ function test_write_plain_val1()
     assert_hex("ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
 
+function test_read_val()
+    local seg = { len = 32, pos = 0 }
+    seg.data = ffi.new("char[?]", 32) -- 32 bytes
+
+    -- write_val(buf, val, size, off)
+    capnp.write_val(seg.data, true, 1, 0)
+    capnp.write_val(seg.data, 8, 8, 1)
+    capnp.write_val(seg.data, 65535, 16, 1)
+    capnp.write_val(seg.data, 1048576, 32, 1)
+    capnp.write_val(seg.data, 4294967296, 64, 1)
+    capnp.write_val(seg.data, 3.14, 32, 4)
+    capnp.write_val(seg.data, 1.41421, 32, 5)
+    capnp.write_val(seg.data, 3.14159265358979, 64, 3)
+
+    assert_equal(true, capnp.read_val(seg.data, "bool", 1, 0))
+end
+
 --[[
 function test_write_structp()
     local seg = capnp.new_segment() -- 32 bytes

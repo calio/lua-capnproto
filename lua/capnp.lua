@@ -43,7 +43,7 @@ local function get_bit_offset(bit_off, size)
     return n, s
 end
 
-local pointer_map {
+local pointer_map = {
     int8    = "int8_t *",
     int16   = "int16_t *",
     int32   = "int32_t *",
@@ -55,6 +55,12 @@ local pointer_map {
     bool    = "uint8_t *",
 }
 local function get_pointer_from_type(buf, field_type)
+    local t = pointer_map[field_type]
+    if not t then
+        error("not supported type: " .. field_type)
+    end
+
+    return ffi.cast(t, buf)
 end
 
 local function get_pointer_from_val(buf, size, val)
@@ -102,6 +108,16 @@ function _M.read_val(buf, field_type, size, off)
         mask = lshift(mask, s)
         val = rshift(band(mask, p[n]), n)
     end
+
+    if field_type == "bool" then
+        if val then
+            return true
+        else
+            return false
+        end
+    end
+
+    return val
 end
 
 function _M.write_val(buf, val, size, off)
