@@ -53,6 +53,8 @@ local pointer_map = {
     uint32  = "uint32_t *",
     uint64  = "uint64_t *",
     bool    = "uint8_t *",
+    float32 = "float *",
+    float64 = "double *",
 }
 local function get_pointer_from_type(buf, field_type)
     local t = pointer_map[field_type]

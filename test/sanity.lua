@@ -85,7 +85,15 @@ function test_read_val()
     capnp.write_val(seg.data, 1.41421, 32, 5)
     capnp.write_val(seg.data, 3.14159265358979, 64, 3)
 
-    assert_equal(true, capnp.read_val(seg.data, "bool", 1, 0))
+    assert_equal(true,          capnp.read_val(seg.data, "bool", 1, 0))
+    assert_equal(8,             capnp.read_val(seg.data, "int8", 8, 1))
+    assert_equal(65535,         capnp.read_val(seg.data, "uint16", 16, 1))
+    assert_equal(1048576,       capnp.read_val(seg.data, "int32", 32, 1))
+    assert_equal(4294967296,    capnp.read_val(seg.data, "uint64", 64, 1))
+    -- TODO make this work
+    -- assert_equal(3.14,          capnp.read_val(seg.data, "float32", 32, 4))
+    -- assert_equal(1.41421,       capnp.read_val(seg.data, "float32", 32, 5))
+    assert_equal(3.14159265358979, capnp.read_val(seg.data, "float64", 64, 3))
 end
 
 --[[
