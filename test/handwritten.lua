@@ -149,3 +149,25 @@ function test_basic_value4()
     assert_equal(127, copy.l0[3])
     assert_nil(copy.t0)
 end
+
+function test_basic_value5()
+    local data = {
+        t0 = "1234567890~!#$%^&*()-=_+[]{};':|,.<>/?"
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    local copy  = hw_capnp.T1.parse(bin)
+    util.write_file("dump", bin)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_equal(38, #copy.t0)
+    assert_equal("1234567890~!#$%^&*()-=_+[]{};':|,.<>/?", copy.t0)
+end
