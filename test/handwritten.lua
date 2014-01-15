@@ -14,6 +14,7 @@ else
     module( "simple", package.seeall, lunit.testcase )
 end
 
+local copy = {}
 
 function test_basic_value()
     local data = {
@@ -21,7 +22,7 @@ function test_basic_value()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    local copy  = hw_capnp.T1.parse(bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(data.i0, copy.i0)
     assert_equal(0, copy.i1)
     assert_equal(0, copy.i2)
@@ -41,8 +42,7 @@ function test_basic_value1()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    local copy  = hw_capnp.T1.parse(bin)
-    util.write_file("dump", bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
     assert_equal(0, copy.i2)
@@ -62,8 +62,7 @@ function test_basic_value2()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    local copy  = hw_capnp.T1.parse(bin)
-    util.write_file("dump", bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
     assert_equal(-8, copy.i2)
@@ -83,8 +82,7 @@ function test_basic_value3()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    local copy  = hw_capnp.T1.parse(bin)
-    util.write_file("dump", bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
     assert_equal(0, copy.i2)
@@ -109,8 +107,7 @@ function test_basic_value4()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    local copy  = hw_capnp.T1.parse(bin)
-    util.write_file("dump", bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
     assert_equal(0, copy.i2)
@@ -132,8 +129,7 @@ function test_basic_value4()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    local copy  = hw_capnp.T1.parse(bin)
-    util.write_file("dump", bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
     assert_equal(0, copy.i2)
@@ -156,8 +152,7 @@ function test_basic_value5()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    local copy  = hw_capnp.T1.parse(bin)
-    util.write_file("dump", bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
     assert_equal(0, copy.i2)
