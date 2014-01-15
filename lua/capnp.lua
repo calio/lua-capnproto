@@ -212,6 +212,10 @@ function _M.parse_listp_buf(buf, T, offset)
 
     local val = p[base]
 
+    if p[base] == 0 and p[base + 1] == 0 then
+        return
+    end
+
     local sig = band(val, 0x03)
     if sig ~= 1 then
         error("corrupt data, expected list signiture 1 but have " .. sig)

@@ -165,10 +165,14 @@ _M.T1 = {
         _M.T1.T2.parse_struct(buf + (2 + 0) * 2, s.s0)
 
         local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 1)
-        s.l0 = capnp.parse_list_data(buf + (2 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+        if off and num then
+            s.l0 = capnp.parse_list_data(buf + (2 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+        end
 
         local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 2)
-        s.t0 = ffi.string(buf + (2 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+        if off and num then
+            s.t0 = ffi.string(buf + (2 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+        end
 
         local val = read_val(buf, "int16", 16, 6)
         s.e0 = get_enum_val(val, _M.T1.EnumType1Str)
@@ -180,6 +184,11 @@ _M.T1 = {
 
     parse_struct = function(buf, tab)
         local p = buf
+        if p[0] == 0 and p[1] == 0 then
+            -- not set
+            return
+        end
+
         local sig = band(p[0], 0x03)
 
         if sig ~= 0 then
@@ -272,6 +281,11 @@ _M.T1.T2 = {
 
     parse_struct = function(buf, tab)
         local p = buf
+        if p[0] == 0 and p[1] == 0 then
+            -- not set
+            return
+        end
+
         local sig = band(p[0], 0x03)
 
         if sig ~= 0 then
