@@ -157,8 +157,10 @@ _M.T1 = {
         s.i2 = read_val(buf, "int8", 8, 7)
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
+        -- dataWordCount + offset
+        print(ffi.typeof(buf))
+        s.s0 = _M.T1.T2.parse_struct(buf + (2 + 0) * 2)
         --[[
-        s.s0 =
         s.e0
         s.l0
         s.t0
@@ -169,7 +171,7 @@ _M.T1 = {
 
     parse_struct = function(buf)
         local p = buf
-        local sig = band(p[0], 0xff)
+        local sig = band(p[0], 0x03)
 
         if sig ~= 0 then
             error("corrupt data, expected struct signiture 0 but have " .. sig)
@@ -248,6 +250,30 @@ _M.T1.T2 = {
 
         return ffi_string(buf, size)
     end,
+
+    parse_struct_data = function(buf, data_word_count, pointer_count)
+        local s = new_tab(0, 2)
+        s.f0 = read_val(buf, "float32", 32, 0)
+        s.f1 = read_val(buf, "float64", 64, 1)
+        return s
+    end,
+
+    parse_struct = function(buf)
+        local p = buf
+        local sig = band(p[0], 0x03)
+
+        if sig ~= 0 then
+            error("corrupt data, expected struct signiture 0 but have " .. sig)
+        end
+
+        local offset = rshift(p[0], 2)
+        local data_word_count = band(p[1], 0xffff)
+        local pointer_count = rshift(p[1], 16)
+
+        return _M.T1.T2.parse_struct_data(p + 2 + offset * 2, data_word_count,
+                pointer_count)
+    end,
+
 
 }
 
