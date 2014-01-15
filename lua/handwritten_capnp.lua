@@ -15,8 +15,6 @@ local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
 local ffi_copy          = ffi.copy
 local ffi_fill          = ffi.fill
-local band, bor, bxor = bit.band, bit.bor, bit.bxor
-local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -158,20 +156,31 @@ _M.T1 = {
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
 
-        if not s.s0 then
-            s.s0 = new_tab(0, 2)
+        local p = buf + (2 + 0) * 2
+        local off, dw, pw = capnp.parse_struct_buf(p)
+        if off and dw and pw then
+            if not s.s0 then
+                s.s0 = new_tab(0, 2)
+            end
+            _M.T1.T2.parse_struct_data(p + 2 + off * 2, dw, pw, s.s0)
+        else
+            s.s0 = nil
         end
         -- dataWordCount + offset
-        _M.T1.T2.parse_struct(buf + (2 + 0) * 2, s.s0)
+        --_M.T1.T2.parse_struct(buf + (2 + 0) * 2, s.s0)
 
         local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 1)
         if off and num then
             s.l0 = capnp.parse_list_data(buf + (2 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+        else
+            s.l0 = nil
         end
 
         local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 2)
         if off and num then
             s.t0 = ffi.string(buf + (2 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+        else
+            s.t0 = nil
         end
 
         local val = read_val(buf, "int16", 16, 6)
@@ -180,27 +189,6 @@ _M.T1 = {
         local val = read_val(buf, "int16", 16, 7)
         s.e1 = get_enum_val(val, _M.EnumType2Str)
         return s
-    end,
-
-    parse_struct = function(buf, tab)
-        local p = buf
-        if p[0] == 0 and p[1] == 0 then
-            -- not set
-            return
-        end
-
-        local sig = band(p[0], 0x03)
-
-        if sig ~= 0 then
-            error("corrupt data, expected struct signiture 0 but have " .. sig)
-        end
-
-        local offset = rshift(p[0], 2)
-        local data_word_count = band(p[1], 0xffff)
-        local pointer_count = rshift(p[1], 16)
-
-        return _M.T1.parse_struct_data(p + 2 + offset * 2, data_word_count,
-                pointer_count, tab)
     end,
 
     parse = function(bin, tab)
@@ -222,7 +210,12 @@ _M.T1 = {
         if not tab then
             tab = new_tab(0, 8)
         end
-        return _M.T1.parse_struct(p, tab)
+        local off, dw, pw = capnp.parse_struct_buf(p)
+        if off and dw and pw then
+            return _M.T1.parse_struct_data(p + 2 + off * 2, dw, pw, tab)
+        else
+            return nil
+        end
     end
 }
 
@@ -279,27 +272,32 @@ _M.T1.T2 = {
         return s
     end,
 
-    parse_struct = function(buf, tab)
-        local p = buf
-        if p[0] == 0 and p[1] == 0 then
-            -- not set
-            return
+    parse = function(bin, tab)
+        if #bin < 16 then
+            return nil, "message too short"
         end
 
-        local sig = band(p[0], 0x03)
-
-        if sig ~= 0 then
-            error("corrupt data, expected struct signiture 0 but have " .. sig)
+        local p = ffi_cast("uint32_t *", bin)
+        local nsegs = p[0] + 1
+        local sizes = {}
+        for i=1, nsegs do
+            sizes[i] = p[i] * 8
         end
 
-        local offset = rshift(p[0], 2)
-        local data_word_count = band(p[1], 0xffff)
-        local pointer_count = rshift(p[1], 16)
+        local pos = round8(4 + nsegs * 4)
 
-        return _M.T1.T2.parse_struct_data(p + 2 + offset * 2, data_word_count,
-                pointer_count, tab)
-    end,
+        p = p + pos/4
 
+        if not tab then
+            tab = new_tab(0, 8)
+        end
+        local off, dw, pw = capnp.parse_struct_buf(p)
+        if off and dw and pw then
+            return _M.T1.T2.parse_struct_data(p + 2 + off * 2, dw, pw, tab)
+        else
+            return nil
+        end
+    end
 
 }
 

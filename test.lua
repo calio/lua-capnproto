@@ -9,47 +9,7 @@ local capnp = require "capnp"
 local cjson = require "cjson"
 local util = require "util"
 
-local format = string.format
 
-
-function table_diff(t1, t2, namespace)
-    local keys = {}
-
-    if not namespace then
-        namespace = ""
-    end
-
-    for k, v in pairs(t1) do
-        k = util.lower_underscore_naming(k)
-        keys[k] = true
-        t1[k] = v
-    end
-
-    for k, v in pairs(t2) do
-        k = util.lower_underscore_naming(k)
-        keys[k] = true
-        t2[k] = v
-    end
-
-    for k, v in pairs(keys) do
-        local name = namespace .. "." .. k
-        local v1 = t1[k]
-        local v2 = t2[k]
-
-        local t1 = type(v1)
-        local t2 = type(v2)
-
-        if t1 ~= t2 then
-            print(format("%s: different type: %s %s", name,
-                    t1, t2))
-        elseif t1 == "table" then
-            table_diff(v1, v2, namespace .. "." .. k)
-        elseif v1 ~= v2 then
-            print(format("%s: different value: %s %s", name,
-                    tostring(v1), tostring(v2)))
-        end
-    end
-end
 
 local data = {
     i0 = 32,
@@ -74,7 +34,7 @@ local bin = test_capnp.T1.serialize(data)
 
 local decoded = handwritten_capnp.T1.parse(bin)
 
-table_diff(data, decoded)
+util.table_diff(data, decoded)
 
 f:write(bin)
 f:close()
@@ -107,7 +67,7 @@ function random_test()
     print(cjson.encode(generated_data))
     print(cjson.encode(decoded))
 
-    table_diff(generated_data, decoded, "")
+    util.table_diff(generated_data, decoded, "")
 end
 
 random_test()

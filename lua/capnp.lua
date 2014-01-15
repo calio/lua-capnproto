@@ -108,11 +108,11 @@ function _M.read_val(buf, field_type, size, off)
         local n, s = get_bit_offset(size * off, 8)
         local mask = 2^size - 1
         mask = lshift(mask, s)
-        val = rshift(band(mask, p[n]), n)
+        val = rshift(band(mask, p[n]), s)
     end
 
     if field_type == "bool" then
-        if val then
+        if val and val ~= 0 then
             return true
         else
             return false
@@ -228,6 +228,26 @@ function _M.parse_listp_buf(buf, T, offset)
     local num = rshift(val, 3)
 
     return offset, size_type, num
+end
+
+function _M.parse_struct_buf(buf)
+    local p = buf
+    if p[0] == 0 and p[1] == 0 then
+        -- not set
+        return
+    end
+
+    local sig = band(p[0], 0x03)
+
+    if sig ~= 0 then
+        error("corrupt data, expected struct signiture 0 but have " .. sig)
+    end
+
+    local offset = rshift(p[0], 2)
+    local data_word_count = band(p[1], 0xffff)
+    local pointer_count = rshift(p[1], 16)
+
+    return offset, data_word_count, pointer_count
 end
 
 return _M
