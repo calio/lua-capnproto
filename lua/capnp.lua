@@ -187,6 +187,25 @@ local list_size_map = {
     -- 7 = ?,
 }
 
+function _M.parse_list_data(p, size_type, elm_type, num)
+    local t = new_tab(num, 0)
+
+    local size = list_size_map[size_type]
+    if not size then
+        error("corrupt data, unknown size type: " .. size_type)
+    end
+
+    size = size * 8
+
+    local p = get_pointer_from_type(p, elm_type)
+
+    for i=1, num do
+        t[i] = p[i - 1]
+    end
+
+    return t
+end
+
 function _M.parse_listp_buf(buf, T, offset)
     local p = ffi.cast("int32_t *", buf)
     local base = T.dataWordCount * 2 + offset * 2

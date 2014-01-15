@@ -158,15 +158,15 @@ _M.T1 = {
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
         -- dataWordCount + offset
-        print(ffi.typeof(buf))
         s.s0 = _M.T1.T2.parse_struct(buf + (2 + 0) * 2)
 
+        local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 1)
+        s.l0 = capnp.parse_list_data(buf + (2 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+
         local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 2)
-        print(off, size, num)
         s.t0 = ffi.string(buf + (2 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         --[[
         s.e0
-        s.l0
         s.e1
         ]]
         return s
