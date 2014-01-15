@@ -160,10 +160,13 @@ _M.T1 = {
         -- dataWordCount + offset
         print(ffi.typeof(buf))
         s.s0 = _M.T1.T2.parse_struct(buf + (2 + 0) * 2)
+
+        local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 2)
+        print(off, size, num)
+        s.t0 = ffi.string(buf + (2 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         --[[
         s.e0
         s.l0
-        s.t0
         s.e1
         ]]
         return s

@@ -187,4 +187,24 @@ local list_size_map = {
     -- 7 = ?,
 }
 
+function _M.parse_listp_buf(buf, T, offset)
+    local p = ffi.cast("int32_t *", buf)
+    local base = T.dataWordCount * 2 + offset * 2
+
+    local val = p[base]
+
+    local sig = band(val, 0x03)
+    if sig ~= 1 then
+        error("corrupt data, expected list signiture 1 but have " .. sig)
+    end
+
+    local offset = rshift(val, 2)
+
+    val = p[base + 1]
+    local size_type = band(val, 0x07)
+    local num = rshift(val, 3)
+
+    return offset, size_type, num
+end
+
 return _M
