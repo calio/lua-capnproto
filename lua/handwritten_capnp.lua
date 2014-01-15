@@ -165,10 +165,12 @@ _M.T1 = {
 
         local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 2)
         s.t0 = ffi.string(buf + (2 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
-        --[[
-        s.e0
-        s.e1
-        ]]
+
+        local val = read_val(buf, "int16", 16, 6)
+        s.e0 = get_enum_val(val, _M.T1.EnumType1Str)
+
+        local val = read_val(buf, "int16", 16, 7)
+        s.e1 = get_enum_val(val, _M.EnumType2Str)
         return s
     end,
 
@@ -290,6 +292,18 @@ _M.EnumType2 = {
     enum5 = 0,
     enum6 = 1,
     enum7 = 2,
+}
+
+_M.T1.EnumType1Str = {
+    [0] = "enum1",
+    [1] = "enum2",
+    [2] = "enum3",
+}
+
+_M.EnumType2Str = {
+    [0] = "enum5",
+    [1] = "enum6",
+    [2] = "enum7",
 }
 
 return _M
