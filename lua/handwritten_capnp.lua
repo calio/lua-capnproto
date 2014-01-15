@@ -149,16 +149,20 @@ _M.T1 = {
         return ffi_string(buf, size)
     end,
 
-    parse_struct_data = function(buf, data_word_count, pointer_count)
-        local s = new_tab(0, 8)
+    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+        local s = tab
         s.i0 = read_val(buf, "uint32", 32, 0)
         s.i1 = read_val(buf, "uint16", 16, 2)
         s.b0 = read_val(buf, "bool", 1, 48)
         s.i2 = read_val(buf, "int8", 8, 7)
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
+
+        if not s.s0 then
+            s.s0 = new_tab(0, 2)
+        end
         -- dataWordCount + offset
-        s.s0 = _M.T1.T2.parse_struct(buf + (2 + 0) * 2)
+        _M.T1.T2.parse_struct(buf + (2 + 0) * 2, s.s0)
 
         local off, size, num = capnp.parse_listp_buf(buf, _M.T1, 1)
         s.l0 = capnp.parse_list_data(buf + (2 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
@@ -174,7 +178,7 @@ _M.T1 = {
         return s
     end,
 
-    parse_struct = function(buf)
+    parse_struct = function(buf, tab)
         local p = buf
         local sig = band(p[0], 0x03)
 
@@ -187,10 +191,10 @@ _M.T1 = {
         local pointer_count = rshift(p[1], 16)
 
         return _M.T1.parse_struct_data(p + 2 + offset * 2, data_word_count,
-                pointer_count)
+                pointer_count, tab)
     end,
 
-    parse = function(bin)
+    parse = function(bin, tab)
         if #bin < 16 then
             return nil, "message too short"
         end
@@ -206,7 +210,10 @@ _M.T1 = {
 
         p = p + pos/4
 
-        return _M.T1.parse_struct(p)
+        if not tab then
+            tab = new_tab(0, 8)
+        end
+        return _M.T1.parse_struct(p, tab)
     end
 }
 
@@ -256,14 +263,14 @@ _M.T1.T2 = {
         return ffi_string(buf, size)
     end,
 
-    parse_struct_data = function(buf, data_word_count, pointer_count)
-        local s = new_tab(0, 2)
+    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+        local s = tab
         s.f0 = read_val(buf, "float32", 32, 0)
         s.f1 = read_val(buf, "float64", 64, 1)
         return s
     end,
 
-    parse_struct = function(buf)
+    parse_struct = function(buf, tab)
         local p = buf
         local sig = band(p[0], 0x03)
 
@@ -276,7 +283,7 @@ _M.T1.T2 = {
         local pointer_count = rshift(p[1], 16)
 
         return _M.T1.T2.parse_struct_data(p + 2 + offset * 2, data_word_count,
-                pointer_count)
+                pointer_count, tab)
     end,
 
 

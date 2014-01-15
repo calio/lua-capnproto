@@ -30,6 +30,7 @@ local data = {
 local size = test_capnp.T1.calc_size(data)
 local buf = ffi.new("char[?]", size)
 local bin = test_capnp.T1.serialize(data)
+local tab = {}
 
 function run4()
     return test_capnp.T1.serialize(data, buf, size)
@@ -44,12 +45,13 @@ function run2()
 end
 
 function run1()
-    return test_capnp.T1.parse(bin)
+    return test_capnp.T1.parse(bin, tab)
 end
 
 print("Benchmarking ", times .. " times.")
 
 local res
+
 
 function bench(name, func)
     local t1 = os.clock()
@@ -61,9 +63,9 @@ function bench(name, func)
     print(name, " Elapsed: ", os.clock() - t1)
 end
 
---bench("cjson", run2)
---bench("capnp", run3)
---bench("capnp-noalloc", run4)
+bench("cjson", run2)
+bench("capnp", run3)
+bench("capnp-noalloc", run4)
 bench("capnp decode", run1)
 
---print(cjson.encode(res))
+print(cjson.encode(res))
