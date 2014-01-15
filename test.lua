@@ -3,6 +3,7 @@ package.path = "lua/?.lua;proto/?.lua;" .. package.path
 
 local data_generator = require "data_generator"
 local test_capnp = require "example_capnp"
+local handwritten_capnp = require "handwritten_capnp"
 local log_capnp = require "log_capnp"
 local capnp = require "capnp"
 local cjson = require "cjson"
@@ -10,31 +11,13 @@ local util = require "util"
 
 local format = string.format
 
-local data = {
-    i0 = 32,
-    i1 = 16,
-    i2 = 127,
-    b0 = true,
-    b1 = true,
-    i3 = 65536,
-    e0 = "enum3",
-    s0 = {
-        f0 = 3.14,
-        f1 = 3.14159265358979,
-    },
-    l0 = { 28, 29 },
-    t0 = "hello",
-    e1 = "enum7",
-}
-
-local file = arg[1]
-local f = io.open(file, "w")
-f:write(test_capnp.T1.serialize(data))
-f:close()
-
 
 function table_diff(t1, t2, namespace)
     local keys = {}
+
+    if not namespace then
+        namespace = ""
+    end
 
     for k, v in pairs(t1) do
         k = util.lower_underscore_naming(k)
@@ -67,6 +50,36 @@ function table_diff(t1, t2, namespace)
         end
     end
 end
+
+local data = {
+    i0 = 32,
+    i1 = 16,
+    i2 = 127,
+    b0 = true,
+    b1 = true,
+    i3 = 65536,
+    e0 = "enum3",
+    s0 = {
+        f0 = 3.14,
+        f1 = 3.14159265358979,
+    },
+    l0 = { 28, 29 },
+    t0 = "hello",
+    e1 = "enum7",
+}
+
+local file = arg[1]
+local f = io.open(file, "w")
+local bin = test_capnp.T1.serialize(data)
+
+local decoded = handwritten_capnp.T1.parse(bin)
+
+table_diff(data, decoded)
+
+f:write(bin)
+f:close()
+
+
 
 function write_file(name, content)
     local f = assert(io.open(name, "a"))

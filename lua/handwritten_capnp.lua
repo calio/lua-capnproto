@@ -1,8 +1,10 @@
 local ffi = require "ffi"
 local capnp = require "capnp"
+local bit = require "bit"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
+local read_val          = capnp.read_val
 local get_enum_val      = capnp.get_enum_val
 local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
@@ -13,6 +15,8 @@ local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
 local ffi_copy          = ffi.copy
 local ffi_fill          = ffi.fill
+local band, bor, bxor = bit.band, bit.bor, bit.bxor
+local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -146,7 +150,21 @@ _M.T1 = {
     end,
 
     parse_struct_data = function(buf, data_word_count, pointer_count)
-
+        local s = new_tab(0, 8)
+        s.i0 = read_val(buf, "uint32", 32, 0)
+        s.i1 = read_val(buf, "uint16", 16, 2)
+        s.b0 = read_val(buf, "bool", 1, 48)
+        s.i2 = read_val(buf, "int8", 8, 7)
+        s.b1 = read_val(buf, "bool", 1, 49)
+        s.i3 = read_val(buf, "int32", 32, 2)
+        --[[
+        s.s0 =
+        s.e0
+        s.l0
+        s.t0
+        s.e1
+        ]]
+        return s
     end,
 
     parse_struct = function(buf)
@@ -161,7 +179,7 @@ _M.T1 = {
         local data_word_count = band(p[1], 0xffff)
         local pointer_count = rshift(p[1], 16)
 
-        return parse_struct_data(p + 2 + offset * 2, data_word_count,
+        return _M.T1.parse_struct_data(p + 2 + offset * 2, data_word_count,
                 pointer_count)
     end,
 
@@ -177,11 +195,11 @@ _M.T1 = {
             sizes[i] = p[i] * 8
         end
 
-        local pos = round8(4 + segs * 4)
+        local pos = round8(4 + nsegs * 4)
 
         p = p + pos/4
 
-        return parse_struct(p)
+        return _M.T1.parse_struct(p)
     end
 }
 
