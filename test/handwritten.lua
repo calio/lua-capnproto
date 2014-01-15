@@ -166,3 +166,42 @@ function test_basic_value5()
     assert_equal(38, #copy.t0)
     assert_equal("1234567890~!#$%^&*()-=_+[]{};':|,.<>/?", copy.t0)
 end
+
+function test_basic_value6()
+    local data = {
+        i0 = 32,
+        i1 = 16,
+        i2 = 127,
+        b0 = true,
+        b1 = true,
+        i3 = 65536,
+        e0 = "enum3",
+        s0 = {
+            f0 = 3.14,
+            f1 = 3.14159265358979,
+        },
+        l0 = { 28, 29 },
+        t0 = "hello",
+        e1 = "enum7",
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(32, copy.i0)
+    assert_equal(16, copy.i1)
+    assert_equal(127, copy.i2)
+    assert_equal(true, copy.b0)
+    assert_equal(true, copy.b1)
+    assert_equal(65536, copy.i3)
+    assert_equal("enum3", copy.e0)
+    assert_equal("enum7", copy.e1)
+    assert_not_nil(copy.s0)
+    -- assert_equal(3.14, copy.s0.f0)
+    assert_equal(3.14159265358979, copy.s0.f1)
+    assert_not_nil(copy.l0)
+    assert_equal(2, #copy.l0)
+    assert_equal(28, copy.l0[1])
+    assert_equal(29, copy.l0[2])
+    assert_equal(5, #copy.t0)
+    assert_equal("hello", copy.t0)
+end
