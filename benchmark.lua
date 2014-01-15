@@ -9,7 +9,7 @@ local test_capnp    = require "handwritten_capnp"
 local capnp         = require "capnp"
 local cjson         = require "cjson"
 
-local times         = arg[1] or 200000
+local times         = arg[1] or 1000000
 
 local data = {
     i0 = 32,
@@ -29,6 +29,7 @@ local data = {
 
 local size = test_capnp.T1.calc_size(data)
 local buf = ffi.new("char[?]", size)
+local bin = test_capnp.T1.serialize(data)
 
 function run4()
     return test_capnp.T1.serialize(data, buf, size)
@@ -40,6 +41,10 @@ end
 
 function run2()
     return cjson.encode(data)
+end
+
+function run1()
+    return test_capnp.T1.parse(bin)
 end
 
 print("Benchmarking ", times .. " times.")
@@ -56,6 +61,9 @@ function bench(name, func)
     print(name, " Elapsed: ", os.clock() - t1)
 end
 
-bench("cjson", run2)
-bench("capnp", run3)
-bench("capnp-noalloc", run4)
+--bench("cjson", run2)
+--bench("capnp", run3)
+--bench("capnp-noalloc", run4)
+bench("capnp decode", run1)
+
+--print(cjson.encode(res))
