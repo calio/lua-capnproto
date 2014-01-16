@@ -168,7 +168,12 @@ function comp_field(res, nodes, field)
         break
     end
 
-    field.size      = get_size(type_name)
+    if not type_name then
+        field.type_name = "void"
+        field.size = 0
+    else
+        field.size      = get_size(type_name)
+    end
 end
 
 function comp_parse_struct_data(res, struct, fields, size, name)

@@ -35,7 +35,7 @@ function _M.parse_capnp_decode(infile, outfile)
     s = gsub(s, "%>", "'")
     s = gsub(s, "id = (%d+)", "id = \"%1\"")
     s = gsub(s, "typeId = (%d+)", "typeId = \"%1\"")
-    s = gsub(s, "void", "\"void\"")
+    s = gsub(s, "([^\"])void([^\"])", "%1\"void\"%2")
     s = "return " .. s
 
     if outfile then
