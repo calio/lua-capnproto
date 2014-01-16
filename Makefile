@@ -24,6 +24,7 @@ cpp/main: cpp/main.o cpp/example_capnp.o cpp/enums_capnp.o
 
 test:
 	luajit test/sanity.lua
+	luajit test/handwritten.lua
 
 all: cpp/main
 

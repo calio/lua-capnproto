@@ -37,17 +37,22 @@ end
 
 function comp_header(res, nodes)
     insert(res, [[
+-- require "luacov"
 local ffi = require "ffi"
 local capnp = require "capnp"
+local bit = require "bit"
 
-local type              = type
 local ceil              = math.ceil
 local write_val         = capnp.write_val
+local read_val          = capnp.read_val
 local get_enum_val      = capnp.get_enum_val
 local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
+local parse_struct_buf  = capnp.parse_struct_buf
+local parse_listp_buf   = capnp.parse_listp_buf
+local parse_list_data   = capnp.parse_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
@@ -146,6 +151,13 @@ function comp_field(res, nodes, field)
         elseif type_name == "enum" then
             field.enum_id = v.typeId
             field.type_display_name = get_name(nodes[v.typeId].displayName)
+        elseif type_name == "list" then
+            local list_type
+            for k, v in pairs(field.slot["type"].list.elementType) do
+                list_type = k
+                break
+            end
+            field.element_type = list_type
         else
             default     = v
         end
@@ -156,9 +168,118 @@ function comp_field(res, nodes, field)
         break
     end
 
-    field.size      = get_size(type_name)
+    if not type_name then
+        field.type_name = "void"
+        field.size = 0
+    else
+        field.size      = get_size(type_name)
+    end
 end
 
+function comp_parse_struct_data(res, struct, fields, size, name)
+    insert(res, format([[
+
+    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+        local s = tab
+]], size))
+
+    for i, field in ipairs(fields) do
+        if field.type_name == "enum" then
+            insert(res, format([[
+        local val = read_val(buf, "uint16", %d, %d)
+        s.%s = get_enum_val(val, _M.%sStr)
+]], field.size, field.slot.offset, field.name, field.type_display_name))
+
+        elseif field.type_name == "list" then
+            local off = field.slot.offset
+            insert(res, format([[
+
+        local off, size, num = parse_listp_buf(buf, _M.%s, %d)
+        if off and num then
+            s.%s = parse_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
+        else
+            s.%s = nil
+        end
+]], name, off, field.name, struct.dataWordCount, off, field.element_type,
+        field.name))
+
+        elseif field.type_name == "struct" then
+            local off = field.slot.offset
+
+            insert(res, format([[
+
+        local p = buf + (%d + %d) * 2
+        local off, dw, pw = parse_struct_buf(p)
+        if off and dw and pw then
+            if not s.%s then
+                s.%s = new_tab(0, 2)
+            end
+            _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, s.%s)
+        else
+            s.%s = nil
+        end
+
+]], struct.dataWordCount, off, field.name, field.name, field.type_display_name,
+            field.name, field.name))
+
+        elseif field.type_name == "text" or field.type_name == "data" then
+            local off = field.slot.offset
+            insert(res, format([[
+
+        local off, size, num = parse_listp_buf(buf, _M.%s, %d)
+        if off and num then
+            s.%s = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+        else
+            s.%s = nil
+        end
+]], name, off, field.name, struct.dataWordCount, off, field.name))
+
+        else
+            insert(res, format([[
+        s.%s = read_val(buf, "%s", %d, %d)
+]], field.name, field.type_name, field.size, field.slot.offset))
+
+        end
+
+    end
+
+    insert(res, [[
+
+        return s
+    end,]])
+end
+
+function comp_parse(res, name)
+    insert(res, format([[
+
+    parse = function(bin, tab)
+        if #bin < 16 then
+            return nil, "message too short"
+        end
+
+        local p = ffi_cast("uint32_t *", bin)
+        local nsegs = p[0] + 1
+        local sizes = {}
+        for i=1, nsegs do
+            sizes[i] = p[i] * 8
+        end
+
+        local pos = round8(4 + nsegs * 4)
+
+        p = p + pos/4
+
+        if not tab then
+            tab = new_tab(0, 8)
+        end
+        local off, dw, pw = parse_struct_buf(p)
+        if off and dw and pw then
+            return _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, tab)
+        else
+            return nil
+        end
+    end,
+]], name))
+end
 
 function comp_serialize(res, name)
     insert(res, format([[
@@ -179,7 +300,8 @@ function comp_serialize(res, name)
         _M.%s.flat_serialize(data, buf + 16)
 
         return ffi_string(buf, size)
-    end,]], name, name, name))
+    end,
+]], name, name, name))
 end
 
 function comp_flat_serialize(res, fields, size, name)
@@ -272,7 +394,7 @@ function comp_calc_size(res, fields, size, name)
             insert(res, format([[
 
         if data.%s then
-            size = size + round8(#data.%s * %d)
+            size = size + round8(#data.%s * %d) -- num * acutal size
         end]], field.name, field.name, list_size_map[field.size]))
         elseif field.type_name == "struct" then
             insert(res, format([[
@@ -284,7 +406,7 @@ function comp_calc_size(res, fields, size, name)
             insert(res, format([[
 
         if data.%s then
-            size = size + round8(#data.%s + 1)
+            size = size + round8(#data.%s + 1) -- size 1, including trailing NULL
         end]], field.name, field.name))
 
         end
@@ -329,13 +451,21 @@ function comp_struct(res, nodes, struct, name)
             comp_flat_serialize(res, struct.fields, struct.size,
                     struct.type_name)
             comp_serialize(res, struct.type_name)
+            comp_parse_struct_data(res, struct, struct.fields, struct.size,
+                    struct.type_name)
+            comp_parse(res, struct.type_name)
         end
 end
 
-function comp_enum(res, enum, naming_func)
+function comp_enum(res, enum, name, naming_func)
     if not naming_func then
         naming_func = util.upper_underscore_naming
     end
+
+    -- string to enum
+    insert(res, format([[
+_M.%s = {
+]], name))
 
     for i, v in ipairs(enum.enumerants) do
         if not v.codeOrder then
@@ -344,6 +474,21 @@ function comp_enum(res, enum, naming_func)
         insert(res, format("    [\"%s\"] = %s,\n",
                 naming_func(v.name), v.codeOrder))
     end
+    insert(res, "\n}\n")
+
+    -- enum to string
+    insert(res, format([[
+_M.%sStr = {
+]], name))
+
+    for i, v in ipairs(enum.enumerants) do
+        if not v.codeOrder then
+            v.codeOrder = 0
+        end
+        insert(res, format("    [%s] = \"%s\",\n",
+                 v.codeOrder, naming_func(v.name)))
+    end
+    insert(res, "\n}\n")
 end
 
 naming_funcs = {
@@ -380,18 +525,20 @@ function comp_node(res, nodes, node, name)
 
     node.name = name
     node.type_name = get_name(node.displayName)
-    insert(res, format([[
-_M.%s = {
-]], name))
 
     local s = node.struct
     if s then
+
+    insert(res, format([[
+_M.%s = {
+]], name))
         s.type_name = node.type_name
         insert(res, format([[
     id = %s,
     displayName = "%s",
 ]], node.id, node.displayName))
         comp_struct(res, nodes, s, name)
+    insert(res, "\n}\n")
     end
 
     local e = node.enum
@@ -401,10 +548,9 @@ _M.%s = {
             process_annotations(node.annotations, nodes, anno_res)
         end
 
-        comp_enum(res, e, anno_res.naming_func)
+        comp_enum(res, e, name, anno_res.naming_func)
     end
 
-    insert(res, "\n}\n")
     if node.nestedNodes then
         for i, child in ipairs(node.nestedNodes) do
             comp_node(res, nodes, nodes[child.id], name .. "." .. child.name)
@@ -481,11 +627,13 @@ function gen_%s()
 
         elseif field.type_name == "enum" then
         elseif field.type_name == "list" then
-            local list_type
+            local list_type = field.element_type
+            --[[
             for k, v in pairs(field.slot["type"].list.elementType) do
                 list_type = k
                 break
             end
+            ]]
             insert(res, format("    %s.%s = rand.%s(rand.uint8(), rand.%s)\n", name,
                     field.name, field.type_name, list_type))
 

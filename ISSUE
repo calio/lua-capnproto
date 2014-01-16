@@ -1,1 +1,2 @@
 int64 may not be handled properly because of lua use double to represent number
+deal with none-exist sub structs or lists

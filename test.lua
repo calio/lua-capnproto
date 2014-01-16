@@ -3,12 +3,13 @@ package.path = "lua/?.lua;proto/?.lua;" .. package.path
 
 local data_generator = require "data_generator"
 local test_capnp = require "example_capnp"
+local handwritten_capnp = require "handwritten_capnp"
 local log_capnp = require "log_capnp"
 local capnp = require "capnp"
 local cjson = require "cjson"
 local util = require "util"
 
-local format = string.format
+
 
 local data = {
     i0 = 32,
@@ -29,44 +30,16 @@ local data = {
 
 local file = arg[1]
 local f = io.open(file, "w")
-f:write(test_capnp.T1.serialize(data))
+local bin = test_capnp.T1.serialize(data)
+
+local decoded = handwritten_capnp.T1.parse(bin)
+
+util.table_diff(data, decoded)
+
+f:write(bin)
 f:close()
 
 
-function table_diff(t1, t2, namespace)
-    local keys = {}
-
-    for k, v in pairs(t1) do
-        k = util.lower_underscore_naming(k)
-        keys[k] = true
-        t1[k] = v
-    end
-
-    for k, v in pairs(t2) do
-        k = util.lower_underscore_naming(k)
-        keys[k] = true
-        t2[k] = v
-    end
-
-    for k, v in pairs(keys) do
-        local name = namespace .. "." .. k
-        local v1 = t1[k]
-        local v2 = t2[k]
-
-        local t1 = type(v1)
-        local t2 = type(v2)
-
-        if t1 ~= t2 then
-            print(format("%s: different type: %s %s", name,
-                    t1, t2))
-        elseif t1 == "table" then
-            table_diff(v1, v2, namespace .. "." .. k)
-        elseif v1 ~= v2 then
-            print(format("%s: different value: %s %s", name,
-                    tostring(v1), tostring(v2)))
-        end
-    end
-end
 
 function write_file(name, content)
     local f = assert(io.open(name, "a"))
@@ -74,6 +47,7 @@ function write_file(name, content)
     f:close()
 end
 
+--[[
 function random_test()
     local generated_data = data_generator.gen_log()
 
@@ -93,9 +67,9 @@ function random_test()
     print(cjson.encode(generated_data))
     print(cjson.encode(decoded))
 
-    table_diff(generated_data, decoded, "")
+    util.table_diff(generated_data, decoded, "")
 end
 
---random_test()
-
+random_test()
+]]
 print("Done")

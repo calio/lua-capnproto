@@ -43,11 +43,31 @@ local function get_bit_offset(bit_off, size)
     return n, s
 end
 
-function _M.write_val(buf, val, size, off)
-    local p = ffi.cast("uint32_t *", buf)
+local pointer_map = {
+    int8    = "int8_t *",
+    int16   = "int16_t *",
+    int32   = "int32_t *",
+    int64   = "int64_t *",
+    uint8   = "uint8_t *",
+    uint16  = "uint16_t *",
+    uint32  = "uint32_t *",
+    uint64  = "uint64_t *",
+    bool    = "uint8_t *",
+    float32 = "float *",
+    float64 = "double *",
+}
+local function get_pointer_from_type(buf, field_type)
+    local t = pointer_map[field_type]
+    if not t then
+        error("not supported type: " .. field_type)
+    end
 
-    if type(val) == "boolean" then
-        val = val and 1 or 0
+    return ffi.cast(t, buf)
+end
+
+local function get_pointer_from_val(buf, size, val)
+    local p = buf
+    if size == 1 then
         p = ffi.cast("uint8_t *", buf)
     else
         local i, f = modf(val)
@@ -73,6 +93,40 @@ function _M.write_val(buf, val, size, off)
                 error("unknown in size " .. size)
             end
         end
+    end
+    return p
+end
+
+function _M.read_val(buf, field_type, size, off)
+    local p = get_pointer_from_type(buf, field_type)
+
+    local val
+    if size >= 8 then
+        local n, s = get_bit_offset(size * off, size)
+        val = p[n]
+    else
+        local n, s = get_bit_offset(size * off, 8)
+        local mask = 2^size - 1
+        mask = lshift(mask, s)
+        val = rshift(band(mask, p[n]), s)
+    end
+
+    if field_type == "bool" then
+        if val and val ~= 0 then
+            return true
+        else
+            return false
+        end
+    end
+
+    return val
+end
+
+function _M.write_val(buf, val, size, off)
+    local p = get_pointer_from_val(buf, size, val)
+
+    if type(val) == "boolean" then
+        val = val and 1 or 0
     end
 
     if size >= 8 then
@@ -133,5 +187,68 @@ local list_size_map = {
     [6] = 8,
     -- 7 = ?,
 }
+
+function _M.parse_list_data(p, size_type, elm_type, num)
+    local t = new_tab(num, 0)
+
+    local size = list_size_map[size_type]
+    if not size then
+        error("corrupt data, unknown size type: " .. size_type)
+    end
+
+    size = size * 8
+
+    local p = get_pointer_from_type(p, elm_type)
+
+    for i=1, num do
+        t[i] = p[i - 1]
+    end
+
+    return t
+end
+
+function _M.parse_listp_buf(buf, T, offset)
+    local p = ffi.cast("int32_t *", buf)
+    local base = T.dataWordCount * 2 + offset * 2
+
+    local val = p[base]
+
+    if p[base] == 0 and p[base + 1] == 0 then
+        return
+    end
+
+    local sig = band(val, 0x03)
+    if sig ~= 1 then
+        error("corrupt data, expected list signiture 1 but have " .. sig)
+    end
+
+    local offset = rshift(val, 2)
+
+    val = p[base + 1]
+    local size_type = band(val, 0x07)
+    local num = rshift(val, 3)
+
+    return offset, size_type, num
+end
+
+function _M.parse_struct_buf(buf)
+    local p = buf
+    if p[0] == 0 and p[1] == 0 then
+        -- not set
+        return
+    end
+
+    local sig = band(p[0], 0x03)
+
+    if sig ~= 0 then
+        error("corrupt data, expected struct signiture 0 but have " .. sig)
+    end
+
+    local offset = rshift(p[0], 2)
+    local data_word_count = band(p[1], 0xffff)
+    local pointer_count = rshift(p[1], 16)
+
+    return offset, data_word_count, pointer_count
+end
 
 return _M
