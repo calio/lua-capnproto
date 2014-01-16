@@ -6,6 +6,7 @@ local bnot      = bit.bnot
 local band, bor, bxor = bit.band, bit.bor, bit.bxor
 local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
+local typeof    = ffi.typeof
 local format    = string.format
 local lower     = string.lower
 local ceil      = math.ceil
@@ -44,18 +45,19 @@ local function get_bit_offset(bit_off, size)
 end
 
 local pointer_map = {
-    int8    = "int8_t *",
-    int16   = "int16_t *",
-    int32   = "int32_t *",
-    int64   = "int64_t *",
-    uint8   = "uint8_t *",
-    uint16  = "uint16_t *",
-    uint32  = "uint32_t *",
-    uint64  = "uint64_t *",
-    bool    = "uint8_t *",
-    float32 = "float *",
-    float64 = "double *",
+    int8    = typeof("int8_t *"),
+    int16   = typeof("int16_t *"),
+    int32   = typeof("int32_t *"),
+    int64   = typeof("int64_t *"),
+    uint8   = typeof("uint8_t *"),
+    uint16  = typeof("uint16_t *"),
+    uint32  = typeof("uint32_t *"),
+    uint64  = typeof("uint64_t *"),
+    bool    = typeof("uint8_t *"),
+    float32 = typeof("float *"),
+    float64 = typeof("double *"),
 }
+
 local function get_pointer_from_type(buf, field_type)
     local t = pointer_map[field_type]
     if not t then
