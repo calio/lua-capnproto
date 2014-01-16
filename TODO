@@ -2,3 +2,5 @@
 * performance turing
 * multiple files input
 * deal with none-exist sub structs, lists or fields
+* union
+* far pointers
