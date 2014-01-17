@@ -205,3 +205,26 @@ function test_basic_value6()
     assert_equal(5, #copy.t0)
     assert_equal("hello", copy.t0)
 end
+
+function test_union_value()
+    local data = {
+        ui1 = 32,
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+    assert_equal(data.ui1, copy.ui1)
+    --assert_nil(copy.ui0)
+    assert_nil(copy.uv0)
+end

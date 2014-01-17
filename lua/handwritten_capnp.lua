@@ -208,11 +208,17 @@ _M.T1 = {
         local disc = _M.T1.which(buf, 10) --buf, discriminantOffset, discriminantValue
         if disc == 0 then
             s.ui0 = read_val(buf, "int32", 32, 4)
+            s.ui1 = nil
+            s.uv0 = nil
         elseif disc == 1 then
             s.ui1 = read_val(buf, "int32", 32, 4)
+            s.ui0 = nil
+            s.uv0 = nil
         elseif disc == 2 then
             -- TODO use cdata to represent "Void" type
             s.uv0 = "Void"
+            s.ui0 = nil
+            s.ui1 = nil
         else
             error("corrupt data, unknown discriminant value: " .. disc)
         end
