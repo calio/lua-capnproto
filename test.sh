@@ -8,7 +8,7 @@ make test || exit
 
 echo
 echo "[Serialization test...]"
-CXX=g++-4.7 make all
+CXX=g++-4.7 make all || exit
 cpp/main > a.data || exit
 capnp compile -olua proto/example.capnp || exit
 luajit test.lua c.data || exit

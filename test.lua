@@ -26,11 +26,12 @@ local data = {
     l0 = { 28, 29 },
     t0 = "hello",
     e1 = "enum7",
+    ui1 = 0x0f0f,
 }
 
 local file = arg[1]
 local f = io.open(file, "w")
-local bin = test_capnp.T1.serialize(data)
+local bin = handwritten_capnp.T1.serialize(data)
 
 local decoded = handwritten_capnp.T1.parse(bin)
 

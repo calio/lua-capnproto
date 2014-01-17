@@ -7,8 +7,3 @@ enum EnumType2 $Lua.naming("lower_underscore") {
     enum6 @1;
     enum7 @2;
 }
-enum EnumType3 $Lua.naming("lower_underscore") {
-    enum5 @0;
-    enum6 @1;
-    enum7 @2;
-}

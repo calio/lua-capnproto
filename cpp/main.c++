@@ -30,6 +30,9 @@ void writeT1(int fd) {
 
     t1.setE1(::EnumType2::ENUM7);
 
+    //t1.setUi0(0xf0f0);
+    t1.setUi1(0x0f0f);
+
     writeMessageToFd(fd, message);
 }
 

@@ -49,11 +49,12 @@ local _M = new_tab(2, 8)
 _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/example.capnp:T1",
-    dataWordCount = 2,
+    dataWordCount = 3,
     pointerCount = 3,
+    discriminantOffset = 10,
 
     calc_size_struct = function(data)
-        local size = 40
+        local size = 48
         -- struct
         if data.s0 then
             size = size + _M.T1.T2.calc_size_struct(data.s0)
@@ -75,7 +76,7 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, buf)
-        local pos = 40
+        local pos = 48
         if data.i0 and (type(data.i0) == "number"
                 or type(data.i0) == "boolean") then
 
@@ -113,7 +114,7 @@ _M.T1 = {
             pos = pos + size
         end
         if data.e0 and type(data.e0) == "string" then
-            local val = get_enum_val(data.e0, _M.T1.EnumType1)
+            local val = get_enum_val(data.e0, _M.T1.EnumType1, "T1.e0")
             write_val(buf, val, 16, 6)
         end
         if data.l0 and type(data.l0) == "table" then
@@ -137,10 +138,32 @@ _M.T1 = {
             pos = pos + round8(len)
         end
         if data.e1 and type(data.e1) == "string" then
-            local val = get_enum_val(data.e1, _M.EnumType2)
+            local val = get_enum_val(data.e1, _M.EnumType2, "T1.e1")
             write_val(buf, val, 16, 7)
         end
+        if data.ui0 and (type(data.ui0) == "number"
+                or type(data.ui0) == "boolean") then
+
+            _M.T1.which(buf, 10, 0) --buf, discriminantOffset, discriminantValue
+            write_val(buf, data.ui0, 32, 4) -- buf, val, size, offset
+        end
+        if data.ui1 and (type(data.ui1) == "number"
+                or type(data.ui1) == "boolean") then
+
+            _M.T1.which(buf, 10, 1)
+            write_val(buf, data.ui1, 32, 4)
+        end
+        if data.uv0  then -- type is "Void"
+
+            _M.T1.which(buf, 10, 2)
+        end
+
         return pos
+    end,
+
+    which = function(buf, offset, n)
+        print("which", offset, n)
+        write_val(buf, n, 16, offset)
     end,
 
     serialize = function(data, buf, size)
@@ -170,7 +193,7 @@ _M.T1 = {
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
 
-        local p = buf + (2 + 0) * 2
+        local p = buf + (3 + 0) * 2
         local off, dw, pw = parse_struct_buf(p)
         if off and dw and pw then
             if not s.s0 then
@@ -186,14 +209,14 @@ _M.T1 = {
         -- list
         local off, size, num = parse_listp_buf(buf, _M.T1, 1)
         if off and num then
-            s.l0 = parse_list_data(buf + (2 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+            s.l0 = parse_list_data(buf + (3 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
         else
             s.l0 = nil
         end
 
         local off, size, num = parse_listp_buf(buf, _M.T1, 2)
         if off and num then
-            s.t0 = ffi.string(buf + (2 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+            s.t0 = ffi.string(buf + (3 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
             s.t0 = nil
         end

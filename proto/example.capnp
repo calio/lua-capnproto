@@ -27,30 +27,32 @@ struct T1 {
         enum2 @1;
         enum3 @2;
     }
-}
 
-struct T3 {
-    name @0 :Text;
+    # unnamed union
     union {
-        i1 @1 :Int32;
-        i2 @2 :Int32;
+        ui0 @11 :Int32;
+        ui1 @12 :Int32;
+        uv0 @13 :Void;
     }
-#    union {
-#        g1 :group {
-#            v0 @1 :Void;
-#            ui0 @2 :UInt32;
-#        }
-#        g2 :group {
-#            b2 @3 :Bool;
-#        }
-#    }
-#
-#    g3 :group {
+
+    # group
+#    g0 :group {
 #        ui1 @4 :UInt32;
 #    }
-#
+
+    # named union = unamed union in a group
 #    u0 :union {
-#        v1 @5 :Void;
+#        v0 @5 :Void;
 #        ui2 @6 :UInt16;
+#    }
+
+#    u1: union {
+#        g1 :group {
+#            v1 @7 :Void;
+#            ui3 @8 :UInt32;
+#        }
+#        g2 :group {
+#            b2 @9 :Bool;
+#        }
 #    }
 }
