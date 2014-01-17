@@ -36,23 +36,23 @@ struct T1 {
     }
 
     # group
-#    g0 :group {
-#        ui1 @4 :UInt32;
-#    }
+    g0 :group {
+        ui2 @14 :UInt32;
+    }
 
     # named union = unamed union in a group
 #    u0 :union {
-#        v0 @5 :Void;
-#        ui2 @6 :UInt16;
+#        ui2 @15 :UInt16;
+#        uv1 @16 :Void;
 #    }
 
 #    u1: union {
 #        g1 :group {
-#            v1 @7 :Void;
-#            ui3 @8 :UInt32;
+#            v1 @17 :Void;
+#            ui3 @18 :UInt32;
 #        }
 #        g2 :group {
-#            b2 @9 :Bool;
+#            b2 @19 :Bool;
 #        }
 #    }
 }

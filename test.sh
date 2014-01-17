@@ -4,7 +4,7 @@ export PATH=$(pwd)/bin:$PATH
 export LUA_PATH="lua/?.lua;proto/?.lua;$LUA_PATH;;"
 
 echo "[Unit test...]"
-make test || exit
+make test # || exit
 
 echo
 echo "[Serialization test...]"

@@ -33,6 +33,9 @@ void writeT1(int fd) {
     //t1.setUi0(0xf0f0);
     t1.setUi1(0x0f0f);
 
+    T1::G0::Builder g0 = t1.initG0();
+    g0.setUi2(0x12345678);
+
     writeMessageToFd(fd, message);
 }
 

@@ -136,6 +136,9 @@ end
 
 function comp_field(res, nodes, field)
     local slot = field.slot
+    if not slot then
+        return
+    end
     if not slot.offset then
         slot.offset = 0
     end
@@ -184,7 +187,9 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 ]], size))
 
     for i, field in ipairs(fields) do
-        if field.type_name == "enum" then
+        if field.group then
+            -- TODO group struffs
+        elseif field.type_name == "enum" then
             insert(res, format([[
         local val = read_val(buf, "uint16", %d, %d)
         s.%s = get_enum_val(val, _M.%sStr)
@@ -311,7 +316,9 @@ function comp_flat_serialize(res, fields, size, name)
         local pos = %d]], size))
 
     for i, field in ipairs(fields) do
-        if field.type_name == "enum" then
+        if field.group then
+            -- TODO group stuffs
+        elseif field.type_name == "enum" then
             insert(res, format([[
 
         if data.%s and type(data.%s) == "string" then
@@ -620,7 +627,9 @@ function gen_%s()
 
     insert(res, format("    local %s  = {}\n", name))
     for i, field in ipairs(node.struct.fields) do
-        if field.type_name == "struct" then
+        if field.group then
+            -- TODO group stuffs
+        elseif field.type_name == "struct" then
             insert(res, format("    %s.%s = gen_%s()\n", name,
                     field.name,
                     gsub(lower(field.type_display_name), "%.", "_")))

@@ -46,15 +46,16 @@ end
 
 local _M = new_tab(2, 8)
 
+
 _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/example.capnp:T1",
-    dataWordCount = 3,
+    dataWordCount = 4,
     pointerCount = 3,
     discriminantOffset = 10,
 
     calc_size_struct = function(data)
-        local size = 48
+        local size = 56
         -- struct
         if data.s0 then
             size = size + _M.T1.T2.calc_size_struct(data.s0)
@@ -76,7 +77,7 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, buf)
-        local pos = 48
+        local pos = 56
         if data.i0 and (type(data.i0) == "number"
                 or type(data.i0) == "boolean") then
 
@@ -157,12 +158,16 @@ _M.T1 = {
 
             _M.T1.which(buf, 10, 2)
         end
+        if data.g0 and type(data.g0) == "table" then
+            -- groups are just namespaces, field offsets are set within parent
+            -- structs
+            _M.T1.g0.flat_serialize(data.g0, buf)
+        end
 
         return pos
     end,
 
     which = function(buf, offset, n)
-        print("which", offset, n)
         write_val(buf, n, 16, offset)
     end,
 
@@ -337,6 +342,23 @@ _M.T1.T2 = {
         end
     end,
 
+}
+
+_M.T1.g0 = {
+    id = 12494356658816394461,
+    displayName = "proto/example.capnp:T1.g0",
+    dataWordCount = 4,
+    pointerCount = 3,
+    isGroup = true,
+
+    -- size is included in the parent struct, so no need to calculate size here
+    flat_serialize = function(data, buf)
+        if data.ui2 and (type(data.ui2) == "number"
+                or type(data.ui2) == "boolean") then
+
+            write_val(buf, data.ui2, 32, 6)
+        end
+    end
 }
 
 _M.T1.EnumType1 = {
