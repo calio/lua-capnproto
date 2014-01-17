@@ -168,7 +168,14 @@ _M.T1 = {
     end,
 
     which = function(buf, offset, n)
-        write_val(buf, n, 16, offset)
+        if n then
+            -- set value
+            write_val(buf, n, 16, offset)
+        else
+            -- get value
+            --s.f1 = read_val(buf, "float64", 64, 1)
+            return read_val(buf, "uint16", 16, offset)
+        end
     end,
 
     serialize = function(data, buf, size)
@@ -198,7 +205,19 @@ _M.T1 = {
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
 
-        local p = buf + (3 + 0) * 2
+        local disc = _M.T1.which(buf, 10) --buf, discriminantOffset, discriminantValue
+        if disc == 0 then
+            s.ui0 = read_val(buf, "int32", 32, 4)
+        elseif disc == 1 then
+            s.ui1 = read_val(buf, "int32", 32, 4)
+        elseif disc == 2 then
+            -- TODO use cdata to represent "Void" type
+            s.uv0 = "Void"
+        else
+            error("corrupt data, unknown discriminant value: " .. disc)
+        end
+
+        local p = buf + (4 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p)
         if off and dw and pw then
             if not s.s0 then
@@ -214,14 +233,14 @@ _M.T1 = {
         -- list
         local off, size, num = parse_listp_buf(buf, _M.T1, 1)
         if off and num then
-            s.l0 = parse_list_data(buf + (3 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+            s.l0 = parse_list_data(buf + (4 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
         else
             s.l0 = nil
         end
 
         local off, size, num = parse_listp_buf(buf, _M.T1, 2)
         if off and num then
-            s.t0 = ffi.string(buf + (3 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+            s.t0 = ffi.string(buf + (4 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
             s.t0 = nil
         end
@@ -245,7 +264,7 @@ _M.T1 = {
 
         local pos = round8(4 + nsegs * 4)
 
-        p = p + pos/4
+        p = p + pos / 4
 
         if not tab then
             tab = new_tab(0, 8)
