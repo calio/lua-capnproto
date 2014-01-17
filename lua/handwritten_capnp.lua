@@ -223,6 +223,10 @@ _M.T1 = {
             error("corrupt data, unknown discriminant value: " .. disc)
         end
 
+        local g0 = {}
+        g0.ui2 = read_val(buf, "int32", 32, 6)
+        s.g0 = g0
+
         local p = buf + (4 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p)
         if off and dw and pw then
