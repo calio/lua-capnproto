@@ -349,7 +349,7 @@ function comp_flat_serialize(res, fields, size, name)
         end]], field.name, field.name, name, off, name, field.type_display_name,
                     off, field.type_display_name, field.name))
 
-        elseif field.type_name == "text" or field.type_name == "data" then
+        elseif field.type_name == "text" then
             local off = field.slot.offset
             insert(res, format([[
 
@@ -357,6 +357,20 @@ function comp_flat_serialize(res, fields, size, name)
             local data_off = get_data_off(_M.%s, %d, pos)
 
             local len = #data.%s + 1
+            write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
+
+            ffi_copy(buf + pos, data.%s)
+            pos = pos + round8(len)
+        end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
+
+        elseif field.type_name == "data" then
+            local off = field.slot.offset
+            insert(res, format([[
+
+        if data.%s and type(data.%s) == "string" then
+            local data_off = get_data_off(_M.%s, %d, pos)
+
+            local len = #data.%s
             write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
 
             ffi_copy(buf + pos, data.%s)

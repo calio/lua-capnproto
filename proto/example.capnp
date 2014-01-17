@@ -19,6 +19,7 @@ struct T1 {
     e0 @7 :EnumType1;
     l0 @8 :List(Int8);
     t0 @9 :Text;
+    d0 @11 :Data;
     e1 @10 :EnumType2;
     #d0 @7 :Data;
 
