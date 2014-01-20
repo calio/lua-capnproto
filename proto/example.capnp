@@ -31,14 +31,14 @@ struct T1 {
 
     # unnamed union
     union {
-        ui0 @11 :Int32;
-        ui1 @12 :Int32;
-        uv0 @13 :Void;
+        ui0 @12 :Int32;
+        ui1 @13 :Int32;
+        uv0 @14 :Void;
     }
 
     # group
     g0 :group {
-        ui2 @14 :UInt32;
+        ui2 @15 :UInt32;
     }
 
     # named union = unamed union in a group

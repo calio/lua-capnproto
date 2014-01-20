@@ -51,11 +51,11 @@ _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/example.capnp:T1",
     dataWordCount = 4,
-    pointerCount = 3,
+    pointerCount = 4,
     discriminantOffset = 10,
 
     calc_size_struct = function(data)
-        local size = 56
+        local size = 64
         -- struct
         if data.s0 then
             size = size + _M.T1.T2.calc_size_struct(data.s0)
@@ -68,6 +68,9 @@ _M.T1 = {
         if data.t0 then
             size = size + round8(#data.t0 + 1) -- size 1, including trailing NULL
         end
+        if data.d0 then
+            size = size + round8(#data.d0) -- size 1, including trailing NULL
+        end
         return size
     end,
 
@@ -77,7 +80,7 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, buf)
-        local pos = 56
+        local pos = 64
         if data.i0 and (type(data.i0) == "number"
                 or type(data.i0) == "boolean") then
 
@@ -136,6 +139,15 @@ _M.T1 = {
             write_listp_buf(buf, _M.T1, 2, 2, len, data_off)
 
             ffi_copy(buf + pos, data.t0)
+            pos = pos + round8(len)
+        end
+        if data.d0 and type(data.d0) == "string" then
+            local data_off = get_data_off(_M.T1, 3, pos)
+
+            local len = #data.d0
+            write_listp_buf(buf, _M.T1, 3, 2, len, data_off)
+
+            ffi_copy(buf + pos, data.d0)
             pos = pos + round8(len)
         end
         if data.e1 and type(data.e1) == "string" then
@@ -377,7 +389,7 @@ _M.T1.g0 = {
     id = 12494356658816394461,
     displayName = "proto/example.capnp:T1.g0",
     dataWordCount = 4,
-    pointerCount = 3,
+    pointerCount = 4,
     isGroup = true,
 
     -- size is included in the parent struct, so no need to calculate size here
