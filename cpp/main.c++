@@ -4,6 +4,8 @@
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
+#include <kj/common.h>
+
 
 void writeT1(int fd) {
     ::capnp::MallocMessageBuilder message;
@@ -17,7 +19,6 @@ void writeT1(int fd) {
     t1.setB1(true);
     t1.setI3(65536);
     t1.setE0(::T1::EnumType1::ENUM3);
-    //local t0 = t1.initT0(#"XW&JZ");
     T1::T2::Builder t2 = t1.initS0();
     t2.setF0(3.14);
     t2.setF1(3.14159265358979);
@@ -27,6 +28,9 @@ void writeT1(int fd) {
     l0.set(1, 29);
 
     t1.setT0("hello");
+    const char *str = "\1\2\3\4\5\6\7";
+    t1.setD0(::capnp::Data::Reader(reinterpret_cast<const ::capnp::byte*>(str),
+                strlen(str)));
 
     t1.setE1(::EnumType2::ENUM7);
 
