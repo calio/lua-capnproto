@@ -37,9 +37,9 @@ local file = arg[1]
 local f = io.open(file, "w")
 local bin = handwritten_capnp.T1.serialize(data)
 
---local decoded = handwritten_capnp.T1.parse(bin)
+local decoded = handwritten_capnp.T1.parse(bin)
 
---util.table_diff(data, decoded)
+util.table_diff(data, decoded)
 
 f:write(bin)
 f:close()

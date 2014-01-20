@@ -267,6 +267,13 @@ _M.T1 = {
             s.t0 = nil
         end
 
+        local off, size, num = parse_listp_buf(buf, _M.T1, 3)
+        if off and num then
+            s.d0 = ffi.string(buf + (4 + 3 + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
+        else
+            s.d0 = nil
+        end
+
         local val = read_val(buf, "uint16", 16, 7)
         s.e1 = get_enum_val(val, _M.EnumType2Str)
         return s
