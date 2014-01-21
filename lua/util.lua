@@ -92,5 +92,9 @@ function _M.write_file(name, content)
     f:close()
 end
 
+function _M.get_output_name(schema)
+    return string.gsub(schema.requestedFiles[1].filename, "%.", "_")
+end
+
 
 return _M

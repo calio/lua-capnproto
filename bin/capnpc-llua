@@ -1,0 +1,16 @@
+#!/usr/bin/env luajit
+
+package.path="lua/?.lua;;"
+
+local schema_capnp = require("schema_capnp")
+local cjson = require("cjson")
+local compile = require("compile")
+local util = require("util")
+
+local content = io.stdin:read("*a")
+local schema = assert(schema_capnp.CodeGeneratorRequest.parse(content))
+
+local res = compile.compile(schema)
+
+local outfile = util.get_output_name(schema) .. ".llua"
+util.write_file(outfile, res)

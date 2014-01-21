@@ -7,9 +7,7 @@ local format = string.format
 local lower = string.lower
 local gsub = string.gsub
 
-function usage()
-    print("lua compile.lua [schema.txt]")
-end
+local _M = {}
 
 local missing_enums = {}
 
@@ -843,7 +841,7 @@ end
 ]], name))
 end
 
-function compile_data_generator(schema)
+function _M.compile_data_generator(schema)
     local res = {}
     insert(res, [[
 
@@ -874,7 +872,7 @@ module(...)
     return table.concat(res)
 end
 
-function compile(schema)
+function _M.compile(schema)
     local res = {}
 
     comp_header(res, schema.nodes)
@@ -883,40 +881,4 @@ function compile(schema)
     return table.concat(res)
 end
 
-function get_output_name(schema)
-    return string.gsub(schema.requestedFiles[1].filename, "%.", "_") .. ".lua"
-end
-
-local f = arg[1]
-if not f then
-    usage()
-    return
-end
-
---[[
-local t = get_schema_text(f)
-
-local file = io.open("test.schema.lua", "w")
-file:write(t)
-file:close()
-
-local schema = assert(loadstring(t))()
-]]
-
-local schema = util.parse_capnp_decode(f, "test.schema.lua")
-local outfile = get_output_name(schema)
-
-local res = compile(schema)
-
-local file = io.open(outfile, "w")
-file:write(res)
-file:close()
-
-
-local outfile = "data_generator.lua"
-local res = compile_data_generator(schema)
-
-local file = assert(io.open(outfile, "w"))
-file:write(res)
-file:close()
-
+return _M
