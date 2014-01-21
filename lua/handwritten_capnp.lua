@@ -50,13 +50,13 @@ local _M = new_tab(2, 8)
 _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/example.capnp:T1",
-    dataWordCount = 4,
+    dataWordCount = 5,
     pointerCount = 4,
     discriminantCount = 3,
     discriminantOffset = 10,
 
     calc_size_struct = function(data)
-        local size = 64
+        local size = 72
         -- struct
         if data.s0 then
             size = size + _M.T1.T2.calc_size_struct(data.s0)
@@ -82,7 +82,7 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, buf)
-        local pos = 64
+        local pos = 72
         local dscrm
         if data.i0 and (type(data.i0) == "number"
                 or type(data.i0) == "boolean") then
@@ -157,21 +157,24 @@ _M.T1 = {
             ffi_copy(buf + pos, data.d0)
             pos = pos + round8(len)
         end
+        if data.ui0 then
+            dscrm = 0
+        end
         if data.ui0 and (type(data.ui0) == "number"
                 or type(data.ui0) == "boolean") then
 
-            _M.T1.which(buf, 10, 0) --buf, discriminantOffset, discriminantValue
-            write_val(buf, data.ui0, 32, 4) -- buf, val, size, offset
+            write_val(buf, data.ui0, 32, 4)
+        end
+        if data.ui1 then
+            dscrm = 1
         end
         if data.ui1 and (type(data.ui1) == "number"
                 or type(data.ui1) == "boolean") then
 
-            _M.T1.which(buf, 10, 1) --buf, discriminantOffset, discriminantValue
-            write_val(buf, data.ui1, 32, 4) -- buf, val, size, offset
+            write_val(buf, data.ui1, 32, 4)
         end
-        if data.uv0 then -- type is "Void"
-
-            _M.T1.which(buf, 10, 2) --buf, discriminantOffset, discriminantValue
+        if data.uv0 then
+            dscrm = 2
         end
         if data.g0 and type(data.g0) == "table" then
             -- groups are just namespaces, field offsets are set within parent
@@ -183,6 +186,9 @@ _M.T1 = {
             -- groups are just namespaces, field offsets are set within parent
             -- structs
             _M.T1.u0.flat_serialize(data.u0, buf)
+        end
+        if dscrm then
+            _M.T1.which(buf, 10, dscrm) --buf, discriminantOffset, discriminantValue
         end
         return pos
     end,
@@ -229,7 +235,7 @@ _M.T1 = {
 
 
 
-        local p = buf + (4 + 0) * 2 -- buf, dataWordCount, offset
+        local p = buf + (5 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p)
         if off and dw and pw then
             if not s.s0 then
@@ -245,14 +251,14 @@ _M.T1 = {
         -- list
         local off, size, num = parse_listp_buf(buf, _M.T1, 1)
         if off and num then
-            s.l0 = parse_list_data(buf + (4 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+            s.l0 = parse_list_data(buf + (5 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
         else
             s.l0 = nil
         end
 
         local off, size, num = parse_listp_buf(buf, _M.T1, 2)
         if off and num then
-            s.t0 = ffi.string(buf + (4 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+            s.t0 = ffi.string(buf + (5 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
             s.t0 = nil
         end
@@ -261,15 +267,32 @@ _M.T1 = {
 
         local off, size, num = parse_listp_buf(buf, _M.T1, 3)
         if off and num then
-            s.d0 = ffi.string(buf + (4 + 3 + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
+            s.d0 = ffi.string(buf + (5 + 3 + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
             s.d0 = nil
         end
 
+        if dscrm == 0 then
+        s.ui0 = read_val(buf, "int32", 32, 4)
 
-        s.ui0 = (dscrm == 0) and read_val(buf, "int32", 32, 4) or nil
-        s.ui1 = (dscrm == 1) and read_val(buf, "int32", 32, 4) or nil
-        s.uv0 = (dscrm == 2) and "Void" or nil
+        else
+            s.ui0 = nil
+        end
+
+        if dscrm == 1 then
+        s.ui1 = read_val(buf, "int32", 32, 4)
+
+        else
+            s.ui1 = nil
+        end
+
+        if dscrm == 2 then
+        s.uv0 = read_val(buf, "void", 0, 0)
+
+        else
+            s.uv0 = nil
+        end
+
         if not s.g0 then
             s.g0 = new_tab(0, 4)
         end
@@ -410,7 +433,7 @@ _M.T1.EnumType1Str = {
 _M.T1.g0 = {
     id = 10312822589529145224,
     displayName = "proto/example.capnp:T1.g0",
-    dataWordCount = 4,
+    dataWordCount = 5,
     pointerCount = 4,
     isGroup = true,
 
@@ -432,21 +455,40 @@ _M.T1.g0 = {
 _M.T1.u0 = {
     id = 12188145960292142197,
     displayName = "proto/example.capnp:T1.u0",
-    dataWordCount = 4,
+    dataWordCount = 5,
     pointerCount = 4,
-    discriminantCount = 2,
+    discriminantCount = 3,
     discriminantOffset = 14,
     isGroup = true,
 
     flat_serialize = function(data, buf)
-        local pos = 64
+        local pos = 72
+        local dscrm
+        if data.ui3 then
+            dscrm = 0
+        end
+
         if data.ui3 and (type(data.ui3) == "number"
                 or type(data.ui3) == "boolean") then
-            _M.T1.u0.which(buf, 14, 0) --buf, discriminantOffset, discriminantValue
-            write_val(buf, data.ui3, 16, 11) -- buf, val, size, offset
+
+            write_val(buf, data.ui3, 16, 11)
         end
-        if data.uv1 then -- type is "Void"
-            _M.T1.u0.which(buf, 14, 1) --buf, discriminantOffset, discriminantValue
+        if data.uv1 then
+            dscrm = 1
+        end
+
+        if data.ug0 then
+            dscrm = 2
+        end
+
+        if data.ug0 and type(data.ug0) == "table" then
+            -- groups are just namespaces, field offsets are set within parent
+            -- structs
+            _M.T1.u0.ug0.flat_serialize(data.ug0, buf)
+        end
+
+        if dscrm then
+            _M.T1.u0.which(buf, 14, dscrm) --buf, discriminantOffset, discriminantValue
         end
         return pos
     end,
@@ -466,8 +508,57 @@ _M.T1.u0 = {
         local dscrm = _M.T1.u0.which(buf, 14) --buf, dscrmriminantOffset, dscrmriminantValue
 
 
-        s.ui3 = (dscrm == 0) and read_val(buf, "uint16", 32, 4) or nil
-        s.uv1 = (dscrm == 1) and "Void" or nil
+        if dscrm == 0 then
+        s.ui3 = read_val(buf, "uint16", 16, 11)
+
+        else
+            s.ui3 = nil
+        end
+
+        if dscrm == 1 then
+        s.uv1 = read_val(buf, "void", 0, 0)
+
+        else
+            s.uv1 = nil
+        end
+
+        if dscrm == 2 then
+
+        if not s.ug0 then
+            s.ug0 = new_tab(0, 4)
+        end
+        _M.T1.u0.ug0.parse_struct_data(buf, _M.T1.u0.dataWordCount, _M.T1.u0.pointerCount,
+                s.ug0)
+
+        else
+            s.ug0 = nil
+        end
+
+        return s
+    end,
+}
+_M.T1.u0.ug0 = {
+    id = 17270536655881866717,
+    displayName = "proto/example.capnp:T1.u0.ug0",
+    dataWordCount = 5,
+    pointerCount = 4,
+    isGroup = true,
+
+    flat_serialize = function(data, buf)
+        local pos = 72
+        local dscrm
+        if data.ugu0 and (type(data.ugu0) == "number"
+                or type(data.ugu0) == "boolean") then
+
+            write_val(buf, data.ugu0, 32, 8)
+        end
+        return pos
+    end,
+    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+        local s = tab
+        s.ugv0 = read_val(buf, "void", 0, 0)
+        s.ugu0 = read_val(buf, "uint32", 32, 8)
+
         return s
     end,
 }

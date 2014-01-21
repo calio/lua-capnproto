@@ -296,8 +296,10 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         if field.discriminantValue then
             insert(res, format([[
 
+        else
+            s.%s = nil
         end
-]],field.discriminantValue))
+]],field.name))
         end
     end
 
@@ -484,7 +486,8 @@ function comp_flat_serialize(res, struct, fields, size, name)
         end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 
         else
-            insert(res, format([[
+            if field.type_name ~= "void" then
+                insert(res, format([[
 
         if data.%s and (type(data.%s) == "number"
                 or type(data.%s) == "boolean") then
@@ -492,7 +495,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
             write_val(buf, data.%s, %d, %d)
         end]], field.name, field.name, field.name, field.name, field.size,
                     field.slot.offset))
-
+            end
         end
 
     end
@@ -507,6 +510,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
     end
 
     insert(res, [[
+
         return pos
     end,]])
 end
