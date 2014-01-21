@@ -186,9 +186,30 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         local s = tab
 ]], size))
 
+    if struct.discriminantCount and struct.discriminantOffset then
+        insert(res, format([[
+
+        local dscrm = _M.%s.which(buf, %d) --buf, dscrmriminantOffset, dscrmriminantValue
+
+]], name, struct.discriminantOffset))
+    end
+
     for i, field in ipairs(fields) do
         if field.group then
             -- TODO group struffs
+        elseif field.discriminantValue then
+            if field.type_name ~= "void" then
+                insert(res, format([[
+
+        s.%s = (dscrm == %d) and read_val(buf, "%s", 32, 4) or nil]],
+                    field.name, field.discriminantValue, field.type_name,
+                    field.size, field.slot.ofset))
+            else
+                insert(res, format([[
+
+        s.%s = (dscrm == %d) and "Void" or nil]], field.name,
+                    field.discriminantValue))
+            end
         elseif field.type_name == "enum" then
             insert(res, format([[
         local val = read_val(buf, "uint16", %d, %d)
@@ -227,13 +248,25 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 ]], struct.dataWordCount, off, field.name, field.name, field.type_display_name,
             field.name, field.name))
 
-        elseif field.type_name == "text" or field.type_name == "data" then
+        elseif field.type_name == "text" then
             local off = field.slot.offset
             insert(res, format([[
 
         local off, size, num = parse_listp_buf(buf, _M.%s, %d)
         if off and num then
             s.%s = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+        else
+            s.%s = nil
+        end
+]], name, off, field.name, struct.dataWordCount, off, field.name))
+
+        elseif field.type_name == "data" then
+            local off = field.slot.offset
+            insert(res, format([[
+
+        local off, size, num = parse_listp_buf(buf, _M.%s, %d)
+        if off and num then
+            s.%s = ffi.string(buf + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
             s.%s = nil
         end
@@ -271,7 +304,7 @@ function comp_parse(res, name)
 
         local pos = round8(4 + nsegs * 4)
 
-        p = p + pos/4
+        p = p + pos / 4
 
         if not tab then
             tab = new_tab(0, 8)

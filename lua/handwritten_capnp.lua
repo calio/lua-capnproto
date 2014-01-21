@@ -211,6 +211,8 @@ _M.T1 = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, tab)
         local s = tab
+        local dscrm = _M.T1.which(buf, 10) --buf, dscrmriminantOffset, dscrmriminantValue
+
         s.i0 = read_val(buf, "uint32", 32, 0)
         s.i1 = read_val(buf, "uint16", 16, 2)
         s.b0 = read_val(buf, "bool", 1, 48)
@@ -218,23 +220,6 @@ _M.T1 = {
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
 
-        local dscrm = _M.T1.which(buf, 10) --buf, dscrmriminantOffset, dscrmriminantValue
-        if dscrm == 0 then
-            s.ui0 = read_val(buf, "int32", 32, 4)
-            s.ui1 = nil
-            s.uv0 = nil
-        elseif dscrm == 1 then
-            s.ui1 = read_val(buf, "int32", 32, 4)
-            s.ui0 = nil
-            s.uv0 = nil
-        elseif dscrm == 2 then
-            -- TODO use cdata to represent "Void" type
-            s.uv0 = "Void"
-            s.ui0 = nil
-            s.ui1 = nil
-        else
-            error("corrupt data, unknown discriminant value: " .. dscrm)
-        end
 
         if not s.g0 then
             s.g0 = new_tab(0, 4)
@@ -270,6 +255,8 @@ _M.T1 = {
         else
             s.t0 = nil
         end
+        local val = read_val(buf, "uint16", 16, 7)
+        s.e1 = get_enum_val(val, _M.EnumType2Str)
 
         local off, size, num = parse_listp_buf(buf, _M.T1, 3)
         if off and num then
@@ -278,8 +265,10 @@ _M.T1 = {
             s.d0 = nil
         end
 
-        local val = read_val(buf, "uint16", 16, 7)
-        s.e1 = get_enum_val(val, _M.EnumType2Str)
+
+        s.ui0 = (dscrm == 0) and read_val(buf, "int32", 32, 4) or nil
+        s.ui1 = (dscrm == 1) and read_val(buf, "int32", 32, 4) or nil
+        s.uv0 = (dscrm == 2) and "Void" or nil
         return s
     end,
 
