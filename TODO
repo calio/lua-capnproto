@@ -4,3 +4,4 @@
 * deal with none-exist sub structs, lists or fields
 * union
 * far pointers
+* support object type
