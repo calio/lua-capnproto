@@ -52,6 +52,7 @@ _M.T1 = {
     displayName = "proto/example.capnp:T1",
     dataWordCount = 4,
     pointerCount = 4,
+    discriminantCount = 3,
     discriminantOffset = 10,
 
     calc_size_struct = function(data)
@@ -68,8 +69,9 @@ _M.T1 = {
         if data.t0 then
             size = size + round8(#data.t0 + 1) -- size 1, including trailing NULL
         end
+        -- data
         if data.d0 then
-            size = size + round8(#data.d0) -- size 1, including trailing NULL
+            size = size + round8(#data.d0)
         end
         return size
     end,
@@ -141,6 +143,10 @@ _M.T1 = {
             ffi_copy(buf + pos, data.t0)
             pos = pos + round8(len)
         end
+        if data.e1 and type(data.e1) == "string" then
+            local val = get_enum_val(data.e1, _M.EnumType2, "T1.e1")
+            write_val(buf, val, 16, 7)
+        end
         if data.d0 and type(data.d0) == "string" then
             local data_off = get_data_off(_M.T1, 3, pos)
 
@@ -149,10 +155,6 @@ _M.T1 = {
 
             ffi_copy(buf + pos, data.d0)
             pos = pos + round8(len)
-        end
-        if data.e1 and type(data.e1) == "string" then
-            local val = get_enum_val(data.e1, _M.EnumType2, "T1.e1")
-            write_val(buf, val, 16, 7)
         end
         if data.ui0 and (type(data.ui0) == "number"
                 or type(data.ui0) == "boolean") then
@@ -163,12 +165,12 @@ _M.T1 = {
         if data.ui1 and (type(data.ui1) == "number"
                 or type(data.ui1) == "boolean") then
 
-            _M.T1.which(buf, 10, 1)
-            write_val(buf, data.ui1, 32, 4)
+            _M.T1.which(buf, 10, 1) --buf, discriminantOffset, discriminantValue
+            write_val(buf, data.ui1, 32, 4) -- buf, val, size, offset
         end
-        if data.uv0  then -- type is "Void"
+        if data.uv0 then -- type is "Void"
 
-            _M.T1.which(buf, 10, 2)
+            _M.T1.which(buf, 10, 2) --buf, discriminantOffset, discriminantValue
         end
         if data.g0 and type(data.g0) == "table" then
             -- groups are just namespaces, field offsets are set within parent
@@ -177,17 +179,6 @@ _M.T1 = {
         end
 
         return pos
-    end,
-
-    which = function(buf, offset, n)
-        if n then
-            -- set value
-            write_val(buf, n, 16, offset)
-        else
-            -- get value
-            --s.f1 = read_val(buf, "float64", 64, 1)
-            return read_val(buf, "uint16", 16, offset)
-        end
     end,
 
     serialize = function(data, buf, size)
@@ -208,6 +199,16 @@ _M.T1 = {
         return ffi_string(buf, size)
     end,
 
+    which = function(buf, offset, n)
+        if n then
+            -- set value
+            write_val(buf, n, 16, offset)
+        else
+            -- get value
+            return read_val(buf, "uint16", 16, offset)
+        end
+    end,
+
     parse_struct_data = function(buf, data_word_count, pointer_count, tab)
         local s = tab
         s.i0 = read_val(buf, "uint32", 32, 0)
@@ -217,27 +218,30 @@ _M.T1 = {
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
 
-        local disc = _M.T1.which(buf, 10) --buf, discriminantOffset, discriminantValue
-        if disc == 0 then
+        local dscrm = _M.T1.which(buf, 10) --buf, dscrmriminantOffset, dscrmriminantValue
+        if dscrm == 0 then
             s.ui0 = read_val(buf, "int32", 32, 4)
             s.ui1 = nil
             s.uv0 = nil
-        elseif disc == 1 then
+        elseif dscrm == 1 then
             s.ui1 = read_val(buf, "int32", 32, 4)
             s.ui0 = nil
             s.uv0 = nil
-        elseif disc == 2 then
+        elseif dscrm == 2 then
             -- TODO use cdata to represent "Void" type
             s.uv0 = "Void"
             s.ui0 = nil
             s.ui1 = nil
         else
-            error("corrupt data, unknown discriminant value: " .. disc)
+            error("corrupt data, unknown discriminant value: " .. dscrm)
         end
 
-        local g0 = {}
-        g0.ui2 = read_val(buf, "int32", 32, 6)
-        s.g0 = g0
+        if not s.g0 then
+            s.g0 = new_tab(0, 4)
+        end
+        _M.T1.g0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
+                s.g0)
+
 
         local p = buf + (4 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p)
@@ -406,7 +410,13 @@ _M.T1.g0 = {
 
             write_val(buf, data.ui2, 32, 6)
         end
-    end
+    end,
+
+    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+        local s = tab
+        s.ui2 = read_val(buf, "int32", 32, 6)
+        return s
+    end,
 }
 
 _M.T1.EnumType1 = {

@@ -309,15 +309,50 @@ function comp_serialize(res, name)
 ]], name, name, name))
 end
 
-function comp_flat_serialize(res, fields, size, name)
+function comp_flat_serialize(res, struct, fields, size, name)
     insert(res, format([[
 
     flat_serialize = function(data, buf)
         local pos = %d]], size))
 
     for i, field in ipairs(fields) do
-        if field.group then
-            -- TODO group stuffs
+        if field.discriminantValue then
+            if field.type_name == "void" then
+
+                insert(res, format([[
+
+        if data.%s then -- type is "Void"
+            _M.%s.which(buf, %d, %d) --buf, discriminantOffset, discriminantValue]],
+                    field.name, name, struct.discriminantOffset,
+                    field.discriminantValue))
+            else
+
+                insert(res, format([[
+
+        if data.%s and (type(data.%s) == "number"
+                or type(data.%s) == "boolean") then]], field.name, field.name,
+                    field.name))
+
+                insert(res, format([[
+
+            _M.%s.which(buf, %d, %d) --buf, discriminantOffset, discriminantValue
+            write_val(buf, data.%s, %d, %d) -- buf, val, size, offset]], name,
+                    struct.discriminantOffset,
+                    field.discriminantValue, field.name, field.size,
+                    field.slot.offset))
+            end
+            insert(res, "\n        end")
+
+        elseif field.group then
+            insert(res, format([[
+
+        if data.%s and type(data.%s) == "table" then
+            -- groups are just namespaces, field offsets are set within parent
+            -- structs
+            _M.%s.%s.flat_serialize(data.%s, buf)
+        end
+]], field.name, field.name, name, field.name, field.name))
+
         elseif field.type_name == "enum" then
             insert(res, format([[
 
@@ -414,20 +449,31 @@ function comp_calc_size(res, fields, size, name)
         if field.type_name == "list" then
             insert(res, format([[
 
+        -- list
         if data.%s then
             size = size + round8(#data.%s * %d) -- num * acutal size
         end]], field.name, field.name, list_size_map[field.size]))
         elseif field.type_name == "struct" then
             insert(res, format([[
 
+        -- struct
         if data.%s then
             size = size + _M.%s.calc_size_struct(data.%s)
         end]], field.name, field.type_display_name, field.name))
-        elseif field.type_name == "text" or field.type_name == "data" then
+        elseif field.type_name == "text" then
             insert(res, format([[
 
+        -- text
         if data.%s then
             size = size + round8(#data.%s + 1) -- size 1, including trailing NULL
+        end]], field.name, field.name))
+
+        elseif field.type_name == "data" then
+            insert(res, format([[
+
+        -- data
+        if data.%s then
+            size = size + round8(#data.%s)
         end]], field.name, field.name))
 
         end
@@ -443,6 +489,21 @@ function comp_calc_size(res, fields, size, name)
         local size = 16 -- header + root struct pointer
         return size + _M.%s.calc_size_struct(data)
     end,]], name))
+end
+
+function comp_which(res)
+    insert(res, [[
+
+    which = function(buf, offset, n)
+        if n then
+            -- set value
+            write_val(buf, n, 16, offset)
+        else
+            -- get value
+            return read_val(buf, "uint16", 16, offset)
+        end
+    end,
+]])
 end
 
 function comp_struct(res, nodes, struct, name)
@@ -462,6 +523,17 @@ function comp_struct(res, nodes, struct, name)
         insert(res, struct.pointerCount)
         insert(res, ",\n")
 
+        if struct.discriminantCount then
+            insert(res, "    discriminantCount = ")
+            insert(res, struct.discriminantCount)
+            insert(res, ",\n")
+        end
+        if struct.discriminantOffset then
+            insert(res, "    discriminantOffset = ")
+            insert(res, struct.discriminantOffset)
+            insert(res, ",\n")
+        end
+
         struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
@@ -469,9 +541,12 @@ function comp_struct(res, nodes, struct, name)
                 comp_field(res, nodes, field)
             end
             comp_calc_size(res, struct.fields, struct.size, struct.type_name)
-            comp_flat_serialize(res, struct.fields, struct.size,
+            comp_flat_serialize(res, struct, struct.fields, struct.size,
                     struct.type_name)
             comp_serialize(res, struct.type_name)
+            if struct.discriminantCount and struct.discriminantOffset then
+                comp_which(res)
+            end
             comp_parse_struct_data(res, struct, struct.fields, struct.size,
                     struct.type_name)
             comp_parse(res, struct.type_name)
