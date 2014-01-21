@@ -197,6 +197,14 @@ function comp_parse_struct_data(res, struct, fields, size, name)
     for i, field in ipairs(fields) do
         if field.group then
             -- TODO group struffs
+            insert(res, format([[
+
+        if not s.%s then
+            s.%s = new_tab(0, 4)
+        end
+        _M.%s.%s.parse_struct_data(buf, _M.%s.dataWordCount, _M.%s.pointerCount,
+                s.%s)
+]], field.name, field.name, name, field.name, name, name, field.name))
         elseif field.discriminantValue then
             if field.type_name ~= "void" then
                 insert(res, format([[
@@ -234,7 +242,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
             insert(res, format([[
 
-        local p = buf + (%d + %d) * 2
+        local p = buf + (%d + %d) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p)
         if off and dw and pw then
             if not s.%s then
@@ -539,7 +547,7 @@ function comp_which(res)
 ]])
 end
 
-function comp_struct(res, nodes, struct, name)
+function comp_struct(res, nodes, node, struct, name)
 
         if not struct.dataWordCount then
             struct.dataWordCount = 0
@@ -566,23 +574,34 @@ function comp_struct(res, nodes, struct, name)
             insert(res, struct.discriminantOffset)
             insert(res, ",\n")
         end
-
+        if struct.isGroup then
+            insert(res, "    isGroup = true,\n")
+        end
         struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
             for i, field in ipairs(struct.fields) do
                 comp_field(res, nodes, field)
+                if field.group then
+                    insert(node.nestedNodes, { name = field.name, id = field.group.typeId })
+                end
             end
-            comp_calc_size(res, struct.fields, struct.size, struct.type_name)
+            if not struct.isGroup then
+                comp_calc_size(res, struct.fields, struct.size, struct.type_name)
+            end
             comp_flat_serialize(res, struct, struct.fields, struct.size,
                     struct.type_name)
-            comp_serialize(res, struct.type_name)
+            if not struct.isGroup then
+                comp_serialize(res, struct.type_name)
+            end
             if struct.discriminantCount and struct.discriminantOffset then
                 comp_which(res)
             end
             comp_parse_struct_data(res, struct, struct.fields, struct.size,
                     struct.type_name)
-            comp_parse(res, struct.type_name)
+            if not struct.isGroup then
+                comp_parse(res, struct.type_name)
+            end
         end
 end
 
@@ -666,7 +685,7 @@ _M.%s = {
     id = %s,
     displayName = "%s",
 ]], node.id, node.displayName))
-        comp_struct(res, nodes, s, name)
+        comp_struct(res, nodes, node, s, name)
     insert(res, "\n}\n")
     end
 
@@ -743,8 +762,11 @@ function gen_%s()
     end
 
 ]], name))
-    for i, child in ipairs(node.nestedNodes) do
-        comp_dg_node(res, nodes, nodes[child.id])
+
+    if node.nestedNodes then
+        for i, child in ipairs(node.nestedNodes) do
+            comp_dg_node(res, nodes, nodes[child.id])
+        end
     end
 
     insert(res, format("    local %s  = {}\n", name))

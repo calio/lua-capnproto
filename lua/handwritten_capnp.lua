@@ -221,11 +221,6 @@ _M.T1 = {
         s.i3 = read_val(buf, "int32", 32, 2)
 
 
-        if not s.g0 then
-            s.g0 = new_tab(0, 4)
-        end
-        _M.T1.g0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
-                s.g0)
 
 
         local p = buf + (4 + 0) * 2 -- buf, dataWordCount, offset
@@ -269,6 +264,11 @@ _M.T1 = {
         s.ui0 = (dscrm == 0) and read_val(buf, "int32", 32, 4) or nil
         s.ui1 = (dscrm == 1) and read_val(buf, "int32", 32, 4) or nil
         s.uv0 = (dscrm == 2) and "Void" or nil
+        if not s.g0 then
+            s.g0 = new_tab(0, 4)
+        end
+        _M.T1.g0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
+                s.g0)
         return s
     end,
 
@@ -370,7 +370,7 @@ _M.T1.T2 = {
 
         local pos = round8(4 + nsegs * 4)
 
-        p = p + pos/4
+        p = p + pos / 4
 
         if not tab then
             tab = new_tab(0, 8)
@@ -384,9 +384,19 @@ _M.T1.T2 = {
     end,
 
 }
+_M.T1.EnumType1 = {
+    ["enum1"] = 0,
+    ["enum2"] = 1,
+    ["enum3"] = 2,
+}
+_M.T1.EnumType1Str = {
+    [0] = "enum1",
+    [1] = "enum2",
+    [2] = "enum3",
+}
 
 _M.T1.g0 = {
-    id = 12494356658816394461,
+    id = 10312822589529145224,
     displayName = "proto/example.capnp:T1.g0",
     dataWordCount = 4,
     pointerCount = 4,
@@ -403,21 +413,11 @@ _M.T1.g0 = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, tab)
         local s = tab
-        s.ui2 = read_val(buf, "int32", 32, 6)
+        s.ui2 = read_val(buf, "uint32", 32, 6)
         return s
     end,
 }
 
-_M.T1.EnumType1 = {
-    ["enum1"] = 0,
-    ["enum2"] = 1,
-    ["enum3"] = 2,
-}
-_M.T1.EnumType1Str = {
-    [0] = "enum1",
-    [1] = "enum2",
-    [2] = "enum3",
-}
 
 _M.EnumType2 = {
     ["enum5"] = 0,
