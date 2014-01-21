@@ -45,6 +45,10 @@ struct T1 {
     u0 :union {
         ui3 @16 :UInt16;
         uv1 @17 :Void;
+        ug0 :group {
+            ugv0 @18 :Void;
+            ugu0 @19 :UInt32;
+        }
     }
 
 #    u1: union {

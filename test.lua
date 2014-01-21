@@ -33,8 +33,11 @@ local data = {
     },
 
     u0 = {
-        uv1 = "void",
+        ug0 = {
+            ugu0 = 32,
+        }
     },
+
 }
 
 local file = arg[1]

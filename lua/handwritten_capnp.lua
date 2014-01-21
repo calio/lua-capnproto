@@ -83,6 +83,7 @@ _M.T1 = {
 
     flat_serialize = function(data, buf)
         local pos = 64
+        local dscrm
         if data.i0 and (type(data.i0) == "number"
                 or type(data.i0) == "boolean") then
 

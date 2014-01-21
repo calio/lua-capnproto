@@ -100,6 +100,10 @@ local function get_pointer_from_val(buf, size, val)
 end
 
 function _M.read_val(buf, field_type, size, off)
+    if field_type == "void" then
+        return "Void"
+    end
+
     local p = get_pointer_from_type(buf, field_type)
 
     local val

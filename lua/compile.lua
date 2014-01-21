@@ -195,17 +195,12 @@ function comp_parse_struct_data(res, struct, fields, size, name)
     end
 
     for i, field in ipairs(fields) do
-        if field.group then
-            -- TODO group struffs
+        if field.discriminantValue then
             insert(res, format([[
 
-        if not s.%s then
-            s.%s = new_tab(0, 4)
-        end
-        _M.%s.%s.parse_struct_data(buf, _M.%s.dataWordCount, _M.%s.pointerCount,
-                s.%s)
-]], field.name, field.name, name, field.name, name, name, field.name))
-        elseif field.discriminantValue then
+        if dscrm == %d then
+]],field.discriminantValue))
+            --[=[
             if field.type_name ~= "void" then
                 insert(res, format([[
 
@@ -218,6 +213,18 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         s.%s = (dscrm == %d) and "Void" or nil]], field.name,
                     field.discriminantValue))
             end
+            ]=]
+        end
+        if field.group then
+            -- TODO group struffs
+            insert(res, format([[
+
+        if not s.%s then
+            s.%s = new_tab(0, 4)
+        end
+        _M.%s.%s.parse_struct_data(buf, _M.%s.dataWordCount, _M.%s.pointerCount,
+                s.%s)
+]], field.name, field.name, name, field.name, name, name, field.name))
         elseif field.type_name == "enum" then
             insert(res, format([[
         local val = read_val(buf, "uint16", %d, %d)
@@ -286,7 +293,12 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 ]], field.name, field.type_name, field.size, field.slot.offset))
 
         end
+        if field.discriminantValue then
+            insert(res, format([[
 
+        end
+]],field.discriminantValue))
+        end
     end
 
     insert(res, [[
@@ -354,11 +366,20 @@ function comp_flat_serialize(res, struct, fields, size, name)
     insert(res, format([[
 
     flat_serialize = function(data, buf)
-        local pos = %d]], size))
+        local pos = %d
+        local dscrm]], size))
 
     for i, field in ipairs(fields) do
         print("comp_field", field.name)
+        -- union
         if field.discriminantValue then
+            insert(res, format([[
+
+        if data.%s then
+            dscrm = %d
+        end
+]], field.name, field.discriminantValue))
+--[=[
             if field.type_name == "void" then
 
                 insert(res, format([[
@@ -384,8 +405,9 @@ function comp_flat_serialize(res, struct, fields, size, name)
                     field.slot.offset))
             end
             insert(res, "\n        end")
-
-        elseif field.group then
+        --]=]
+        end
+        if field.group then
             insert(res, format([[
 
         if data.%s and type(data.%s) == "table" then
@@ -475,8 +497,16 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
     end
 
-    insert(res, [[
+    if struct.discriminantOffset then
+        insert(res, format([[
 
+        if dscrm then
+            _M.%s.which(buf, %d, dscrm) --buf, discriminantOffset, discriminantValue
+        end
+]],  name, struct.discriminantOffset))
+    end
+
+    insert(res, [[
         return pos
     end,]])
 end
@@ -584,6 +614,9 @@ function comp_struct(res, nodes, node, struct, name)
             for i, field in ipairs(struct.fields) do
                 comp_field(res, nodes, field)
                 if field.group then
+                    if not node.nestedNodes then
+                        node.nestedNodes = {}
+                    end
                     insert(node.nestedNodes, { name = field.name, id = field.group.typeId })
                 end
             end
