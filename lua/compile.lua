@@ -123,6 +123,7 @@ size_map = {
     list    = 2, -- size: list item size id, not actual size
     struct  = 8,  -- struct pointer
     enum    = 16,
+    object  = 8, -- FIXME object is a pointer ?
 }
 
 function get_size(type_name)
