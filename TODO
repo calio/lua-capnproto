@@ -5,3 +5,4 @@
 * union
 * far pointers
 * support object type
+* make capnpc-llua work
