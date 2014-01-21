@@ -2,7 +2,7 @@
 package.path = "lua/?.lua;proto/?.lua;" .. package.path
 
 local data_generator = require "data_generator"
-local test_capnp = require "example_capnp"
+local example_capnp = require "example_capnp"
 local handwritten_capnp = require "handwritten_capnp"
 local log_capnp = require "log_capnp"
 local capnp = require "capnp"
@@ -30,14 +30,18 @@ local data = {
     ui1 = 0x0f0f,
     g0 = {
         ui2 = 0x12345678,
-    }
+    },
+
+    u0 = {
+        uv1 = "void",
+    },
 }
 
 local file = arg[1]
 local f = io.open(file, "w")
-local bin = handwritten_capnp.T1.serialize(data)
+local bin = example_capnp.T1.serialize(data)
 
-local decoded = handwritten_capnp.T1.parse(bin)
+local decoded = example_capnp.T1.parse(bin)
 
 util.table_diff(data, decoded)
 

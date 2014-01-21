@@ -357,6 +357,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         local pos = %d]], size))
 
     for i, field in ipairs(fields) do
+        print("comp_field", field.name)
         if field.discriminantValue then
             if field.type_name == "void" then
 

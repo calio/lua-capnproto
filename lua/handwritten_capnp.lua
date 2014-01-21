@@ -178,6 +178,11 @@ _M.T1 = {
             _M.T1.g0.flat_serialize(data.g0, buf)
         end
 
+        if data.u0 and type(data.u0) == "table" then
+            -- groups are just namespaces, field offsets are set within parent
+            -- structs
+            _M.T1.u0.flat_serialize(data.u0, buf)
+        end
         return pos
     end,
 
@@ -269,6 +274,12 @@ _M.T1 = {
         end
         _M.T1.g0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
                 s.g0)
+
+        if not s.u0 then
+            s.u0 = new_tab(0, 4)
+        end
+        _M.T1.u0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
+                s.u0)
         return s
     end,
 
@@ -414,6 +425,48 @@ _M.T1.g0 = {
     parse_struct_data = function(buf, data_word_count, pointer_count, tab)
         local s = tab
         s.ui2 = read_val(buf, "uint32", 32, 6)
+        return s
+    end,
+}
+_M.T1.u0 = {
+    id = 12188145960292142197,
+    displayName = "proto/example.capnp:T1.u0",
+    dataWordCount = 4,
+    pointerCount = 4,
+    discriminantCount = 2,
+    discriminantOffset = 14,
+    isGroup = true,
+
+    flat_serialize = function(data, buf)
+        local pos = 64
+        if data.ui3 and (type(data.ui3) == "number"
+                or type(data.ui3) == "boolean") then
+            _M.T1.u0.which(buf, 14, 0) --buf, discriminantOffset, discriminantValue
+            write_val(buf, data.ui3, 16, 11) -- buf, val, size, offset
+        end
+        if data.uv1 then -- type is "Void"
+            _M.T1.u0.which(buf, 14, 1) --buf, discriminantOffset, discriminantValue
+        end
+        return pos
+    end,
+    which = function(buf, offset, n)
+        if n then
+            -- set value
+            write_val(buf, n, 16, offset)
+        else
+            -- get value
+            return read_val(buf, "uint16", 16, offset)
+        end
+    end,
+
+    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+        local s = tab
+
+        local dscrm = _M.T1.u0.which(buf, 14) --buf, dscrmriminantOffset, dscrmriminantValue
+
+
+        s.ui3 = (dscrm == 0) and read_val(buf, "uint16", 32, 4) or nil
+        s.uv1 = (dscrm == 1) and "Void" or nil
         return s
     end,
 }
