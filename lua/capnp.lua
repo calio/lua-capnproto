@@ -150,6 +150,12 @@ function _M.get_data_off(T, offset, pos)
     return (pos - T.dataWordCount * 8 - offset * 8 - 8) / 8
 end
 
+function _M.write_composite_tag(buf, T, num)
+    local p = ffi.cast("int32_t *", buf)
+    p[0] = lshift(num, 2)   -- pointer offset (B) instead indicates the number of elements in the list
+    p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
+end
+
 function _M.write_structp(buf, T, data_off)
     local p = ffi.cast("int32_t *", buf)
     p[0] = lshift(data_off, 2)

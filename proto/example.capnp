@@ -21,7 +21,6 @@ struct T1 {
     t0 @9 :Text;
     d0 @11 :Data;
     e1 @10 :EnumType2;
-    #d0 @7 :Data;
 
     enum EnumType1 $Lua.naming("lower_underscore") {
         enum1 @0;
@@ -51,6 +50,7 @@ struct T1 {
         }
     }
 
+    ls0 @20 :List(T2);
 #    u1: union {
 #        g1 :group {
 #            v1 @17 :Void;

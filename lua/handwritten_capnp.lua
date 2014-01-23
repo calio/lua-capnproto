@@ -51,12 +51,12 @@ _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/example.capnp:T1",
     dataWordCount = 5,
-    pointerCount = 4,
+    pointerCount = 5,
     discriminantCount = 3,
     discriminantOffset = 10,
 
     calc_size_struct = function(data)
-        local size = 72
+        local size = 80
         -- struct
         if data.s0 then
             size = size + _M.T1.T2.calc_size_struct(data.s0)
@@ -73,6 +73,15 @@ _M.T1 = {
         if data.d0 then
             size = size + round8(#data.d0)
         end
+        -- composite list
+        if data.ls0 then
+            size = size + 8
+            local num = #data.ls0
+            for i=1, num do
+                size = size + _M.T1.T2.calc_size_struct(data.ls0[i])
+            end
+        end
+
         return size
     end,
 
@@ -82,7 +91,7 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, buf)
-        local pos = 72
+        local pos = 80
         local dscrm
         if data.i0 and (type(data.i0) == "number"
                 or type(data.i0) == "boolean") then
@@ -187,6 +196,24 @@ _M.T1 = {
             -- structs
             _M.T1.u0.flat_serialize(data.u0, buf)
         end
+
+        if data.ls0 then
+            local num, size, old_pos = #data.l0, 0, pos
+            local data_off = get_data_off(_M.T1, 4, pos)
+
+            -- write tag
+            capnp.write_composite_tag(buf + pos, _M.T1.T2, num)
+            pos = pos + 8 -- tag
+
+            -- write data
+            for i=1, num do
+                pos = pos + _M.T1.T2.flat_serialize(data.ls0[i], buf + pos)
+            end
+
+            -- write list pointer
+            write_listp_buf(buf, _M.T1, 4, 7, (pos - old_pos - 8) / 8, data_off) -- TODO get size later
+        end
+
         if dscrm then
             _M.T1.which(buf, 10, dscrm) --buf, discriminantOffset, discriminantValue
         end
@@ -434,11 +461,13 @@ _M.T1.g0 = {
     id = 10312822589529145224,
     displayName = "proto/example.capnp:T1.g0",
     dataWordCount = 5,
-    pointerCount = 4,
+    pointerCount = 5,
     isGroup = true,
 
     -- size is included in the parent struct, so no need to calculate size here
     flat_serialize = function(data, buf)
+        local pos = 80
+        local dscrm
         if data.ui2 and (type(data.ui2) == "number"
                 or type(data.ui2) == "boolean") then
 
@@ -456,13 +485,13 @@ _M.T1.u0 = {
     id = 12188145960292142197,
     displayName = "proto/example.capnp:T1.u0",
     dataWordCount = 5,
-    pointerCount = 4,
+    pointerCount = 5,
     discriminantCount = 3,
     discriminantOffset = 14,
     isGroup = true,
 
     flat_serialize = function(data, buf)
-        local pos = 72
+        local pos = 80
         local dscrm
         if data.ui3 then
             dscrm = 0
@@ -541,11 +570,11 @@ _M.T1.u0.ug0 = {
     id = 17270536655881866717,
     displayName = "proto/example.capnp:T1.u0.ug0",
     dataWordCount = 5,
-    pointerCount = 4,
+    pointerCount = 5,
     isGroup = true,
 
     flat_serialize = function(data, buf)
-        local pos = 72
+        local pos = 80
         local dscrm
         if data.ugu0 and (type(data.ugu0) == "number"
                 or type(data.ugu0) == "boolean") then

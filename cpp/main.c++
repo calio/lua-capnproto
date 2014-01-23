@@ -41,7 +41,14 @@ void writeT1(int fd) {
     g0.setUi2(0x12345678);
 
     T1::U0::Builder u0 = t1.initU0();
-    u0.setUv1();
+    T1::U0::Ug0::Builder ug0 = u0.initUg0();
+    ug0.setUgu0(32);
+
+    ::capnp::List< ::T1::T2>::Builder ls0 = t1.initLs0(2);
+    ls0[0].setF0(0.61803398875);
+    ls0[0].setF1(1.61803398875);
+    ls0[1].setF0(2.71828182846);
+    ls0[1].setF1(2.71828182846);
 
     writeMessageToFd(fd, message);
 }

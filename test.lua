@@ -38,13 +38,23 @@ local data = {
         }
     },
 
+    ls0 = {
+        {
+            f0 = 0.61803398875,
+            f1 = 1.61803398875,
+        },
+        {
+            f0 = 2.71828182846,
+            f1 = 2.71828182846,
+        },
+    }
 }
 
 local file = arg[1]
 local f = io.open(file, "w")
-local bin = example_capnp.T1.serialize(data)
+local bin = handwritten_capnp.T1.serialize(data)
 
-local decoded = example_capnp.T1.parse(bin)
+local decoded = handwritten_capnp.T1.parse(bin)
 
 util.table_diff(data, decoded)
 
