@@ -273,14 +273,14 @@ _M.T1 = {
         s.e0 = get_enum_val(val, _M.T1.EnumType1Str)
 
         -- list
-        local off, size, num = parse_listp_buf(buf, _M.T1, 1)
+        local off, size, num = parse_listp_buf(buf, header, _M.T1, 1)
         if off and num then
             s.l0 = parse_list_data(buf + (5 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
         else
             s.l0 = nil
         end
 
-        local off, size, num = parse_listp_buf(buf, _M.T1, 2)
+        local off, size, num = parse_listp_buf(buf, header, _M.T1, 2)
         if off and num then
             s.t0 = ffi.string(buf + (5 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -289,7 +289,7 @@ _M.T1 = {
         local val = read_val(buf, "uint16", 16, 7)
         s.e1 = get_enum_val(val, _M.EnumType2Str)
 
-        local off, size, num = parse_listp_buf(buf, _M.T1, 3)
+        local off, size, num = parse_listp_buf(buf, header, _M.T1, 3)
         if off and num then
             s.d0 = ffi.string(buf + (5 + 3 + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
@@ -330,7 +330,7 @@ _M.T1 = {
                 header, s.u0)
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.T1, 4)
+        local off, size, words = parse_listp_buf(buf, header, _M.T1, 4)
         if off and words then
             local start = (5 + 4 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)

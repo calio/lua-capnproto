@@ -153,3 +153,24 @@ function test_far_pointer_to_struct()
     assert_equal(2, dw)
     assert_equal(4, pw)
 end
+
+function test_far_pointer_to_list()
+    local buf = util.new_buf({
+        01, 00, 00, 00,     01, 00, 00, 00, -- 2 segs           seg1: 1 word
+        02, 00, 00, 00,     00, 00, 00, 00, -- seg2: 1 word     padding
+        02, 00, 00, 00,     01, 00, 00, 00, -- far pointer      seg 1
+        09, 00, 00, 00,     0x27, 00, 00, 00, -- list pointer
+    })
+    local header = {
+        base = buf,
+        header_size = 2,
+        seg_sizes = { 1, 2, },
+    }
+    local T = {
+        dataWordCount = 0
+    }
+    local off, size_type, num = capnp.parse_listp_buf(buf + 4, header, T, 0)
+    assert_equal(2, off)
+    assert_equal(7, size_type)
+    assert_equal(4, num)
+end

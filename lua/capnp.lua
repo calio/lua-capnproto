@@ -235,7 +235,19 @@ function _M.parse_list_data(p, size_type, elm_type, num)
     return t
 end
 
-function _M.parse_listp_buf(buf, T, offset)
+function parse_list_pointer(buf)
+    local p = buf
+    local val = p[0]
+    local offset = rshift(val, 2)
+
+    val = p[1]
+    local size_type = band(val, 0x07)
+    local num = rshift(val, 3)
+
+    return offset, size_type, num
+end
+
+function _M.parse_listp_buf(buf, header, T, offset)
     local p = ffi.cast("int32_t *", buf)
     local base = T.dataWordCount * 2 + offset * 2
 
@@ -246,20 +258,17 @@ function _M.parse_listp_buf(buf, T, offset)
     end
 
     local sig = band(val, 0x03)
-    if sig ~= 1 then
-        error("corrupt data, expected list signiture 1 but have " .. sig)
+    if sig == 1 then
+        return parse_list_pointer(p + base)
+    elseif sig == 2 then
+        return parse_far_pointer(p + base, header, parse_list_pointer)
+    else
+        error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
     end
 
-    local offset = rshift(val, 2)
-
-    val = p[base + 1]
-    local size_type = band(val, 0x07)
-    local num = rshift(val, 3)
-
-    return offset, size_type, num
 end
 
-function parse_far_pointer(buf)
+function parse_far_pointer(buf, header, parser)
     local p = buf
 
     local landing = rshift(band(p[0], 0x04), 2)
@@ -267,7 +276,16 @@ function parse_far_pointer(buf)
     local offset = rshift(p[0], 3)
     local seg_id = tonumber(p[1])
 
-    return landing, offset, seg_id
+    --return landing, offset, seg_id
+    -- object pointer offset
+    local op_offset = header.header_size
+    for i=1, seg_id do
+        op_offset = op_offset + header.seg_sizes[i]
+    end
+    op_offset = op_offset + offset  -- offset is in words
+    local pp = header.base + op_offset * 2 -- header.base is uint32_t *
+
+    return parser(pp)
 end
 
 function parse_struct_pointer(p)
@@ -290,16 +308,7 @@ function _M.parse_struct_buf(buf, header)
     if sig == 0 then
         return parse_struct_pointer(p)
     elseif sig == 2 then
-        local landing, offset, seg_id = parse_far_pointer(p)
-        -- struct pointer offset
-        local sp_offset = header.header_size
-        for i=1, seg_id do
-            sp_offset = sp_offset + header.seg_sizes[i]
-        end
-        sp_offset = sp_offset + offset  -- offset is in words
-        local pp = header.base + sp_offset * 2 -- header.base is uint32_t *
-
-        return parse_struct_pointer(pp)
+        return parse_far_pointer(p, header, parse_struct_pointer)
     else
         error("corrupt data, expected struct signiture 0 or far pointer 2, but have " .. sig)
     end

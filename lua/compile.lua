@@ -225,7 +225,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
                 insert(res, format([[
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.%s, %d)
+        local off, size, words = parse_listp_buf(buf, header, _M.%s, %d)
         if off and words then
             local start = (%d + %d + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -248,7 +248,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             else
                 insert(res, format([[
 
-        local off, size, num = parse_listp_buf(buf, _M.%s, %d)
+        local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
         if off and num then
             s.%s = parse_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
         else
@@ -281,7 +281,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = parse_listp_buf(buf, _M.%s, %d)
+        local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
         if off and num then
             s.%s = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -293,7 +293,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = parse_listp_buf(buf, _M.%s, %d)
+        local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
         if off and num then
             s.%s = ffi.string(buf + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
