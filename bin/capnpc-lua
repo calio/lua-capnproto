@@ -10,4 +10,4 @@ export LUA_PATH="$BASE/lua/?.lua;$BASE/proto/?.lua;$LUA_PATH;;"
 
 cat - > /tmp/schema.bin
 capnp decode $BASE/proto/schema.capnp CodeGeneratorRequest > /tmp/schema.txt < /tmp/schema.bin
-lua $BASE/lua/compile_run.lua /tmp/schema.txt
+luajit $BASE/lua/compile_run.lua /tmp/schema.txt

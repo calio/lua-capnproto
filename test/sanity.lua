@@ -126,9 +126,11 @@ function test_write_listp()
 end
 ]]
 
-function test_underscore_naming()
-    assert_equal("request_uri", util.lower_underscore_naming("requestURI"))
-    assert_equal("REQUEST_URI", util.upper_underscore_naming("requestURI"))
-    assert_equal("REQUEST", util.upper_underscore_naming("request"))
-    assert_equal("TEST_RES", util.upper_underscore_naming("testRes"))
+
+function test_parse_struct_buf()
+    local buf = util.new_buf({ 0x10, 0x00, 0x00, 0x00, 0x02, 0x00, 0x04, 0x00 })
+    local off, dw, pw = capnp.parse_struct_buf(buf)
+    assert_equal(4, off)
+    assert_equal(2, dw)
+    assert_equal(4, pw)
 end

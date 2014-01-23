@@ -23,9 +23,7 @@ cpp/main: cpp/main.o cpp/example_capnp.o cpp/enums_capnp.o
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
 
 test:
-	luajit test/sanity.lua
-	luajit test/handwritten.lua
-	luajit test/example.lua
+	test/run_tests.sh
 
 all: cpp/main
 

@@ -97,13 +97,32 @@ function _M.get_output_name(schema)
     return string.gsub(schema.requestedFiles[1].filename, "%.", "_")
 end
 
-function _M.print_hex_buf(buf, len)
+function _M.hex_buf_str(buf, len)
     local str = ffi.string(buf, len)
     local t = {}
     for i = 1, len do
         table.insert(t, bit.tohex(string.byte(str, i), 2))
     end
-    print(table.concat(t, " "))
+    return table.concat(t, " ")
+end
+function _M.print_hex_buf(buf, len)
+    local str = _M.hex_buf_str(buf, len)
+    print(str)
+end
+
+function _M.new_buf(hex, ct)
+    if type(hex) ~= "table" then
+        error("expected the first argument as a table")
+    end
+    local len = #hex
+    local buf = ffi.new("char[?]", len)
+    for i=1, len do
+        buf[i - 1] = hex[i]
+    end
+    if not ct then
+        ct = "uint32_t *"
+    end
+    return ffi.cast(ct, buf)
 end
 
 return _M

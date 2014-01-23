@@ -386,7 +386,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         local dscrm]], size))
 
     for i, field in ipairs(fields) do
-        print("comp_field", field.name)
+        --print("comp_field", field.name)
         -- union
         if field.discriminantValue then
             insert(res, format([[
