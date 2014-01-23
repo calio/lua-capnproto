@@ -259,9 +259,6 @@ _M.T1 = {
         s.b1 = read_val(buf, "bool", 1, 49)
         s.i3 = read_val(buf, "int32", 32, 2)
 
-
-
-
         local p = buf + (5 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p)
         if off and dw and pw then
@@ -331,6 +328,29 @@ _M.T1 = {
         end
         _M.T1.u0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
                 s.u0)
+
+        -- composite list
+        local off, size, words = parse_listp_buf(buf, _M.T1, 4)
+        if off and words then
+            print("off:", off)
+            local start = (5 + 4 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
+            print("start:", start)
+            local num, dt, pt = capnp.read_composite_tag(buf + start)
+            start = start + 2 -- 2 * 32bit
+            if not s.ls0 then
+                s.ls0 = new_tab(num, 0)
+            end
+            print("ls0 num=", num)
+            for i=1, num do
+                if not s.ls0[i] then
+                    s.ls0[i] = new_tab(0, 2)
+                end
+                _M.T1.T2.parse_struct_data(buf + start, dt, pt, s.ls0[i])
+                start = start + (dt + pt) * 2
+            end
+        else
+            s.ls0 = nil
+        end
         return s
     end,
 

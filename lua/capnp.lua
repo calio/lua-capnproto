@@ -150,6 +150,22 @@ function _M.get_data_off(T, offset, pos)
     return (pos - T.dataWordCount * 8 - offset * 8 - 8) / 8
 end
 
+function _M.read_composite_tag(buf)
+    local p = ffi.cast("int32_t *", buf)
+    local val = p[0]
+    local sig = band(val, 0x03)
+    if sig ~= 0 then
+        error("corrupt data, expected struct signiture(composite list tag) 0 but have " .. sig)
+    end
+
+    local num = rshift(val, 2)   -- pointer offset (B) instead indicates the number of elements in the list
+    val = p[1]
+    local dt = band(val, 0xffff)
+    local pt = rshift(val, 16)
+    --p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
+    return num, dt, pt
+end
+
 function _M.write_composite_tag(buf, T, num)
     local p = ffi.cast("int32_t *", buf)
     p[0] = lshift(num, 2)   -- pointer offset (B) instead indicates the number of elements in the list

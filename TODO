@@ -7,3 +7,4 @@
 * support object type
 * make capnpc-llua work
 * fix 0-item list
+* calculate new_tab arguments
