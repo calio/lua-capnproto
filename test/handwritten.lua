@@ -277,3 +277,96 @@ function test_union_value()
     assert_nil(copy.uv0)
     assert_equal(data.g0.ui2, copy.g0.ui2)
 end
+
+function test_union_group()
+    local data = {
+        u0 = {
+            ui3 = 48,
+        },
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+    assert_equal(0, copy.ui0) -- ui0 is set by default
+    assert_nil(copy.ui1)
+    assert_nil(copy.uv0)
+    assert_equal(0, copy.g0.ui2)
+    assert_equal(data.u0.ui3, copy.u0.ui3)
+    assert_nil(copy.u0.uv1)
+    assert_nil(copy.u0.ug0)
+    assert_nil(copy.ls0)
+end
+
+function test_union_group1()
+    local data = {
+        u0 = {
+            uv1 = "Void",
+        },
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+    assert_equal(0, copy.ui0) -- ui0 is set by default
+    assert_nil(copy.ui1)
+    assert_nil(copy.uv0)
+    assert_equal(0, copy.g0.ui2)
+    assert_nil(copy.u0.ui3)
+    assert_equal("Void", copy.u0.uv1)
+    assert_nil(copy.u0.ug0)
+    assert_nil(copy.ls0)
+end
+
+function test_union_group2()
+    local data = {
+        u0 = {
+            ug0 = {
+                ugv0 = "Void",
+            },
+        },
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+    assert_equal(0, copy.ui0) -- ui0 is set by default
+    assert_nil(copy.ui1)
+    assert_nil(copy.uv0)
+    assert_equal(0, copy.g0.ui2)
+    assert_nil(copy.u0.ui3)
+    assert_nil(copy.u0.uv1)
+    assert_equal("Void", copy.u0.ug0.ugv0)
+    assert_equal(0, copy.u0.ug0.ugu0)
+    assert_nil(copy.ls0)
+end
