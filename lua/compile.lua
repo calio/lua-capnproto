@@ -184,7 +184,7 @@ end
 function comp_parse_struct_data(res, struct, fields, size, name)
     insert(res, format([[
 
-    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+    parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 ]], size))
 
@@ -211,7 +211,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             s.%s = new_tab(0, 4)
         end
         _M.%s.%s.parse_struct_data(buf, _M.%s.dataWordCount, _M.%s.pointerCount,
-                s.%s)
+                header, s.%s)
 ]], field.name, field.name, name, field.name, name, name, field.name))
         elseif field.type_name == "enum" then
             insert(res, format([[
@@ -237,7 +237,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
                 if not s.%s[i] then
                     s.%s[i] = new_tab(0, 2)
                 end
-                _M.%s.parse_struct_data(buf + start, dt, pt, s.%s[i])
+                _M.%s.parse_struct_data(buf + start, dt, pt, header, s.%s[i])
                 start = start + (dt + pt) * 2
             end
         else
@@ -264,12 +264,12 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             insert(res, format([[
 
         local p = buf + (%d + %d) * 2 -- buf, dataWordCount, offset
-        local off, dw, pw = parse_struct_buf(p)
+        local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
             if not s.%s then
                 s.%s = new_tab(0, 2)
             end
-            _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, s.%s)
+            _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.%s)
         else
             s.%s = nil
         end
@@ -331,23 +331,25 @@ function comp_parse(res, name)
             return nil, "message too short"
         end
 
+        local header = new_tab(0, 4)
         local p = ffi_cast("uint32_t *", bin)
+        header.base = p
+
         local nsegs = p[0] + 1
-        local sizes = {}
+        header.seg_sizes = {}
         for i=1, nsegs do
-            sizes[i] = p[i] * 8
+            header.seg_sizes[i] = p[i]
         end
-
         local pos = round8(4 + nsegs * 4)
-
+        header.header_size = pos / 8
         p = p + pos / 4
 
         if not tab then
             tab = new_tab(0, 8)
         end
-        local off, dw, pw = parse_struct_buf(p)
+        local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            return _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, tab)
+            return _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, header, tab)
         else
             return nil
         end

@@ -134,3 +134,22 @@ function test_parse_struct_buf()
     assert_equal(2, dw)
     assert_equal(4, pw)
 end
+
+function test_far_pointer_to_struct()
+    local buf = util.new_buf({
+        01, 00, 00, 00,     01, 00, 00, 00, -- 2 segs           seg1: 1 word
+        02, 00, 00, 00,     00, 00, 00, 00, -- seg2: 1 word     padding
+        02, 00, 00, 00,     01, 00, 00, 00, -- far pointer      seg 1
+        16, 00, 00, 00,     02, 00, 04, 00, -- struct pointer
+    })
+    local header = {
+        base = buf,
+        header_size = 2,
+        seg_sizes = { 1, 2, },
+    }
+
+    local off, dw, pw = capnp.parse_struct_buf(buf + 4, header)
+    assert_equal(4, off)
+    assert_equal(2, dw)
+    assert_equal(4, pw)
+end

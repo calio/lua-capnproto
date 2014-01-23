@@ -259,7 +259,26 @@ function _M.parse_listp_buf(buf, T, offset)
     return offset, size_type, num
 end
 
-function _M.parse_struct_buf(buf)
+function parse_far_pointer(buf)
+    local p = buf
+
+    local landing = rshift(band(p[0], 0x04), 2)
+
+    local offset = rshift(p[0], 3)
+    local seg_id = tonumber(p[1])
+
+    return landing, offset, seg_id
+end
+
+function parse_struct_pointer(p)
+    local offset = rshift(p[0], 2)
+    local data_word_count = band(p[1], 0xffff)
+    local pointer_count = rshift(p[1], 16)
+
+    return offset, data_word_count, pointer_count
+end
+
+function _M.parse_struct_buf(buf, header)
     local p = buf
     if p[0] == 0 and p[1] == 0 then
         -- not set
@@ -268,15 +287,22 @@ function _M.parse_struct_buf(buf)
 
     local sig = band(p[0], 0x03)
 
-    if sig ~= 0 then
-        error("corrupt data, expected struct signiture 0 but have " .. sig)
+    if sig == 0 then
+        return parse_struct_pointer(p)
+    elseif sig == 2 then
+        local landing, offset, seg_id = parse_far_pointer(p)
+        -- struct pointer offset
+        local sp_offset = header.header_size
+        for i=1, seg_id do
+            sp_offset = sp_offset + header.seg_sizes[i]
+        end
+        sp_offset = sp_offset + offset  -- offset is in words
+        local pp = header.base + sp_offset * 2 -- header.base is uint32_t *
+
+        return parse_struct_pointer(pp)
+    else
+        error("corrupt data, expected struct signiture 0 or far pointer 2, but have " .. sig)
     end
-
-    local offset = rshift(p[0], 2)
-    local data_word_count = band(p[1], 0xffff)
-    local pointer_count = rshift(p[1], 16)
-
-    return offset, data_word_count, pointer_count
 end
 
 return _M

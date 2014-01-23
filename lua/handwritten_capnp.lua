@@ -248,7 +248,7 @@ _M.T1 = {
         end
     end,
 
-    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+    parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
         local dscrm = _M.T1.which(buf, 10) --buf, dscrmriminantOffset, dscrmriminantValue
 
@@ -260,12 +260,12 @@ _M.T1 = {
         s.i3 = read_val(buf, "int32", 32, 2)
 
         local p = buf + (5 + 0) * 2 -- buf, dataWordCount, offset
-        local off, dw, pw = parse_struct_buf(p)
+        local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
             if not s.s0 then
                 s.s0 = new_tab(0, 2)
             end
-            _M.T1.T2.parse_struct_data(p + 2 + off * 2, dw, pw, s.s0)
+            _M.T1.T2.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.s0)
         else
             s.s0 = nil
         end
@@ -321,13 +321,13 @@ _M.T1 = {
             s.g0 = new_tab(0, 4)
         end
         _M.T1.g0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
-                s.g0)
+                header, s.g0)
 
         if not s.u0 then
             s.u0 = new_tab(0, 4)
         end
         _M.T1.u0.parse_struct_data(buf, _M.T1.dataWordCount, _M.T1.pointerCount,
-                s.u0)
+                header, s.u0)
 
         -- composite list
         local off, size, words = parse_listp_buf(buf, _M.T1, 4)
@@ -342,7 +342,7 @@ _M.T1 = {
                 if not s.ls0[i] then
                     s.ls0[i] = new_tab(0, 2)
                 end
-                _M.T1.T2.parse_struct_data(buf + start, dt, pt, s.ls0[i])
+                _M.T1.T2.parse_struct_data(buf + start, dt, pt, header, s.ls0[i])
                 start = start + (dt + pt) * 2
             end
         else
@@ -356,23 +356,25 @@ _M.T1 = {
             return nil, "message too short"
         end
 
+        local header = new_tab(0, 4)
         local p = ffi_cast("uint32_t *", bin)
+        header.base = p
+
         local nsegs = p[0] + 1
-        local sizes = {}
+        header.seg_sizes = {}
         for i=1, nsegs do
-            sizes[i] = p[i] * 8
+            header.seg_sizes[i] = p[i]
         end
-
         local pos = round8(4 + nsegs * 4)
-
+        header.header_size = pos / 8
         p = p + pos / 4
 
         if not tab then
             tab = new_tab(0, 8)
         end
-        local off, dw, pw = parse_struct_buf(p)
+        local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            return _M.T1.parse_struct_data(p + 2 + off * 2, dw, pw, tab)
+            return _M.T1.parse_struct_data(p + 2 + off * 2, dw, pw, header, tab)
         else
             return nil
         end
@@ -428,7 +430,7 @@ _M.T1.T2 = {
         return ffi_string(buf, size)
     end,
 
-    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+    parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
         s.f0 = read_val(buf, "float32", 32, 0)
         s.f1 = read_val(buf, "float64", 64, 1)
@@ -442,21 +444,22 @@ _M.T1.T2 = {
 
         local p = ffi_cast("uint32_t *", bin)
         local nsegs = p[0] + 1
-        local sizes = {}
+        header.seg_sizes = {}
         for i=1, nsegs do
-            sizes[i] = p[i] * 8
+            header.seg_sizes[i] = p[i]
         end
 
         local pos = round8(4 + nsegs * 4)
 
+        header.header_size = pos / 8
         p = p + pos / 4
 
         if not tab then
             tab = new_tab(0, 8)
         end
-        local off, dw, pw = parse_struct_buf(p)
+        local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            return _M.T1.T2.parse_struct_data(p + 2 + off * 2, dw, pw, tab)
+            return _M.T1.T2.parse_struct_data(p + 2 + off * 2, dw, pw, header, tab)
         else
             return nil
         end
@@ -492,7 +495,7 @@ _M.T1.g0 = {
         end
     end,
 
-    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+    parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
         s.ui2 = read_val(buf, "uint32", 32, 6)
         return s
@@ -548,7 +551,7 @@ _M.T1.u0 = {
         end
     end,
 
-    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+    parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 
         local dscrm = _M.T1.u0.which(buf, 14) --buf, dscrmriminantOffset, dscrmriminantValue
@@ -574,7 +577,7 @@ _M.T1.u0 = {
             s.ug0 = new_tab(0, 4)
         end
         _M.T1.u0.ug0.parse_struct_data(buf, _M.T1.u0.dataWordCount, _M.T1.u0.pointerCount,
-                s.ug0)
+                header, s.ug0)
 
         else
             s.ug0 = nil
@@ -600,7 +603,7 @@ _M.T1.u0.ug0 = {
         end
         return pos
     end,
-    parse_struct_data = function(buf, data_word_count, pointer_count, tab)
+    parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
         s.ugv0 = read_val(buf, "void", 0, 0)
         s.ugu0 = read_val(buf, "uint32", 32, 8)
