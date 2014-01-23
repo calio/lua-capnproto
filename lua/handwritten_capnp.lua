@@ -198,7 +198,7 @@ _M.T1 = {
         end
 
         if data.ls0 then
-            local num, size, old_pos = #data.l0, 0, pos
+            local num, size, old_pos = #data.ls0, 0, pos
             local data_off = get_data_off(_M.T1, 4, pos)
 
             -- write tag
@@ -332,15 +332,12 @@ _M.T1 = {
         -- composite list
         local off, size, words = parse_listp_buf(buf, _M.T1, 4)
         if off and words then
-            print("off:", off)
             local start = (5 + 4 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
-            print("start:", start)
             local num, dt, pt = capnp.read_composite_tag(buf + start)
             start = start + 2 -- 2 * 32bit
             if not s.ls0 then
                 s.ls0 = new_tab(num, 0)
             end
-            print("ls0 num=", num)
             for i=1, num do
                 if not s.ls0[i] then
                     s.ls0[i] = new_tab(0, 2)

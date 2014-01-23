@@ -16,6 +16,10 @@ end
 
 local copy = {}
 
+function assert_equalf(expected, actual)
+    assert_true(math.abs(expected - actual) < 0.000001)
+end
+
 function test_basic_value()
     local data = {
         i0 = 32,
@@ -369,4 +373,44 @@ function test_union_group2()
     assert_equal("Void", copy.u0.ug0.ugv0)
     assert_equal(0, copy.u0.ug0.ugu0)
     assert_nil(copy.ls0)
+end
+
+function test_struct_list()
+    local data = {
+        ls0 = {
+            {
+                f0 = 3.14,
+                f1 = 3.141592653589,
+            },
+            {
+                f0 = 3.14,
+                f1 = 3.141592653589,
+            },
+        },
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+    assert_equal(0, copy.ui0) -- ui0 is set by default
+    assert_nil(copy.ui1)
+    assert_nil(copy.uv0)
+    assert_equal(0, copy.g0.ui2)
+    assert_equal(0, copy.u0.ui3)
+    assert_nil(copy.u0.uv1)
+    assert_nil(copy.u0.ug0)
+    assert_equalf(data.ls0[1].f0, copy.ls0[1].f0)
+    assert_equal(data.ls0[1].f1, copy.ls0[1].f1)
+    assert_equalf(data.ls0[2].f0, copy.ls0[2].f0)
+    assert_equal(data.ls0[2].f1, copy.ls0[2].f1)
 end
