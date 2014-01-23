@@ -197,7 +197,7 @@ _M.T1 = {
             _M.T1.u0.flat_serialize(data.u0, buf)
         end
 
-        if data.ls0 then
+        if data.ls0 and type(data.ls0) == "table" then
             local num, size, old_pos = #data.ls0, 0, pos
             local data_off = get_data_off(_M.T1, 4, pos)
 
@@ -211,7 +211,7 @@ _M.T1 = {
             end
 
             -- write list pointer
-            write_listp_buf(buf, _M.T1, 4, 7, (pos - old_pos - 8) / 8, data_off) -- TODO get size later
+            write_listp_buf(buf, _M.T1, 4, 7, (pos - old_pos - 8) / 8, data_off)
         end
 
         if dscrm then

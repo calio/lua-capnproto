@@ -2,7 +2,8 @@ local ffi = require "ffi"
 local lunit = require "lunitx"
 local capnp = require "capnp"
 local util = require "util"
-local hw_capnp = require "handwritten_capnp"
+
+hw_capnp = require "handwritten_capnp"
 --local format = string.format
 
 local tdiff = util.table_diff
@@ -414,3 +415,5 @@ function test_struct_list()
     assert_equalf(data.ls0[2].f0, copy.ls0[2].f0)
     assert_equal(data.ls0[2].f1, copy.ls0[2].f1)
 end
+
+return _G

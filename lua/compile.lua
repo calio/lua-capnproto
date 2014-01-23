@@ -157,6 +157,9 @@ function comp_field(res, nodes, field)
             local list_type
             for k, v in pairs(field.slot["type"].list.elementType) do
                 list_type = k
+                if list_type == "struct" then
+                    field.type_display_name = get_name(nodes[v.typeId].displayName)
+                end
                 break
             end
             field.element_type = list_type
@@ -199,20 +202,6 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         if dscrm == %d then
 ]],field.discriminantValue))
-            --[=[
-            if field.type_name ~= "void" then
-                insert(res, format([[
-
-        s.%s = (dscrm == %d) and read_val(buf, "%s", 32, 4) or nil]],
-                    field.name, field.discriminantValue, field.type_name,
-                    field.size, field.slot.ofset))
-            else
-                insert(res, format([[
-
-        s.%s = (dscrm == %d) and "Void" or nil]], field.name,
-                    field.discriminantValue))
-            end
-            ]=]
         end
         if field.group then
             -- TODO group struffs
@@ -232,7 +221,32 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         elseif field.type_name == "list" then
             local off = field.slot.offset
-            insert(res, format([[
+            if field.element_type == "struct" then
+                insert(res, format([[
+
+        -- composite list
+        local off, size, words = parse_listp_buf(buf, _M.%s, %d)
+        if off and words then
+            local start = (%d + %d + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
+            local num, dt, pt = capnp.read_composite_tag(buf + start)
+            start = start + 2 -- 2 * 32bit
+            if not s.%s then
+                s.%s = new_tab(num, 0)
+            end
+            for i=1, num do
+                if not s.%s[i] then
+                    s.%s[i] = new_tab(0, 2)
+                end
+                _M.%s.parse_struct_data(buf + start, dt, pt, s.%s[i])
+                start = start + (dt + pt) * 2
+            end
+        else
+            s.%s = nil
+        end]], name, off, struct.dataWordCount, off, field.name, field.name,
+                    field.name, field.name, field.type_display_name, field.name,
+                    field.name))
+            else
+                insert(res, format([[
 
         local off, size, num = parse_listp_buf(buf, _M.%s, %d)
         if off and num then
@@ -241,7 +255,8 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             s.%s = nil
         end
 ]], name, off, field.name, struct.dataWordCount, off, field.element_type,
-        field.name))
+                    field.name))
+            end
 
         elseif field.type_name == "struct" then
             local off = field.slot.offset
@@ -380,33 +395,6 @@ function comp_flat_serialize(res, struct, fields, size, name)
             dscrm = %d
         end
 ]], field.name, field.discriminantValue))
---[=[
-            if field.type_name == "void" then
-
-                insert(res, format([[
-
-        if data.%s then -- type is "Void"
-            _M.%s.which(buf, %d, %d) --buf, discriminantOffset, discriminantValue]],
-                    field.name, name, struct.discriminantOffset,
-                    field.discriminantValue))
-            else
-
-                insert(res, format([[
-
-        if data.%s and (type(data.%s) == "number"
-                or type(data.%s) == "boolean") then]], field.name, field.name,
-                    field.name))
-
-                insert(res, format([[
-
-            _M.%s.which(buf, %d, %d) --buf, discriminantOffset, discriminantValue
-            write_val(buf, data.%s, %d, %d) -- buf, val, size, offset]], name,
-                    struct.discriminantOffset,
-                    field.discriminantValue, field.name, field.size,
-                    field.slot.offset))
-            end
-            insert(res, "\n        end")
-        --]=]
         end
         if field.group then
             insert(res, format([[
@@ -429,7 +417,29 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
         elseif field.type_name == "list" then
             local off = field.slot.offset
-            insert(res, format([[
+            if field.element_type == "struct" then
+                insert(res, format([[
+
+        if data.%s and type(data.%s) == "table" then
+            local num, size, old_pos = #data.%s, 0, pos
+            local data_off = get_data_off(_M.%s, %d, pos)
+
+            -- write tag
+            capnp.write_composite_tag(buf + pos, _M.%s, num)
+            pos = pos + 8 -- tag
+
+            -- write data
+            for i=1, num do
+                pos = pos + _M.%s.flat_serialize(data.%s[i], buf + pos)
+            end
+
+            -- write list pointer
+            write_listp_buf(buf, _M.%s, %d, 7, (pos - old_pos - 8) / 8, data_off)
+        end]], field.name, field.name, field.name, name, off,
+                    field.type_display_name, field.type_display_name, field.name,
+                    name, off))
+            else
+                insert(res, format([[
 
         if data.%s and type(data.%s) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
@@ -443,7 +453,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
             pos = pos + round8(len * 1) -- 1 ** actual size
         end]], field.name, field.name, name, off, field.name, name, off,
                     field.size, field.name, list_size_map[field.size] * 8))
-
+            end
         elseif field.type_name == "struct" then
             local off = field.slot.offset
             insert(res, format([[
@@ -522,12 +532,27 @@ function comp_calc_size(res, fields, size, name)
 
     for i, field in ipairs(fields) do
         if field.type_name == "list" then
-            insert(res, format([[
+            if field.element_type == "struct" then
+                -- composite
+                insert(res, format([[
+
+        -- composite list
+        if data.%s then
+            size = size + 8
+            local num = #data.%s
+            for i=1, num do
+                size = size + _M.%s.calc_size_struct(data.%s[i])
+            end
+        end]], field.name, field.name, field.type_display_name, field.name))
+            else
+
+                insert(res, format([[
 
         -- list
         if data.%s then
             size = size + round8(#data.%s * %d) -- num * acutal size
         end]], field.name, field.name, list_size_map[field.size]))
+            end
         elseif field.type_name == "struct" then
             insert(res, format([[
 
