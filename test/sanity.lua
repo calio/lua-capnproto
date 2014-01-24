@@ -138,9 +138,12 @@ end
 function test_far_pointer_to_struct()
     local buf = util.new_buf({
         01, 00, 00, 00,     01, 00, 00, 00, -- 2 segs           seg1: 1 word
-        02, 00, 00, 00,     00, 00, 00, 00, -- seg2: 1 word     padding
-        02, 00, 00, 00,     01, 00, 00, 00, -- far pointer      seg 1
-        16, 00, 00, 00,     02, 00, 04, 00, -- struct pointer
+        02, 00, 00, 00,     00, 00, 00, 00, -- seg2: 4 word     padding
+        0x0a, 00, 00, 00,   01, 00, 00, 00, -- far pointer      seg:1, offset:1
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, -- start of seg 2
+        08, 00, 00, 00,     02, 00, 04, 00, -- struct pointer
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, -- start of seg 2
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, -- start of seg 2
     })
     local header = {
         base = buf,
@@ -157,9 +160,11 @@ end
 function test_far_pointer_to_list()
     local buf = util.new_buf({
         01, 00, 00, 00,     01, 00, 00, 00, -- 2 segs           seg1: 1 word
-        02, 00, 00, 00,     00, 00, 00, 00, -- seg2: 1 word     padding
+        03, 00, 00, 00,     00, 00, 00, 00, -- seg2: 3 word     padding
         02, 00, 00, 00,     01, 00, 00, 00, -- far pointer      seg 1
-        09, 00, 00, 00,     0x27, 00, 00, 00, -- list pointer
+        05, 00, 00, 00,     0x27, 00, 00, 00, -- list pointer
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        00, 00, 00, 00,     00, 00, 00, 00,
     })
     local header = {
         base = buf,

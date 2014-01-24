@@ -259,8 +259,10 @@ function _M.parse_listp_buf(buf, header, T, offset)
 
     local sig = band(val, 0x03)
     if sig == 1 then
+        --print("plain pointer")
         return parse_list_pointer(p + base)
     elseif sig == 2 then
+        --print("single far pointer")
         return parse_far_pointer(p + base, header, parse_list_pointer)
     else
         error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
@@ -273,19 +275,25 @@ function parse_far_pointer(buf, header, parser)
 
     local landing = rshift(band(p[0], 0x04), 2)
 
+    assert(landing == 0, "double far pointer not supported yet")
     local offset = rshift(p[0], 3)
     local seg_id = tonumber(p[1])
+    --print("landing, offset, seg_id:", landing, offset, seg_id)
 
-    --return landing, offset, seg_id
     -- object pointer offset
     local op_offset = header.header_size
     for i=1, seg_id do
         op_offset = op_offset + header.seg_sizes[i]
     end
     op_offset = op_offset + offset  -- offset is in words
+    --print("op_offset:", op_offset)
     local pp = header.base + op_offset * 2 -- header.base is uint32_t *
 
-    return parser(pp)
+    local p_offset, r1, r2 = parser(pp)
+    --print("p_offset:", p_offset)
+    p_offset = p_offset + (pp - p) / 2 -- p and pp are uint32_t *
+
+    return p_offset, r1, r2
 end
 
 function parse_struct_pointer(p)

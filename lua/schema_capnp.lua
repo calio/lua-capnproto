@@ -2,6 +2,7 @@
 local ffi = require "ffi"
 local capnp = require "capnp"
 local bit = require "bit"
+local util = require "util"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
@@ -236,7 +237,7 @@ _M.Node = {
 
         s.id = read_val(buf, "uint64", 64, 0)
 
-        local off, size, num = parse_listp_buf(buf, _M.Node, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Node, 0)
         if off and num then
             s.display_name = ffi.string(buf + (5 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -246,7 +247,7 @@ _M.Node = {
         s.scope_id = read_val(buf, "uint64", 64, 2)
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Node, 1)
+        local off, size, words = parse_listp_buf(buf, header, _M.Node, 1)
         if off and words then
             local start = (5 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -265,7 +266,7 @@ _M.Node = {
             s.nested_nodes = nil
         end
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Node, 2)
+        local off, size, words = parse_listp_buf(buf, header, _M.Node, 2)
         if off and words then
             local start = (5 + 2 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -440,7 +441,7 @@ _M.Node.NestedNode = {
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 
-        local off, size, num = parse_listp_buf(buf, _M.Node.NestedNode, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Node.NestedNode, 0)
         if off and num then
             s.name = ffi.string(buf + (1 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -548,7 +549,7 @@ _M.Node.struct = {
         s.discriminant_offset = read_val(buf, "uint32", 32, 8)
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Node.struct, 3)
+        local off, size, words = parse_listp_buf(buf, header, _M.Node.struct, 3)
         if off and words then
             local start = (5 + 3 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -601,7 +602,7 @@ _M.Node.enum = {
         local s = tab
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Node.enum, 3)
+        local off, size, words = parse_listp_buf(buf, header, _M.Node.enum, 3)
         if off and words then
             local start = (5 + 3 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -654,7 +655,7 @@ _M.Node.interface = {
         local s = tab
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Node.interface, 3)
+        local off, size, words = parse_listp_buf(buf, header, _M.Node.interface, 3)
         if off and words then
             local start = (5 + 3 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -969,7 +970,7 @@ _M.Field = {
         local dscrm = _M.Field.which(buf, 4) --buf, dscrmriminantOffset, dscrmriminantValue
 
 
-        local off, size, num = parse_listp_buf(buf, _M.Field, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Field, 0)
         if off and num then
             s.name = ffi.string(buf + (3 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -978,7 +979,7 @@ _M.Field = {
         s.code_order = read_val(buf, "uint16", 16, 0)
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Field, 1)
+        local off, size, words = parse_listp_buf(buf, header, _M.Field, 1)
         if off and words then
             local start = (3 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -1289,7 +1290,7 @@ _M.Enumerant = {
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 
-        local off, size, num = parse_listp_buf(buf, _M.Enumerant, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Enumerant, 0)
         if off and num then
             s.name = ffi.string(buf + (1 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -1298,7 +1299,7 @@ _M.Enumerant = {
         s.code_order = read_val(buf, "uint16", 16, 0)
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Enumerant, 1)
+        local off, size, words = parse_listp_buf(buf, header, _M.Enumerant, 1)
         if off and words then
             local start = (1 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -1469,7 +1470,7 @@ _M.Method = {
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 
-        local off, size, num = parse_listp_buf(buf, _M.Method, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Method, 0)
         if off and num then
             s.name = ffi.string(buf + (1 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -1478,7 +1479,7 @@ _M.Method = {
         s.code_order = read_val(buf, "uint16", 16, 0)
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Method, 1)
+        local off, size, words = parse_listp_buf(buf, header, _M.Method, 1)
         if off and words then
             local start = (1 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -1510,7 +1511,7 @@ _M.Method = {
 
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Method, 3)
+        local off, size, words = parse_listp_buf(buf, header, _M.Method, 3)
         if off and words then
             local start = (1 + 3 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -1657,7 +1658,7 @@ _M.Method.Param = {
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 
-        local off, size, num = parse_listp_buf(buf, _M.Method.Param, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Method.Param, 0)
         if off and num then
             s.name = ffi.string(buf + (0 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -1689,7 +1690,7 @@ _M.Method.Param = {
 
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.Method.Param, 3)
+        local off, size, words = parse_listp_buf(buf, header, _M.Method.Param, 3)
         if off and words then
             local start = (0 + 3 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -2477,7 +2478,7 @@ _M.Value = {
 
         if dscrm == 12 then
 
-        local off, size, num = parse_listp_buf(buf, _M.Value, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Value, 0)
         if off and num then
             s.text = ffi.string(buf + (2 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -2490,7 +2491,7 @@ _M.Value = {
 
         if dscrm == 13 then
 
-        local off, size, num = parse_listp_buf(buf, _M.Value, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.Value, 0)
         if off and num then
             s.data = ffi.string(buf + (2 + 0 + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
@@ -2779,7 +2780,7 @@ _M.CodeGeneratorRequest = {
         local s = tab
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.CodeGeneratorRequest, 0)
+        local off, size, words = parse_listp_buf(buf, header, _M.CodeGeneratorRequest, 0)
         if off and words then
             local start = (0 + 0 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -2798,7 +2799,7 @@ _M.CodeGeneratorRequest = {
             s.nodes = nil
         end
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.CodeGeneratorRequest, 1)
+        local off, size, words = parse_listp_buf(buf, header, _M.CodeGeneratorRequest, 1)
         if off and words then
             local start = (0 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -2931,7 +2932,7 @@ _M.CodeGeneratorRequest.RequestedFile = {
         local s = tab
         s.id = read_val(buf, "uint64", 64, 0)
 
-        local off, size, num = parse_listp_buf(buf, _M.CodeGeneratorRequest.RequestedFile, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.CodeGeneratorRequest.RequestedFile, 0)
         if off and num then
             s.filename = ffi.string(buf + (1 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -2939,7 +2940,7 @@ _M.CodeGeneratorRequest.RequestedFile = {
         end
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, _M.CodeGeneratorRequest.RequestedFile, 1)
+        local off, size, words = parse_listp_buf(buf, header, _M.CodeGeneratorRequest.RequestedFile, 1)
         if off and words then
             local start = (1 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -3048,7 +3049,7 @@ _M.CodeGeneratorRequest.RequestedFile.Import = {
         local s = tab
         s.id = read_val(buf, "uint64", 64, 0)
 
-        local off, size, num = parse_listp_buf(buf, _M.CodeGeneratorRequest.RequestedFile.Import, 0)
+        local off, size, num = parse_listp_buf(buf, header, _M.CodeGeneratorRequest.RequestedFile.Import, 0)
         if off and num then
             s.name = ffi.string(buf + (1 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
