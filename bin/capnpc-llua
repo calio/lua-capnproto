@@ -10,6 +10,7 @@ local util = require("util")
 local content = io.stdin:read("*a")
 local schema = assert(schema_capnp.CodeGeneratorRequest.parse(content))
 
+util.write_file("test.schema.capnp.txt", cjson.encode(schema))
 local res = compile.compile(schema)
 
 local outfile = util.get_output_name(schema) .. ".llua"

@@ -11,6 +11,10 @@ local _M = {}
 
 local missing_enums = {}
 
+local config = {
+    default_naming_func = util.lower_underscore_naming,
+    default_enum_naming_func = util.upper_underscore_naming,
+}
 
 function get_schema_text(file)
     local f = io.open(file)
@@ -143,7 +147,7 @@ function comp_field(res, nodes, field)
         slot.offset = 0
     end
 
-    field.name = util.lower_underscore_naming(field.name)
+    field.name = config.default_naming_func(field.name)
 
     local type_name, default
     for k, v in pairs(slot["type"]) do
@@ -672,7 +676,7 @@ end
 
 function comp_enum(res, enum, name, naming_func)
     if not naming_func then
-        naming_func = util.upper_underscore_naming
+        naming_func = config.default_enum_naming_func
     end
 
     -- string to enum

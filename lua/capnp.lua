@@ -125,7 +125,7 @@ function _M.read_val(buf, field_type, size, off)
         end
     end
 
-    return val
+    return tonumber(val)
 end
 
 function _M.write_val(buf, val, size, off)
