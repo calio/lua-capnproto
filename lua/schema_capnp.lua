@@ -57,15 +57,15 @@ _M.Node = {
     calc_size_struct = function(data)
         local size = 80
         -- text
-        if data.display_name then
-            size = size + round8(#data.display_name + 1) -- size 1, including trailing NULL
+        if data.displayName then
+            size = size + round8(#data.displayName + 1) -- size 1, including trailing NULL
         end
         -- composite list
-        if data.nested_nodes then
+        if data.nestedNodes then
             size = size + 8
-            local num = #data.nested_nodes
+            local num = #data.nestedNodes
             for i=1, num do
-                size = size + _M.Node.NestedNode.calc_size_struct(data.nested_nodes[i])
+                size = size + _M.Node.NestedNode.calc_size_struct(data.nestedNodes[i])
             end
         end
         -- composite list
@@ -91,27 +91,27 @@ _M.Node = {
 
             write_val(buf, data.id, 64, 0)
         end
-        if data.display_name and type(data.display_name) == "string" then
+        if data.displayName and type(data.displayName) == "string" then
             local data_off = get_data_off(_M.Node, 0, pos)
 
-            local len = #data.display_name + 1
+            local len = #data.displayName + 1
             write_listp_buf(buf, _M.Node, 0, 2, len, data_off)
 
-            ffi_copy(buf + pos, data.display_name)
+            ffi_copy(buf + pos, data.displayName)
             pos = pos + round8(len)
         end
-        if data.display_name_prefix_length and (type(data.display_name_prefix_length) == "number"
-                or type(data.display_name_prefix_length) == "boolean") then
+        if data.displayNamePrefixLength and (type(data.displayNamePrefixLength) == "number"
+                or type(data.displayNamePrefixLength) == "boolean") then
 
-            write_val(buf, data.display_name_prefix_length, 32, 2)
+            write_val(buf, data.displayNamePrefixLength, 32, 2)
         end
-        if data.scope_id and (type(data.scope_id) == "number"
-                or type(data.scope_id) == "boolean") then
+        if data.scopeId and (type(data.scopeId) == "number"
+                or type(data.scopeId) == "boolean") then
 
-            write_val(buf, data.scope_id, 64, 2)
+            write_val(buf, data.scopeId, 64, 2)
         end
-        if data.nested_nodes and type(data.nested_nodes) == "table" then
-            local num, size, old_pos = #data.nested_nodes, 0, pos
+        if data.nestedNodes and type(data.nestedNodes) == "table" then
+            local num, size, old_pos = #data.nestedNodes, 0, pos
             local data_off = get_data_off(_M.Node, 1, pos)
 
             -- write tag
@@ -120,7 +120,7 @@ _M.Node = {
 
             -- write data
             for i=1, num do
-                pos = pos + _M.Node.NestedNode.flat_serialize(data.nested_nodes[i], buf + pos)
+                pos = pos + _M.Node.NestedNode.flat_serialize(data.nestedNodes[i], buf + pos)
             end
 
             -- write list pointer
@@ -239,12 +239,12 @@ _M.Node = {
 
         local off, size, num = parse_listp_buf(buf, header, _M.Node, 0)
         if off and num then
-            s.display_name = ffi.string(buf + (5 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+            s.displayName = ffi.string(buf + (5 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
-            s.display_name = nil
+            s.displayName = nil
         end
-        s.display_name_prefix_length = read_val(buf, "uint32", 32, 2)
-        s.scope_id = read_val(buf, "uint64", 64, 2)
+        s.displayNamePrefixLength = read_val(buf, "uint32", 32, 2)
+        s.scopeId = read_val(buf, "uint64", 64, 2)
 
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Node, 1)
@@ -252,18 +252,18 @@ _M.Node = {
             local start = (5 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
             start = start + 2 -- 2 * 32bit
-            if not s.nested_nodes then
-                s.nested_nodes = new_tab(num, 0)
+            if not s.nestedNodes then
+                s.nestedNodes = new_tab(num, 0)
             end
             for i=1, num do
-                if not s.nested_nodes[i] then
-                    s.nested_nodes[i] = new_tab(0, 2)
+                if not s.nestedNodes[i] then
+                    s.nestedNodes[i] = new_tab(0, 2)
                 end
-                _M.Node.NestedNode.parse_struct_data(buf + start, dt, pt, header, s.nested_nodes[i])
+                _M.Node.NestedNode.parse_struct_data(buf + start, dt, pt, header, s.nestedNodes[i])
                 start = start + (dt + pt) * 2
             end
         else
-            s.nested_nodes = nil
+            s.nestedNodes = nil
         end
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Node, 2)
@@ -491,34 +491,34 @@ _M.Node.struct = {
     flat_serialize = function(data, buf)
         local pos = 80
         local dscrm
-        if data.data_word_count and (type(data.data_word_count) == "number"
-                or type(data.data_word_count) == "boolean") then
+        if data.dataWordCount and (type(data.dataWordCount) == "number"
+                or type(data.dataWordCount) == "boolean") then
 
-            write_val(buf, data.data_word_count, 16, 7)
+            write_val(buf, data.dataWordCount, 16, 7)
         end
-        if data.pointer_count and (type(data.pointer_count) == "number"
-                or type(data.pointer_count) == "boolean") then
+        if data.pointerCount and (type(data.pointerCount) == "number"
+                or type(data.pointerCount) == "boolean") then
 
-            write_val(buf, data.pointer_count, 16, 12)
+            write_val(buf, data.pointerCount, 16, 12)
         end
-        if data.preferred_list_encoding and type(data.preferred_list_encoding) == "string" then
-            local val = get_enum_val(data.preferred_list_encoding, _M.ElementSize, "Node.struct.preferred_list_encoding")
+        if data.preferredListEncoding and type(data.preferredListEncoding) == "string" then
+            local val = get_enum_val(data.preferredListEncoding, _M.ElementSize, "Node.struct.preferredListEncoding")
             write_val(buf, val, 16, 13)
         end
-        if data.is_group and (type(data.is_group) == "number"
-                or type(data.is_group) == "boolean") then
+        if data.isGroup and (type(data.isGroup) == "number"
+                or type(data.isGroup) == "boolean") then
 
-            write_val(buf, data.is_group, 1, 224)
+            write_val(buf, data.isGroup, 1, 224)
         end
-        if data.discriminant_count and (type(data.discriminant_count) == "number"
-                or type(data.discriminant_count) == "boolean") then
+        if data.discriminantCount and (type(data.discriminantCount) == "number"
+                or type(data.discriminantCount) == "boolean") then
 
-            write_val(buf, data.discriminant_count, 16, 15)
+            write_val(buf, data.discriminantCount, 16, 15)
         end
-        if data.discriminant_offset and (type(data.discriminant_offset) == "number"
-                or type(data.discriminant_offset) == "boolean") then
+        if data.discriminantOffset and (type(data.discriminantOffset) == "number"
+                or type(data.discriminantOffset) == "boolean") then
 
-            write_val(buf, data.discriminant_offset, 32, 8)
+            write_val(buf, data.discriminantOffset, 32, 8)
         end
         if data.fields and type(data.fields) == "table" then
             local num, size, old_pos = #data.fields, 0, pos
@@ -540,13 +540,13 @@ _M.Node.struct = {
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.data_word_count = read_val(buf, "uint16", 16, 7)
-        s.pointer_count = read_val(buf, "uint16", 16, 12)
+        s.dataWordCount = read_val(buf, "uint16", 16, 7)
+        s.pointerCount = read_val(buf, "uint16", 16, 12)
         local val = read_val(buf, "uint16", 16, 13)
-        s.preferred_list_encoding = get_enum_val(val, _M.ElementSizeStr)
-        s.is_group = read_val(buf, "bool", 1, 224)
-        s.discriminant_count = read_val(buf, "uint16", 16, 15)
-        s.discriminant_offset = read_val(buf, "uint32", 32, 8)
+        s.preferredListEncoding = get_enum_val(val, _M.ElementSizeStr)
+        s.isGroup = read_val(buf, "bool", 1, 224)
+        s.discriminantCount = read_val(buf, "uint16", 16, 15)
+        s.discriminantOffset = read_val(buf, "uint32", 32, 8)
 
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Node.struct, 3)
@@ -746,65 +746,65 @@ _M.Node.annotation = {
             local size = _M.Type.flat_serialize(data.type, buf + pos)
             pos = pos + size
         end
-        if data.targets_file and (type(data.targets_file) == "number"
-                or type(data.targets_file) == "boolean") then
+        if data.targetsFile and (type(data.targetsFile) == "number"
+                or type(data.targetsFile) == "boolean") then
 
-            write_val(buf, data.targets_file, 1, 112)
+            write_val(buf, data.targetsFile, 1, 112)
         end
-        if data.targets_const and (type(data.targets_const) == "number"
-                or type(data.targets_const) == "boolean") then
+        if data.targetsConst and (type(data.targetsConst) == "number"
+                or type(data.targetsConst) == "boolean") then
 
-            write_val(buf, data.targets_const, 1, 113)
+            write_val(buf, data.targetsConst, 1, 113)
         end
-        if data.targets_enum and (type(data.targets_enum) == "number"
-                or type(data.targets_enum) == "boolean") then
+        if data.targetsEnum and (type(data.targetsEnum) == "number"
+                or type(data.targetsEnum) == "boolean") then
 
-            write_val(buf, data.targets_enum, 1, 114)
+            write_val(buf, data.targetsEnum, 1, 114)
         end
-        if data.targets_enumerant and (type(data.targets_enumerant) == "number"
-                or type(data.targets_enumerant) == "boolean") then
+        if data.targetsEnumerant and (type(data.targetsEnumerant) == "number"
+                or type(data.targetsEnumerant) == "boolean") then
 
-            write_val(buf, data.targets_enumerant, 1, 115)
+            write_val(buf, data.targetsEnumerant, 1, 115)
         end
-        if data.targets_struct and (type(data.targets_struct) == "number"
-                or type(data.targets_struct) == "boolean") then
+        if data.targetsStruct and (type(data.targetsStruct) == "number"
+                or type(data.targetsStruct) == "boolean") then
 
-            write_val(buf, data.targets_struct, 1, 116)
+            write_val(buf, data.targetsStruct, 1, 116)
         end
-        if data.targets_field and (type(data.targets_field) == "number"
-                or type(data.targets_field) == "boolean") then
+        if data.targetsField and (type(data.targetsField) == "number"
+                or type(data.targetsField) == "boolean") then
 
-            write_val(buf, data.targets_field, 1, 117)
+            write_val(buf, data.targetsField, 1, 117)
         end
-        if data.targets_union and (type(data.targets_union) == "number"
-                or type(data.targets_union) == "boolean") then
+        if data.targetsUnion and (type(data.targetsUnion) == "number"
+                or type(data.targetsUnion) == "boolean") then
 
-            write_val(buf, data.targets_union, 1, 118)
+            write_val(buf, data.targetsUnion, 1, 118)
         end
-        if data.targets_group and (type(data.targets_group) == "number"
-                or type(data.targets_group) == "boolean") then
+        if data.targetsGroup and (type(data.targetsGroup) == "number"
+                or type(data.targetsGroup) == "boolean") then
 
-            write_val(buf, data.targets_group, 1, 119)
+            write_val(buf, data.targetsGroup, 1, 119)
         end
-        if data.targets_interface and (type(data.targets_interface) == "number"
-                or type(data.targets_interface) == "boolean") then
+        if data.targetsInterface and (type(data.targetsInterface) == "number"
+                or type(data.targetsInterface) == "boolean") then
 
-            write_val(buf, data.targets_interface, 1, 120)
+            write_val(buf, data.targetsInterface, 1, 120)
         end
-        if data.targets_method and (type(data.targets_method) == "number"
-                or type(data.targets_method) == "boolean") then
+        if data.targetsMethod and (type(data.targetsMethod) == "number"
+                or type(data.targetsMethod) == "boolean") then
 
-            write_val(buf, data.targets_method, 1, 121)
+            write_val(buf, data.targetsMethod, 1, 121)
         end
-        if data.targets_param and (type(data.targets_param) == "number"
-                or type(data.targets_param) == "boolean") then
+        if data.targetsParam and (type(data.targetsParam) == "number"
+                or type(data.targetsParam) == "boolean") then
 
-            write_val(buf, data.targets_param, 1, 122)
+            write_val(buf, data.targetsParam, 1, 122)
         end
-        if data.targets_annotation and (type(data.targets_annotation) == "number"
-                or type(data.targets_annotation) == "boolean") then
+        if data.targetsAnnotation and (type(data.targetsAnnotation) == "number"
+                or type(data.targetsAnnotation) == "boolean") then
 
-            write_val(buf, data.targets_annotation, 1, 123)
+            write_val(buf, data.targetsAnnotation, 1, 123)
         end
         return pos
     end,
@@ -822,18 +822,18 @@ _M.Node.annotation = {
             s.type = nil
         end
 
-        s.targets_file = read_val(buf, "bool", 1, 112)
-        s.targets_const = read_val(buf, "bool", 1, 113)
-        s.targets_enum = read_val(buf, "bool", 1, 114)
-        s.targets_enumerant = read_val(buf, "bool", 1, 115)
-        s.targets_struct = read_val(buf, "bool", 1, 116)
-        s.targets_field = read_val(buf, "bool", 1, 117)
-        s.targets_union = read_val(buf, "bool", 1, 118)
-        s.targets_group = read_val(buf, "bool", 1, 119)
-        s.targets_interface = read_val(buf, "bool", 1, 120)
-        s.targets_method = read_val(buf, "bool", 1, 121)
-        s.targets_param = read_val(buf, "bool", 1, 122)
-        s.targets_annotation = read_val(buf, "bool", 1, 123)
+        s.targetsFile = read_val(buf, "bool", 1, 112)
+        s.targetsConst = read_val(buf, "bool", 1, 113)
+        s.targetsEnum = read_val(buf, "bool", 1, 114)
+        s.targetsEnumerant = read_val(buf, "bool", 1, 115)
+        s.targetsStruct = read_val(buf, "bool", 1, 116)
+        s.targetsField = read_val(buf, "bool", 1, 117)
+        s.targetsUnion = read_val(buf, "bool", 1, 118)
+        s.targetsGroup = read_val(buf, "bool", 1, 119)
+        s.targetsInterface = read_val(buf, "bool", 1, 120)
+        s.targetsMethod = read_val(buf, "bool", 1, 121)
+        s.targetsParam = read_val(buf, "bool", 1, 122)
+        s.targetsAnnotation = read_val(buf, "bool", 1, 123)
 
         return s
     end,
@@ -878,10 +878,10 @@ _M.Field = {
             ffi_copy(buf + pos, data.name)
             pos = pos + round8(len)
         end
-        if data.code_order and (type(data.code_order) == "number"
-                or type(data.code_order) == "boolean") then
+        if data.codeOrder and (type(data.codeOrder) == "number"
+                or type(data.codeOrder) == "boolean") then
 
-            write_val(buf, data.code_order, 16, 0)
+            write_val(buf, data.codeOrder, 16, 0)
         end
         if data.annotations and type(data.annotations) == "table" then
             local num, size, old_pos = #data.annotations, 0, pos
@@ -899,10 +899,10 @@ _M.Field = {
             -- write list pointer
             write_listp_buf(buf, _M.Field, 1, 7, (pos - old_pos - 8) / 8, data_off)
         end
-        if data.discriminant_value and (type(data.discriminant_value) == "number"
-                or type(data.discriminant_value) == "boolean") then
+        if data.discriminantValue and (type(data.discriminantValue) == "number"
+                or type(data.discriminantValue) == "boolean") then
 
-            write_val(buf, data.discriminant_value, 16, 1)
+            write_val(buf, data.discriminantValue, 16, 1)
         end
         if data.slot then
             dscrm = 0
@@ -976,7 +976,7 @@ _M.Field = {
         else
             s.name = nil
         end
-        s.code_order = read_val(buf, "uint16", 16, 0)
+        s.codeOrder = read_val(buf, "uint16", 16, 0)
 
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Field, 1)
@@ -996,7 +996,7 @@ _M.Field = {
             end
         else
             s.annotations = nil
-        end        s.discriminant_value = read_val(buf, "uint16", 16, 1)
+        end        s.discriminantValue = read_val(buf, "uint16", 16, 1)
 
         if dscrm == 0 then
 
@@ -1081,10 +1081,10 @@ _M.Field.slot = {
             local size = _M.Type.flat_serialize(data.type, buf + pos)
             pos = pos + size
         end
-        if data.default_value and type(data.default_value) == "table" then
+        if data.defaultValue and type(data.defaultValue) == "table" then
             local data_off = get_data_off(_M.Field.slot, 3, pos)
             write_structp_buf(buf, _M.Field.slot, _M.Value, 3, data_off)
-            local size = _M.Value.flat_serialize(data.default_value, buf + pos)
+            local size = _M.Value.flat_serialize(data.defaultValue, buf + pos)
             pos = pos + size
         end
         return pos
@@ -1108,12 +1108,12 @@ _M.Field.slot = {
         local p = buf + (3 + 3) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            if not s.default_value then
-                s.default_value = new_tab(0, 2)
+            if not s.defaultValue then
+                s.defaultValue = new_tab(0, 2)
             end
-            _M.Value.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.default_value)
+            _M.Value.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.defaultValue)
         else
-            s.default_value = nil
+            s.defaultValue = nil
         end
 
 
@@ -1130,16 +1130,16 @@ _M.Field.group = {
     flat_serialize = function(data, buf)
         local pos = 56
         local dscrm
-        if data.type_id and (type(data.type_id) == "number"
-                or type(data.type_id) == "boolean") then
+        if data.typeId and (type(data.typeId) == "number"
+                or type(data.typeId) == "boolean") then
 
-            write_val(buf, data.type_id, 64, 2)
+            write_val(buf, data.typeId, 64, 2)
         end
         return pos
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.type_id = read_val(buf, "uint64", 64, 2)
+        s.typeId = read_val(buf, "uint64", 64, 2)
 
         return s
     end,
@@ -1246,10 +1246,10 @@ _M.Enumerant = {
             ffi_copy(buf + pos, data.name)
             pos = pos + round8(len)
         end
-        if data.code_order and (type(data.code_order) == "number"
-                or type(data.code_order) == "boolean") then
+        if data.codeOrder and (type(data.codeOrder) == "number"
+                or type(data.codeOrder) == "boolean") then
 
-            write_val(buf, data.code_order, 16, 0)
+            write_val(buf, data.codeOrder, 16, 0)
         end
         if data.annotations and type(data.annotations) == "table" then
             local num, size, old_pos = #data.annotations, 0, pos
@@ -1296,7 +1296,7 @@ _M.Enumerant = {
         else
             s.name = nil
         end
-        s.code_order = read_val(buf, "uint16", 16, 0)
+        s.codeOrder = read_val(buf, "uint16", 16, 0)
 
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Enumerant, 1)
@@ -1369,8 +1369,8 @@ _M.Method = {
             end
         end
         -- struct
-        if data.return_type then
-            size = size + _M.Type.calc_size_struct(data.return_type)
+        if data.returnType then
+            size = size + _M.Type.calc_size_struct(data.returnType)
         end
         -- composite list
         if data.annotations then
@@ -1399,10 +1399,10 @@ _M.Method = {
             ffi_copy(buf + pos, data.name)
             pos = pos + round8(len)
         end
-        if data.code_order and (type(data.code_order) == "number"
-                or type(data.code_order) == "boolean") then
+        if data.codeOrder and (type(data.codeOrder) == "number"
+                or type(data.codeOrder) == "boolean") then
 
-            write_val(buf, data.code_order, 16, 0)
+            write_val(buf, data.codeOrder, 16, 0)
         end
         if data.params and type(data.params) == "table" then
             local num, size, old_pos = #data.params, 0, pos
@@ -1420,15 +1420,15 @@ _M.Method = {
             -- write list pointer
             write_listp_buf(buf, _M.Method, 1, 7, (pos - old_pos - 8) / 8, data_off)
         end
-        if data.required_param_count and (type(data.required_param_count) == "number"
-                or type(data.required_param_count) == "boolean") then
+        if data.requiredParamCount and (type(data.requiredParamCount) == "number"
+                or type(data.requiredParamCount) == "boolean") then
 
-            write_val(buf, data.required_param_count, 16, 1)
+            write_val(buf, data.requiredParamCount, 16, 1)
         end
-        if data.return_type and type(data.return_type) == "table" then
+        if data.returnType and type(data.returnType) == "table" then
             local data_off = get_data_off(_M.Method, 2, pos)
             write_structp_buf(buf, _M.Method, _M.Type, 2, data_off)
-            local size = _M.Type.flat_serialize(data.return_type, buf + pos)
+            local size = _M.Type.flat_serialize(data.returnType, buf + pos)
             pos = pos + size
         end
         if data.annotations and type(data.annotations) == "table" then
@@ -1476,7 +1476,7 @@ _M.Method = {
         else
             s.name = nil
         end
-        s.code_order = read_val(buf, "uint16", 16, 0)
+        s.codeOrder = read_val(buf, "uint16", 16, 0)
 
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Method, 1)
@@ -1496,17 +1496,17 @@ _M.Method = {
             end
         else
             s.params = nil
-        end        s.required_param_count = read_val(buf, "uint16", 16, 1)
+        end        s.requiredParamCount = read_val(buf, "uint16", 16, 1)
 
         local p = buf + (1 + 2) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            if not s.return_type then
-                s.return_type = new_tab(0, 2)
+            if not s.returnType then
+                s.returnType = new_tab(0, 2)
             end
-            _M.Type.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.return_type)
+            _M.Type.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.returnType)
         else
-            s.return_type = nil
+            s.returnType = nil
         end
 
 
@@ -1577,8 +1577,8 @@ _M.Method.Param = {
             size = size + _M.Type.calc_size_struct(data.type)
         end
         -- struct
-        if data.default_value then
-            size = size + _M.Value.calc_size_struct(data.default_value)
+        if data.defaultValue then
+            size = size + _M.Value.calc_size_struct(data.defaultValue)
         end
         -- composite list
         if data.annotations then
@@ -1613,10 +1613,10 @@ _M.Method.Param = {
             local size = _M.Type.flat_serialize(data.type, buf + pos)
             pos = pos + size
         end
-        if data.default_value and type(data.default_value) == "table" then
+        if data.defaultValue and type(data.defaultValue) == "table" then
             local data_off = get_data_off(_M.Method.Param, 2, pos)
             write_structp_buf(buf, _M.Method.Param, _M.Value, 2, data_off)
-            local size = _M.Value.flat_serialize(data.default_value, buf + pos)
+            local size = _M.Value.flat_serialize(data.defaultValue, buf + pos)
             pos = pos + size
         end
         if data.annotations and type(data.annotations) == "table" then
@@ -1680,12 +1680,12 @@ _M.Method.Param = {
         local p = buf + (0 + 2) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            if not s.default_value then
-                s.default_value = new_tab(0, 2)
+            if not s.defaultValue then
+                s.defaultValue = new_tab(0, 2)
             end
-            _M.Value.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.default_value)
+            _M.Value.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.defaultValue)
         else
-            s.default_value = nil
+            s.defaultValue = nil
         end
 
 
@@ -2076,10 +2076,10 @@ _M.Type.list = {
     flat_serialize = function(data, buf)
         local pos = 24
         local dscrm
-        if data.element_type and type(data.element_type) == "table" then
+        if data.elementType and type(data.elementType) == "table" then
             local data_off = get_data_off(_M.Type.list, 0, pos)
             write_structp_buf(buf, _M.Type.list, _M.Type, 0, data_off)
-            local size = _M.Type.flat_serialize(data.element_type, buf + pos)
+            local size = _M.Type.flat_serialize(data.elementType, buf + pos)
             pos = pos + size
         end
         return pos
@@ -2090,12 +2090,12 @@ _M.Type.list = {
         local p = buf + (2 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            if not s.element_type then
-                s.element_type = new_tab(0, 2)
+            if not s.elementType then
+                s.elementType = new_tab(0, 2)
             end
-            _M.Type.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.element_type)
+            _M.Type.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.elementType)
         else
-            s.element_type = nil
+            s.elementType = nil
         end
 
 
@@ -2112,16 +2112,16 @@ _M.Type.enum = {
     flat_serialize = function(data, buf)
         local pos = 24
         local dscrm
-        if data.type_id and (type(data.type_id) == "number"
-                or type(data.type_id) == "boolean") then
+        if data.typeId and (type(data.typeId) == "number"
+                or type(data.typeId) == "boolean") then
 
-            write_val(buf, data.type_id, 64, 1)
+            write_val(buf, data.typeId, 64, 1)
         end
         return pos
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.type_id = read_val(buf, "uint64", 64, 1)
+        s.typeId = read_val(buf, "uint64", 64, 1)
 
         return s
     end,
@@ -2136,16 +2136,16 @@ _M.Type.struct = {
     flat_serialize = function(data, buf)
         local pos = 24
         local dscrm
-        if data.type_id and (type(data.type_id) == "number"
-                or type(data.type_id) == "boolean") then
+        if data.typeId and (type(data.typeId) == "number"
+                or type(data.typeId) == "boolean") then
 
-            write_val(buf, data.type_id, 64, 1)
+            write_val(buf, data.typeId, 64, 1)
         end
         return pos
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.type_id = read_val(buf, "uint64", 64, 1)
+        s.typeId = read_val(buf, "uint64", 64, 1)
 
         return s
     end,
@@ -2160,16 +2160,16 @@ _M.Type.interface = {
     flat_serialize = function(data, buf)
         local pos = 24
         local dscrm
-        if data.type_id and (type(data.type_id) == "number"
-                or type(data.type_id) == "boolean") then
+        if data.typeId and (type(data.typeId) == "number"
+                or type(data.typeId) == "boolean") then
 
-            write_val(buf, data.type_id, 64, 1)
+            write_val(buf, data.typeId, 64, 1)
         end
         return pos
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.type_id = read_val(buf, "uint64", 64, 1)
+        s.typeId = read_val(buf, "uint64", 64, 1)
 
         return s
     end,
@@ -2670,25 +2670,25 @@ _M.Annotation = {
 
 }
 _M.ElementSize = {
-    ["EMPTY"] = 0,
-    ["BIT"] = 1,
-    ["BYTE"] = 2,
-    ["TWO_BYTES"] = 3,
-    ["FOUR_BYTES"] = 4,
-    ["EIGHT_BYTES"] = 5,
-    ["POINTER"] = 6,
-    ["INLINE_COMPOSITE"] = 7,
+    ["empty"] = 0,
+    ["bit"] = 1,
+    ["byte"] = 2,
+    ["twoBytes"] = 3,
+    ["fourBytes"] = 4,
+    ["eightBytes"] = 5,
+    ["pointer"] = 6,
+    ["inlineComposite"] = 7,
 
 }
 _M.ElementSizeStr = {
-    [0] = "EMPTY",
-    [1] = "BIT",
-    [2] = "BYTE",
-    [3] = "TWO_BYTES",
-    [4] = "FOUR_BYTES",
-    [5] = "EIGHT_BYTES",
-    [6] = "POINTER",
-    [7] = "INLINE_COMPOSITE",
+    [0] = "empty",
+    [1] = "bit",
+    [2] = "byte",
+    [3] = "twoBytes",
+    [4] = "fourBytes",
+    [5] = "eightBytes",
+    [6] = "pointer",
+    [7] = "inlineComposite",
 
 }
 _M.CodeGeneratorRequest = {
@@ -2707,11 +2707,11 @@ _M.CodeGeneratorRequest = {
             end
         end
         -- composite list
-        if data.requested_files then
+        if data.requestedFiles then
             size = size + 8
-            local num = #data.requested_files
+            local num = #data.requestedFiles
             for i=1, num do
-                size = size + _M.CodeGeneratorRequest.RequestedFile.calc_size_struct(data.requested_files[i])
+                size = size + _M.CodeGeneratorRequest.RequestedFile.calc_size_struct(data.requestedFiles[i])
             end
         end
         return size
@@ -2740,8 +2740,8 @@ _M.CodeGeneratorRequest = {
             -- write list pointer
             write_listp_buf(buf, _M.CodeGeneratorRequest, 0, 7, (pos - old_pos - 8) / 8, data_off)
         end
-        if data.requested_files and type(data.requested_files) == "table" then
-            local num, size, old_pos = #data.requested_files, 0, pos
+        if data.requestedFiles and type(data.requestedFiles) == "table" then
+            local num, size, old_pos = #data.requestedFiles, 0, pos
             local data_off = get_data_off(_M.CodeGeneratorRequest, 1, pos)
 
             -- write tag
@@ -2750,7 +2750,7 @@ _M.CodeGeneratorRequest = {
 
             -- write data
             for i=1, num do
-                pos = pos + _M.CodeGeneratorRequest.RequestedFile.flat_serialize(data.requested_files[i], buf + pos)
+                pos = pos + _M.CodeGeneratorRequest.RequestedFile.flat_serialize(data.requestedFiles[i], buf + pos)
             end
 
             -- write list pointer
@@ -2804,18 +2804,18 @@ _M.CodeGeneratorRequest = {
             local start = (0 + 1 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
             start = start + 2 -- 2 * 32bit
-            if not s.requested_files then
-                s.requested_files = new_tab(num, 0)
+            if not s.requestedFiles then
+                s.requestedFiles = new_tab(num, 0)
             end
             for i=1, num do
-                if not s.requested_files[i] then
-                    s.requested_files[i] = new_tab(0, 2)
+                if not s.requestedFiles[i] then
+                    s.requestedFiles[i] = new_tab(0, 2)
                 end
-                _M.CodeGeneratorRequest.RequestedFile.parse_struct_data(buf + start, dt, pt, header, s.requested_files[i])
+                _M.CodeGeneratorRequest.RequestedFile.parse_struct_data(buf + start, dt, pt, header, s.requestedFiles[i])
                 start = start + (dt + pt) * 2
             end
         else
-            s.requested_files = nil
+            s.requestedFiles = nil
         end
         return s
     end,

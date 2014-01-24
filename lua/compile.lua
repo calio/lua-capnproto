@@ -708,7 +708,7 @@ _M.%sStr = {
     insert(res, "\n}\n")
 end
 
-naming_funcs = {
+_M.naming_funcs = {
     lower_underscore = util.lower_underscore_naming,
     upper_underscore = util.upper_underscore_naming,
     camel            = util.camel_naming,
@@ -719,7 +719,7 @@ function process_annotations(annos, nodes, res)
         local id = anno.id
         local anno_node = nodes[id]
         if get_name(anno_node.displayName) == "naming" then
-            local func = naming_funcs[anno.value.text]
+            local func = _M.naming_funcs[anno.value.text]
             if func then
                 res.naming_func = func
             end
@@ -911,6 +911,17 @@ function _M.compile(schema)
     comp_body(res, schema)
 
     return table.concat(res)
+end
+
+function _M.init(user_conf)
+    print("set config init")
+    for k, v in pairs(user_conf) do
+        if not config[k] then
+            print(format("Unknown user config: %s, ignored.", k))
+        end
+        config[k] = v
+        print("set config " .. k)
+    end
 end
 
 return _M
