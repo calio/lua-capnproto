@@ -14,6 +14,7 @@ local floor     = math.floor
 local byte      = string.byte
 local type      = type
 local modf      = math.modf
+local substr    = string.sub
 
 -- works only with Little Endian
 assert(ffi.abi("le") == true)
@@ -125,7 +126,11 @@ function _M.read_val(buf, field_type, size, off)
         end
     end
 
-    return tonumber(val)
+    if field_type == "int64" or field_type == "uint64" then
+        return substr(tostring(val), 1, -4)
+    else
+        return tonumber(val)
+    end
 end
 
 function _M.write_val(buf, val, size, off)
