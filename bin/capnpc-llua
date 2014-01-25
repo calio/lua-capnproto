@@ -7,10 +7,12 @@ local cjson = require("cjson")
 local compile = require("compile")
 local util = require("util")
 
+local schema_json_file  = "llua.schema.json"
+
 local content = io.stdin:read("*a")
 local schema = assert(schema_capnp.CodeGeneratorRequest.parse(content))
 
-util.write_file("test.schema.capnp.txt", cjson.encode(schema))
+util.write_file(schema_json_file, cjson.encode(schema))
 local res = compile.compile(schema)
 
 local outfile = util.get_output_name(schema) .. ".llua"

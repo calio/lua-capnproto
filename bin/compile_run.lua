@@ -1,10 +1,14 @@
 local compile = require ("compile")
 local util = require ("util")
+local cjson = require ("cjson")
 
 local format = string.format
 local insert = table.insert
 local concat = table.concat
 
+
+local schema_lua_file   = "test.schema.lua"
+local schema_json_file  = "lua.schema.json"
 
 function usage()
     print("lua compile.lua [schema.txt]")
@@ -26,7 +30,7 @@ for k, v in pairs(compile.naming_funcs) do
 end
 
 -- TODO fix this
--- arg[2] = "--naming=camel"
+ arg[2] = "--naming=camel"
 
 for i=2, #arg do
     if string.sub(arg[i], 1, 9) == "--naming=" then
@@ -40,17 +44,13 @@ for i=2, #arg do
         config.default_enum_naming_func = naming_func
     end
 end
---[[
-local t = get_schema_text(f)
 
-local file = io.open("test.schema.lua", "w")
-file:write(t)
-file:close()
+local lua_schema = util.parse_capnp_decode_txt(f)
+util.write_file(schema_lua_file, lua_schema)
 
-local schema = assert(loadstring(t))()
-]]
+local schema = assert(loadstring(lua_schema)())
+util.write_file(schema_json_file, cjson.encode(schema))
 
-local schema = util.parse_capnp_decode(f, "test.schema.lua")
 local outfile = util.get_output_name(schema) .. ".lua"
 
 print("set config:")

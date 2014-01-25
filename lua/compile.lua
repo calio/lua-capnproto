@@ -178,7 +178,9 @@ function comp_field(res, nodes, field)
 
         break
     end
-    if slot.defaultValue then
+    if slot.defaultValue and field.type_name ~= "void"
+            and field.type_name ~= "object" then
+
         for k, v in pairs(slot.defaultValue) do
             if v ~= 0 then
                 field.default_value = v
@@ -229,9 +231,9 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 ]], field.name, field.name, name, field.name, name, name, field.name))
         elseif field.type_name == "enum" then
             insert(res, format([[
+
         local val = read_val(buf, "uint16", %d, %d)
-        s.%s = get_enum_val(val, _M.%sStr)
-]], field.size, field.slot.offset, field.name, field.type_display_name))
+        s.%s = get_enum_val(val, _M.%sStr)]], field.size, field.slot.offset, field.name, field.type_display_name))
 
         elseif field.type_name == "list" then
             local off = field.slot.offset

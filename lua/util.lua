@@ -19,7 +19,7 @@ function _M.camel_naming(name)
     return name
 end
 
-function _M.parse_capnp_decode(infile, outfile)
+function _M.parse_capnp_decode_txt(infile)
     local f = io.open(infile)
     if not f then
         return nil, "Can't open file: " .. tostring(infile)
@@ -39,13 +39,7 @@ function _M.parse_capnp_decode(infile, outfile)
     s = gsub(s, "([^\"])void([^\"])", "%1\"void\"%2")
     s = "return " .. s
 
-    if outfile then
-        local file = io.open(outfile, "w")
-        file:write(s)
-        file:close()
-    end
-
-    return assert(loadstring(s))()
+    return s
 end
 
 function _M.table_diff(t1, t2, namespace)

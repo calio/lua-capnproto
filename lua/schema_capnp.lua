@@ -20,6 +20,7 @@ local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
 local ffi_copy          = ffi.copy
 local ffi_fill          = ffi.fill
+local band, bor, bxor = bit.band, bit.bor, bit.bxor
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -235,17 +236,17 @@ _M.Node = {
 
         local dscrm = _M.Node.which(buf, 6) --buf, dscrmriminantOffset, dscrmriminantValue
 
-        s.id = read_val(buf, "uint64", 64, 0)
 
+        s.id = read_val(buf, "uint64", 64, 0)
         local off, size, num = parse_listp_buf(buf, header, _M.Node, 0)
         if off and num then
             s.displayName = ffi.string(buf + (5 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
             s.displayName = nil
         end
+
         s.displayNamePrefixLength = read_val(buf, "uint32", 32, 2)
         s.scopeId = read_val(buf, "uint64", 64, 2)
-
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Node, 1)
         if off and words then
@@ -285,8 +286,8 @@ _M.Node = {
             s.annotations = nil
         end
         if dscrm == 0 then
-        s.file = read_val(buf, "void", 0, 0)
 
+        s.file = read_val(buf, "void", 0, 0)
         else
             s.file = nil
         end
@@ -447,8 +448,8 @@ _M.Node.NestedNode = {
         else
             s.name = nil
         end
-        s.id = read_val(buf, "uint64", 64, 0)
 
+        s.id = read_val(buf, "uint64", 64, 0)
         return s
     end,
     parse = function(bin, tab)
@@ -540,6 +541,7 @@ _M.Node.struct = {
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
+
         s.dataWordCount = read_val(buf, "uint16", 16, 7)
         s.pointerCount = read_val(buf, "uint16", 16, 12)
         local val = read_val(buf, "uint16", 16, 13)
@@ -547,7 +549,6 @@ _M.Node.struct = {
         s.isGroup = read_val(buf, "bool", 1, 224)
         s.discriminantCount = read_val(buf, "uint16", 16, 15)
         s.discriminantOffset = read_val(buf, "uint32", 32, 8)
-
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Node.struct, 3)
         if off and words then
@@ -822,6 +823,7 @@ _M.Node.annotation = {
             s.type = nil
         end
 
+
         s.targetsFile = read_val(buf, "bool", 1, 112)
         s.targetsConst = read_val(buf, "bool", 1, 113)
         s.targetsEnum = read_val(buf, "bool", 1, 114)
@@ -834,7 +836,6 @@ _M.Node.annotation = {
         s.targetsMethod = read_val(buf, "bool", 1, 121)
         s.targetsParam = read_val(buf, "bool", 1, 122)
         s.targetsAnnotation = read_val(buf, "bool", 1, 123)
-
         return s
     end,
 }
@@ -902,7 +903,7 @@ _M.Field = {
         if data.discriminantValue and (type(data.discriminantValue) == "number"
                 or type(data.discriminantValue) == "boolean") then
 
-            write_val(buf, data.discriminantValue, 16, 1)
+            write_val(buf, bxor(data.discriminantValue, 65535), 16, 1)
         end
         if data.slot then
             dscrm = 0
@@ -976,8 +977,8 @@ _M.Field = {
         else
             s.name = nil
         end
-        s.codeOrder = read_val(buf, "uint16", 16, 0)
 
+        s.codeOrder = read_val(buf, "uint16", 16, 0)
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Field, 1)
         if off and words then
@@ -996,8 +997,8 @@ _M.Field = {
             end
         else
             s.annotations = nil
-        end        s.discriminantValue = read_val(buf, "uint16", 16, 1)
-
+        end
+        s.discriminantValue = bxor(65535, read_val(buf, "uint16", 16, 1))
         if dscrm == 0 then
 
         if not s.slot then
@@ -1091,8 +1092,8 @@ _M.Field.slot = {
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.offset = read_val(buf, "uint32", 32, 1)
 
+        s.offset = read_val(buf, "uint32", 32, 1)
         local p = buf + (3 + 2) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
@@ -1139,8 +1140,8 @@ _M.Field.group = {
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.typeId = read_val(buf, "uint64", 64, 2)
 
+        s.typeId = read_val(buf, "uint64", 64, 2)
         return s
     end,
 }
@@ -1192,15 +1193,15 @@ _M.Field.ordinal = {
 
 
         if dscrm == 0 then
-        s.implicit = read_val(buf, "void", 0, 0)
 
+        s.implicit = read_val(buf, "void", 0, 0)
         else
             s.implicit = nil
         end
 
         if dscrm == 1 then
-        s.explicit = read_val(buf, "uint16", 16, 6)
 
+        s.explicit = read_val(buf, "uint16", 16, 6)
         else
             s.explicit = nil
         end
@@ -1296,8 +1297,8 @@ _M.Enumerant = {
         else
             s.name = nil
         end
-        s.codeOrder = read_val(buf, "uint16", 16, 0)
 
+        s.codeOrder = read_val(buf, "uint16", 16, 0)
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Enumerant, 1)
         if off and words then
@@ -1476,8 +1477,8 @@ _M.Method = {
         else
             s.name = nil
         end
-        s.codeOrder = read_val(buf, "uint16", 16, 0)
 
+        s.codeOrder = read_val(buf, "uint16", 16, 0)
         -- composite list
         local off, size, words = parse_listp_buf(buf, header, _M.Method, 1)
         if off and words then
@@ -1496,8 +1497,8 @@ _M.Method = {
             end
         else
             s.params = nil
-        end        s.requiredParamCount = read_val(buf, "uint16", 16, 1)
-
+        end
+        s.requiredParamCount = read_val(buf, "uint16", 16, 1)
         local p = buf + (1 + 2) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
@@ -1882,99 +1883,99 @@ _M.Type = {
         local s = tab
 
         if dscrm == 0 then
-        s.void = read_val(buf, "void", 0, 0)
 
+        s.void = read_val(buf, "void", 0, 0)
         else
             s.void = nil
         end
 
         if dscrm == 1 then
-        s.bool = read_val(buf, "void", 0, 0)
 
+        s.bool = read_val(buf, "void", 0, 0)
         else
             s.bool = nil
         end
 
         if dscrm == 2 then
-        s.int8 = read_val(buf, "void", 0, 0)
 
+        s.int8 = read_val(buf, "void", 0, 0)
         else
             s.int8 = nil
         end
 
         if dscrm == 3 then
-        s.int16 = read_val(buf, "void", 0, 0)
 
+        s.int16 = read_val(buf, "void", 0, 0)
         else
             s.int16 = nil
         end
 
         if dscrm == 4 then
-        s.int32 = read_val(buf, "void", 0, 0)
 
+        s.int32 = read_val(buf, "void", 0, 0)
         else
             s.int32 = nil
         end
 
         if dscrm == 5 then
-        s.int64 = read_val(buf, "void", 0, 0)
 
+        s.int64 = read_val(buf, "void", 0, 0)
         else
             s.int64 = nil
         end
 
         if dscrm == 6 then
-        s.uint8 = read_val(buf, "void", 0, 0)
 
+        s.uint8 = read_val(buf, "void", 0, 0)
         else
             s.uint8 = nil
         end
 
         if dscrm == 7 then
-        s.uint16 = read_val(buf, "void", 0, 0)
 
+        s.uint16 = read_val(buf, "void", 0, 0)
         else
             s.uint16 = nil
         end
 
         if dscrm == 8 then
-        s.uint32 = read_val(buf, "void", 0, 0)
 
+        s.uint32 = read_val(buf, "void", 0, 0)
         else
             s.uint32 = nil
         end
 
         if dscrm == 9 then
-        s.uint64 = read_val(buf, "void", 0, 0)
 
+        s.uint64 = read_val(buf, "void", 0, 0)
         else
             s.uint64 = nil
         end
 
         if dscrm == 10 then
-        s.float32 = read_val(buf, "void", 0, 0)
 
+        s.float32 = read_val(buf, "void", 0, 0)
         else
             s.float32 = nil
         end
 
         if dscrm == 11 then
-        s.float64 = read_val(buf, "void", 0, 0)
 
+        s.float64 = read_val(buf, "void", 0, 0)
         else
             s.float64 = nil
         end
 
         if dscrm == 12 then
-        s.text = read_val(buf, "void", 0, 0)
 
+        s.text = read_val(buf, "void", 0, 0)
         else
             s.text = nil
         end
 
         if dscrm == 13 then
-        s.data = read_val(buf, "void", 0, 0)
 
+        s.data = read_val(buf, "void", 0, 0)
         else
             s.data = nil
         end
@@ -2028,8 +2029,8 @@ _M.Type = {
         end
 
         if dscrm == 18 then
-        s.object = read_val(buf, "void", 0, 0)
 
+        s.object = read_val(buf, "void", 0, 0)
         else
             s.object = nil
         end
@@ -2121,8 +2122,8 @@ _M.Type.enum = {
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.typeId = read_val(buf, "uint64", 64, 1)
 
+        s.typeId = read_val(buf, "uint64", 64, 1)
         return s
     end,
 }
@@ -2145,8 +2146,8 @@ _M.Type.struct = {
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.typeId = read_val(buf, "uint64", 64, 1)
 
+        s.typeId = read_val(buf, "uint64", 64, 1)
         return s
     end,
 }
@@ -2169,8 +2170,8 @@ _M.Type.interface = {
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.typeId = read_val(buf, "uint64", 64, 1)
 
+        s.typeId = read_val(buf, "uint64", 64, 1)
         return s
     end,
 }
@@ -2393,85 +2394,85 @@ _M.Value = {
         local s = tab
 
         if dscrm == 0 then
-        s.void = read_val(buf, "void", 0, 0)
 
+        s.void = read_val(buf, "void", 0, 0)
         else
             s.void = nil
         end
 
         if dscrm == 1 then
-        s.bool = read_val(buf, "bool", 1, 16)
 
+        s.bool = read_val(buf, "bool", 1, 16)
         else
             s.bool = nil
         end
 
         if dscrm == 2 then
-        s.int8 = read_val(buf, "int8", 8, 2)
 
+        s.int8 = read_val(buf, "int8", 8, 2)
         else
             s.int8 = nil
         end
 
         if dscrm == 3 then
-        s.int16 = read_val(buf, "int16", 16, 1)
 
+        s.int16 = read_val(buf, "int16", 16, 1)
         else
             s.int16 = nil
         end
 
         if dscrm == 4 then
-        s.int32 = read_val(buf, "int32", 32, 1)
 
+        s.int32 = read_val(buf, "int32", 32, 1)
         else
             s.int32 = nil
         end
 
         if dscrm == 5 then
-        s.int64 = read_val(buf, "int64", 64, 1)
 
+        s.int64 = read_val(buf, "int64", 64, 1)
         else
             s.int64 = nil
         end
 
         if dscrm == 6 then
-        s.uint8 = read_val(buf, "uint8", 8, 2)
 
+        s.uint8 = read_val(buf, "uint8", 8, 2)
         else
             s.uint8 = nil
         end
 
         if dscrm == 7 then
-        s.uint16 = read_val(buf, "uint16", 16, 1)
 
+        s.uint16 = read_val(buf, "uint16", 16, 1)
         else
             s.uint16 = nil
         end
 
         if dscrm == 8 then
-        s.uint32 = read_val(buf, "uint32", 32, 1)
 
+        s.uint32 = read_val(buf, "uint32", 32, 1)
         else
             s.uint32 = nil
         end
 
         if dscrm == 9 then
-        s.uint64 = read_val(buf, "uint64", 64, 1)
 
+        s.uint64 = read_val(buf, "uint64", 64, 1)
         else
             s.uint64 = nil
         end
 
         if dscrm == 10 then
-        s.float32 = read_val(buf, "float32", 32, 1)
 
+        s.float32 = read_val(buf, "float32", 32, 1)
         else
             s.float32 = nil
         end
 
         if dscrm == 11 then
-        s.float64 = read_val(buf, "float64", 64, 1)
 
+        s.float64 = read_val(buf, "float64", 64, 1)
         else
             s.float64 = nil
         end
@@ -2503,36 +2504,36 @@ _M.Value = {
         end
 
         if dscrm == 14 then
-        s.list = read_val(buf, "object", 8, 0)
 
+        s.list = read_val(buf, "object", 8, 0)
         else
             s.list = nil
         end
 
         if dscrm == 15 then
-        s.enum = read_val(buf, "uint16", 16, 1)
 
+        s.enum = read_val(buf, "uint16", 16, 1)
         else
             s.enum = nil
         end
 
         if dscrm == 16 then
-        s.struct = read_val(buf, "object", 8, 0)
 
+        s.struct = read_val(buf, "object", 8, 0)
         else
             s.struct = nil
         end
 
         if dscrm == 17 then
-        s.interface = read_val(buf, "void", 0, 0)
 
+        s.interface = read_val(buf, "void", 0, 0)
         else
             s.interface = nil
         end
 
         if dscrm == 18 then
-        s.object = read_val(buf, "object", 8, 0)
 
+        s.object = read_val(buf, "object", 8, 0)
         else
             s.object = nil
         end
@@ -2623,8 +2624,8 @@ _M.Annotation = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.id = read_val(buf, "uint64", 64, 0)
 
+        s.id = read_val(buf, "uint64", 64, 0)
         local p = buf + (1 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
@@ -2930,8 +2931,8 @@ _M.CodeGeneratorRequest.RequestedFile = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.id = read_val(buf, "uint64", 64, 0)
 
+        s.id = read_val(buf, "uint64", 64, 0)
         local off, size, num = parse_listp_buf(buf, header, _M.CodeGeneratorRequest.RequestedFile, 0)
         if off and num then
             s.filename = ffi.string(buf + (1 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
@@ -3047,8 +3048,8 @@ _M.CodeGeneratorRequest.RequestedFile.Import = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.id = read_val(buf, "uint64", 64, 0)
 
+        s.id = read_val(buf, "uint64", 64, 0)
         local off, size, num = parse_listp_buf(buf, header, _M.CodeGeneratorRequest.RequestedFile.Import, 0)
         if off and num then
             s.name = ffi.string(buf + (1 + 0 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
