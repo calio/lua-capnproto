@@ -19,6 +19,7 @@ local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
 local ffi_copy          = ffi.copy
 local ffi_fill          = ffi.fill
+local band, bor, bxor = bit.band, bit.bor, bit.bxor
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -214,6 +215,11 @@ _M.T1 = {
             write_listp_buf(buf, _M.T1, 4, 7, (pos - old_pos - 8) / 8, data_off)
         end
 
+        if data.du0 and (type(data.du0) == "number"
+                or type(data.du0) == "boolean") then
+
+            write_val(buf, bxor(data.du0, 65535), 32, 9)
+        end
         if dscrm then
             _M.T1.which(buf, 10, dscrm) --buf, discriminantOffset, discriminantValue
         end
@@ -348,6 +354,7 @@ _M.T1 = {
         else
             s.ls0 = nil
         end
+        s.du0 = bxor(65535, read_val(buf, "uint32", 32, 9))
         return s
     end,
 

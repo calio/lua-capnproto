@@ -61,6 +61,7 @@ local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
 local ffi_copy          = ffi.copy
 local ffi_fill          = ffi.fill
+local band, bor, bxor = bit.band, bit.bor, bit.bxor
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -154,7 +155,7 @@ function comp_field(res, nodes, field)
         type_name   = k
         if type_name == "struct" then
             field.type_display_name = get_name(nodes[v.typeId].displayName)
-            default     = "opaque object"
+            --default     = "opaque object"
         elseif type_name == "enum" then
             field.enum_id = v.typeId
             field.type_display_name = get_name(nodes[v.typeId].displayName)
@@ -169,13 +170,21 @@ function comp_field(res, nodes, field)
             end
             field.element_type = list_type
         else
-            default     = v
+            -- default     = v
         end
 
         field.type_name = type_name
-        field.default   = default
+        --field.default   = default
 
         break
+    end
+    if slot.defaultValue then
+        for k, v in pairs(slot.defaultValue) do
+            if v ~= 0 then
+                field.default_value = v
+            end
+            break
+        end
     end
 
     if not type_name then
@@ -307,9 +316,15 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 ]], name, off, field.name, struct.dataWordCount, off, field.name))
 
         else
-            insert(res, format([[
-        s.%s = read_val(buf, "%s", %d, %d)
-]], field.name, field.type_name, field.size, field.slot.offset))
+            if field.default_value then
+                insert(res, format([[
+
+        s.%s = bxor(%d, read_val(buf, "%s", %d, %d))]], field.name, field.default_value, field.type_name, field.size, field.slot.offset))
+            else
+                insert(res, format([[
+
+        s.%s = read_val(buf, "%s", %d, %d)]], field.name, field.type_name, field.size, field.slot.offset))
+            end
 
         end
         if field.discriminantValue then
@@ -503,13 +518,19 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
         else
             if field.type_name ~= "void" then
+                local val
+                if field.default_value then
+                    val = format("bxor(data.%s, %d)", field.name, field.default_value)
+                else
+                    val = "data." .. field.name
+                end
                 insert(res, format([[
 
         if data.%s and (type(data.%s) == "number"
                 or type(data.%s) == "boolean") then
 
-            write_val(buf, data.%s, %d, %d)
-        end]], field.name, field.name, field.name, field.name, field.size,
+            write_val(buf, %s, %d, %d)
+        end]], field.name, field.name, field.name, val, field.size,
                     field.slot.offset))
             end
         end
