@@ -12,6 +12,7 @@ local schema_json_file  = "llua.schema.json"
 local content = io.stdin:read("*a")
 local schema = assert(schema_capnp.CodeGeneratorRequest.parse(content))
 
+schema.__compiler = "lua-capnp(decoded by lua)"
 util.write_file(schema_json_file, cjson.encode(schema))
 local res = compile.compile(schema)
 
