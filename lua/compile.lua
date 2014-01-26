@@ -183,7 +183,11 @@ function comp_field(res, nodes, field)
 
         for k, v in pairs(slot.defaultValue) do
             if v ~= 0 then
-                field.default_value = v
+                if field.type_name == "bool" then
+                    field.default_value = v and 1 or 0
+                else
+                    field.default_value = v
+                end
             end
             break
         end
@@ -318,15 +322,10 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 ]], name, off, field.name, struct.dataWordCount, off, field.name))
 
         else
-            if field.default_value then
-                insert(res, format([[
+            local default = field.default_value and field.default_value or "nil"
+            insert(res, format([[
 
-        s.%s = bxor(%d, read_val(buf, "%s", %d, %d))]], field.name, field.default_value, field.type_name, field.size, field.slot.offset))
-            else
-                insert(res, format([[
-
-        s.%s = read_val(buf, "%s", %d, %d)]], field.name, field.type_name, field.size, field.slot.offset))
-            end
+        s.%s = read_val(buf, "%s", %d, %d, %s)]], field.name, field.type_name, field.size, field.slot.offset, default))
 
         end
         if field.discriminantValue then
@@ -519,21 +518,16 @@ function comp_flat_serialize(res, struct, fields, size, name)
         end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 
         else
+            local default = field.default_value and field.default_value or "nil"
             if field.type_name ~= "void" then
-                local val
-                if field.default_value then
-                    val = format("bxor(data.%s, %d)", field.name, field.default_value)
-                else
-                    val = "data." .. field.name
-                end
                 insert(res, format([[
 
         if data.%s and (type(data.%s) == "number"
                 or type(data.%s) == "boolean") then
 
-            write_val(buf, %s, %d, %d)
-        end]], field.name, field.name, field.name, val, field.size,
-                    field.slot.offset))
+            write_val(buf, data.%s, %d, %d, %s)
+        end]], field.name, field.name, field.name, field.name, field.size,
+                    field.slot.offset, default))
             end
         end
 

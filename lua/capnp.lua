@@ -100,7 +100,8 @@ local function get_pointer_from_val(buf, size, val)
     return p
 end
 
-function _M.read_val(buf, field_type, size, off)
+-- default: optional
+function _M.read_val(buf, field_type, size, off, default)
     if field_type == "void" then
         return "Void"
     end
@@ -118,6 +119,11 @@ function _M.read_val(buf, field_type, size, off)
         val = rshift(band(mask, p[n]), s)
     end
 
+    -- TODO int64/uint64 support
+    if default then
+        val = bxor(val, default)
+    end
+
     if field_type == "bool" then
         if val and val ~= 0 then
             return true
@@ -133,11 +139,16 @@ function _M.read_val(buf, field_type, size, off)
     end
 end
 
-function _M.write_val(buf, val, size, off)
+-- default: optional
+function _M.write_val(buf, val, size, off, default)
     local p = get_pointer_from_val(buf, size, val)
 
     if type(val) == "boolean" then
         val = val and 1 or 0
+    end
+
+    if default then
+        val = bxor(val, default)
     end
 
     if size >= 8 then

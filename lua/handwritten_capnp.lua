@@ -2,6 +2,7 @@
 local ffi = require "ffi"
 local capnp = require "capnp"
 local bit = require "bit"
+local util = require "util"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
@@ -97,32 +98,32 @@ _M.T1 = {
         if data.i0 and (type(data.i0) == "number"
                 or type(data.i0) == "boolean") then
 
-            write_val(buf, data.i0, 32, 0)
+            write_val(buf, data.i0, 32, 0, nil)
         end
         if data.i1 and (type(data.i1) == "number"
                 or type(data.i1) == "boolean") then
 
-            write_val(buf, data.i1, 16, 2)
+            write_val(buf, data.i1, 16, 2, nil)
         end
         if data.b0 and (type(data.b0) == "number"
                 or type(data.b0) == "boolean") then
 
-            write_val(buf, data.b0, 1, 48)
+            write_val(buf, data.b0, 1, 48, 0)
         end
         if data.i2 and (type(data.i2) == "number"
                 or type(data.i2) == "boolean") then
 
-            write_val(buf, data.i2, 8, 7)
+            write_val(buf, data.i2, 8, 7, nil)
         end
         if data.b1 and (type(data.b1) == "number"
                 or type(data.b1) == "boolean") then
 
-            write_val(buf, data.b1, 1, 49)
+            write_val(buf, data.b1, 1, 49, 0)
         end
         if data.i3 and (type(data.i3) == "number"
                 or type(data.i3) == "boolean") then
 
-            write_val(buf, data.i3, 32, 2)
+            write_val(buf, data.i3, 32, 2, nil)
         end
         if data.s0 and type(data.s0) == "table" then
             local data_off = get_data_off(_M.T1, 0, pos)
@@ -173,7 +174,7 @@ _M.T1 = {
         if data.ui0 and (type(data.ui0) == "number"
                 or type(data.ui0) == "boolean") then
 
-            write_val(buf, data.ui0, 32, 4)
+            write_val(buf, data.ui0, 32, 4, nil)
         end
         if data.ui1 then
             dscrm = 1
@@ -181,7 +182,7 @@ _M.T1 = {
         if data.ui1 and (type(data.ui1) == "number"
                 or type(data.ui1) == "boolean") then
 
-            write_val(buf, data.ui1, 32, 4)
+            write_val(buf, data.ui1, 32, 4, nil)
         end
         if data.uv0 then
             dscrm = 2
@@ -218,7 +219,12 @@ _M.T1 = {
         if data.du0 and (type(data.du0) == "number"
                 or type(data.du0) == "boolean") then
 
-            write_val(buf, bxor(data.du0, 65535), 32, 9)
+            write_val(buf, data.du0, 32, 9, 65535)
+        end
+        if data.db0 and (type(data.db0) == "number"
+                or type(data.db0) == "boolean") then
+
+            write_val(buf, data.db0, 1, 50, 1)
         end
         if dscrm then
             _M.T1.which(buf, 10, dscrm) --buf, discriminantOffset, discriminantValue
@@ -258,12 +264,12 @@ _M.T1 = {
         local s = tab
         local dscrm = _M.T1.which(buf, 10) --buf, dscrmriminantOffset, dscrmriminantValue
 
-        s.i0 = read_val(buf, "uint32", 32, 0)
-        s.i1 = read_val(buf, "uint16", 16, 2)
-        s.b0 = read_val(buf, "bool", 1, 48)
-        s.i2 = read_val(buf, "int8", 8, 7)
-        s.b1 = read_val(buf, "bool", 1, 49)
-        s.i3 = read_val(buf, "int32", 32, 2)
+        s.i0 = read_val(buf, "uint32", 32, 0, nil)
+        s.i1 = read_val(buf, "uint16", 16, 2, nil)
+        s.b0 = read_val(buf, "bool", 1, 48, 0)
+        s.i2 = read_val(buf, "int8", 8, 7, nil)
+        s.b1 = read_val(buf, "bool", 1, 49, 0)
+        s.i3 = read_val(buf, "int32", 32, 2, nil)
 
         local p = buf + (5 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
@@ -303,21 +309,21 @@ _M.T1 = {
         end
 
         if dscrm == 0 then
-        s.ui0 = read_val(buf, "int32", 32, 4)
+        s.ui0 = read_val(buf, "int32", 32, 4, nil)
 
         else
             s.ui0 = nil
         end
 
         if dscrm == 1 then
-        s.ui1 = read_val(buf, "int32", 32, 4)
+        s.ui1 = read_val(buf, "int32", 32, 4, nil)
 
         else
             s.ui1 = nil
         end
 
         if dscrm == 2 then
-        s.uv0 = read_val(buf, "void", 0, 0)
+        s.uv0 = read_val(buf, "void", 0, 0, nil)
 
         else
             s.uv0 = nil
@@ -354,7 +360,8 @@ _M.T1 = {
         else
             s.ls0 = nil
         end
-        s.du0 = bxor(65535, read_val(buf, "uint32", 32, 9))
+        s.du0 = read_val(buf, "uint32", 32, 9, 65535)
+        s.db0 = read_val(buf, "bool", 1, 50, 1)
         return s
     end,
 
@@ -406,15 +413,16 @@ _M.T1.T2 = {
 
     flat_serialize = function(data, buf)
         local pos = 16
+        local dscrm
         if data.f0 and (type(data.f0) == "number"
                 or type(data.f0) == "boolean") then
 
-            write_val(buf, data.f0, 32, 0)
+            write_val(buf, data.f0, 32, 0, nil)
         end
         if data.f1 and (type(data.f1) == "number"
                 or type(data.f1) == "boolean") then
 
-            write_val(buf, data.f1, 64, 1)
+            write_val(buf, data.f1, 64, 1, nil)
         end
         return pos
     end,
@@ -439,8 +447,8 @@ _M.T1.T2 = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.f0 = read_val(buf, "float32", 32, 0)
-        s.f1 = read_val(buf, "float64", 64, 1)
+        s.f0 = read_val(buf, "float32", 32, 0, nil)
+        s.f1 = read_val(buf, "float64", 64, 1, nil)
         return s
     end,
 
@@ -449,7 +457,9 @@ _M.T1.T2 = {
             return nil, "message too short"
         end
 
+        local header = new_tab(0, 4)
         local p = ffi_cast("uint32_t *", bin)
+        header.base = p
         local nsegs = p[0] + 1
         header.seg_sizes = {}
         for i=1, nsegs do
@@ -498,13 +508,13 @@ _M.T1.g0 = {
         if data.ui2 and (type(data.ui2) == "number"
                 or type(data.ui2) == "boolean") then
 
-            write_val(buf, data.ui2, 32, 6)
+            write_val(buf, data.ui2, 32, 6, nil)
         end
     end,
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.ui2 = read_val(buf, "uint32", 32, 6)
+        s.ui2 = read_val(buf, "uint32", 32, 6, nil)
         return s
     end,
 }
@@ -527,7 +537,7 @@ _M.T1.u0 = {
         if data.ui3 and (type(data.ui3) == "number"
                 or type(data.ui3) == "boolean") then
 
-            write_val(buf, data.ui3, 16, 11)
+            write_val(buf, data.ui3, 16, 11, nil)
         end
         if data.uv1 then
             dscrm = 1
@@ -565,14 +575,14 @@ _M.T1.u0 = {
 
 
         if dscrm == 0 then
-        s.ui3 = read_val(buf, "uint16", 16, 11)
+        s.ui3 = read_val(buf, "uint16", 16, 11, nil)
 
         else
             s.ui3 = nil
         end
 
         if dscrm == 1 then
-        s.uv1 = read_val(buf, "void", 0, 0)
+        s.uv1 = read_val(buf, "void", 0, 0, nil)
 
         else
             s.uv1 = nil
@@ -606,14 +616,14 @@ _M.T1.u0.ug0 = {
         if data.ugu0 and (type(data.ugu0) == "number"
                 or type(data.ugu0) == "boolean") then
 
-            write_val(buf, data.ugu0, 32, 8)
+            write_val(buf, data.ugu0, 32, 8, nil)
         end
         return pos
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s.ugv0 = read_val(buf, "void", 0, 0)
-        s.ugu0 = read_val(buf, "uint32", 32, 8)
+        s.ugv0 = read_val(buf, "void", 0, 0, nil)
+        s.ugu0 = read_val(buf, "uint32", 32, 8, nil)
 
         return s
     end,

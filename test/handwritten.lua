@@ -472,4 +472,33 @@ function test_default_value1()
     assert_nil(copy.ls0)
     assert_equal(630, copy.du0) -- default = 65535
 end
+function test_default_value2()
+    local data = {
+        db0 = true
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+    assert_equal(0, copy.ui0) -- ui0 is set by default
+    assert_nil(copy.ui1)
+    assert_nil(copy.uv0)
+    assert_equal(0, copy.g0.ui2)
+    assert_equal(0, copy.u0.ui3)
+    assert_nil(copy.u0.uv1)
+    assert_nil(copy.u0.ug0)
+    assert_nil(copy.ls0)
+    assert_equal(65535, copy.du0) -- default = 65535
+    assert_equal(true, copy.db0) -- default = true
+end
 return _G

@@ -53,6 +53,7 @@ struct T1 {
     ls0 @20 :List(T2);
 
     du0 @21 :UInt32 = 65535;
+    db0 @22 :Bool = true;
 #    u1: union {
 #        g1 :group {
 #            v1 @17 :Void;

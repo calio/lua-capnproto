@@ -8,3 +8,5 @@
 * make capnpc-llua work
 * fix 0-item list
 * calculate new_tab arguments
+* 64 bit support for read_val and write_val
+* float number default value
