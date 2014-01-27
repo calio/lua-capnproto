@@ -54,6 +54,7 @@ struct T1 {
 
     du0 @21 :UInt32 = 65535;
     db0 @22 :Bool = true;
+    end @23 :Bool; # "end" is lua's reserved word
 #    u1: union {
 #        g1 :group {
 #            v1 @17 :Void;

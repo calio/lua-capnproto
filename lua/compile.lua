@@ -227,17 +227,17 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             -- TODO group struffs
             insert(res, format([[
 
-        if not s.%s then
-            s.%s = new_tab(0, 4)
+        if not s["%s"] then
+            s["%s"] = new_tab(0, 4)
         end
-        _M.%s.%s.parse_struct_data(buf, _M.%s.dataWordCount, _M.%s.pointerCount,
-                header, s.%s)
+        _M.%s["%s"].parse_struct_data(buf, _M.%s.dataWordCount, _M.%s.pointerCount,
+                header, s["%s"])
 ]], field.name, field.name, name, field.name, name, name, field.name))
         elseif field.type_name == "enum" then
             insert(res, format([[
 
         local val = read_val(buf, "uint16", %d, %d)
-        s.%s = get_enum_val(val, _M.%sStr)]], field.size, field.slot.offset, field.name, field.type_display_name))
+        s["%s"] = get_enum_val(val, _M.%sStr)]], field.size, field.slot.offset, field.name, field.type_display_name))
 
         elseif field.type_name == "list" then
             local off = field.slot.offset
@@ -250,18 +250,18 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local start = (%d + %d + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
             start = start + 2 -- 2 * 32bit
-            if not s.%s then
-                s.%s = new_tab(num, 0)
+            if not s["%s"] then
+                s["%s"] = new_tab(num, 0)
             end
             for i=1, num do
-                if not s.%s[i] then
-                    s.%s[i] = new_tab(0, 2)
+                if not s["%s"][i] then
+                    s["%s"][i] = new_tab(0, 2)
                 end
-                _M.%s.parse_struct_data(buf + start, dt, pt, header, s.%s[i])
+                _M.%s.parse_struct_data(buf + start, dt, pt, header, s["%s"][i])
                 start = start + (dt + pt) * 2
             end
         else
-            s.%s = nil
+            s["%s"] = nil
         end]], name, off, struct.dataWordCount, off, field.name, field.name,
                     field.name, field.name, field.type_display_name, field.name,
                     field.name))
@@ -270,9 +270,9 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
         if off and num then
-            s.%s = parse_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = parse_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
         else
-            s.%s = nil
+            s["%s"] = nil
         end
 ]], name, off, field.name, struct.dataWordCount, off, field.element_type,
                     field.name))
@@ -286,12 +286,12 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         local p = buf + (%d + %d) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = parse_struct_buf(p, header)
         if off and dw and pw then
-            if not s.%s then
-                s.%s = new_tab(0, 2)
+            if not s["%s"] then
+                s["%s"] = new_tab(0, 2)
             end
-            _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, header, s.%s)
+            _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, header, s["%s"])
         else
-            s.%s = nil
+            s["%s"] = nil
         end
 
 ]], struct.dataWordCount, off, field.name, field.name, field.type_display_name,
@@ -303,9 +303,9 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
         if off and num then
-            s.%s = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
-            s.%s = nil
+            s["%s"] = nil
         end
 ]], name, off, field.name, struct.dataWordCount, off, field.name))
 
@@ -315,9 +315,9 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
         if off and num then
-            s.%s = ffi.string(buf + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
-            s.%s = nil
+            s["%s"] = nil
         end
 ]], name, off, field.name, struct.dataWordCount, off, field.name))
 
@@ -325,14 +325,14 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local default = field.default_value and field.default_value or "nil"
             insert(res, format([[
 
-        s.%s = read_val(buf, "%s", %d, %d, %s)]], field.name, field.type_name, field.size, field.slot.offset, default))
+        s["%s"] = read_val(buf, "%s", %d, %d, %s)]], field.name, field.type_name, field.size, field.slot.offset, default))
 
         end
         if field.discriminantValue then
             insert(res, format([[
 
         else
-            s.%s = nil
+            s["%s"] = nil
         end
 ]],field.name))
         end
@@ -414,7 +414,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         if field.discriminantValue then
             insert(res, format([[
 
-        if data.%s then
+        if data["%s"] then
             dscrm = %d
         end
 ]], field.name, field.discriminantValue))
@@ -422,18 +422,18 @@ function comp_flat_serialize(res, struct, fields, size, name)
         if field.group then
             insert(res, format([[
 
-        if data.%s and type(data.%s) == "table" then
+        if data["%s"] and type(data["%s"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.%s.%s.flat_serialize(data.%s, buf)
+            _M.%s.%s.flat_serialize(data["%s"], buf)
         end
 ]], field.name, field.name, name, field.name, field.name))
 
         elseif field.type_name == "enum" then
             insert(res, format([[
 
-        if data.%s and type(data.%s) == "string" then
-            local val = get_enum_val(data.%s, _M.%s, "%s.%s")
+        if data["%s"] and type(data["%s"]) == "string" then
+            local val = get_enum_val(data["%s"], _M.%s, "%s.%s")
             write_val(buf, val, %d, %d)
         end]], field.name, field.name, field.name, field.type_display_name,
                      name, field.name, field.size, field.slot.offset))
@@ -443,8 +443,8 @@ function comp_flat_serialize(res, struct, fields, size, name)
             if field.element_type == "struct" then
                 insert(res, format([[
 
-        if data.%s and type(data.%s) == "table" then
-            local num, size, old_pos = #data.%s, 0, pos
+        if data["%s"] and type(data["%s"]) == "table" then
+            local num, size, old_pos = #data["%s"], 0, pos
             local data_off = get_data_off(_M.%s, %d, pos)
 
             -- write tag
@@ -453,7 +453,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
             -- write data
             for i=1, num do
-                pos = pos + _M.%s.flat_serialize(data.%s[i], buf + pos)
+                pos = pos + _M.%s.flat_serialize(data["%s"][i], buf + pos)
             end
 
             -- write list pointer
@@ -464,14 +464,14 @@ function comp_flat_serialize(res, struct, fields, size, name)
             else
                 insert(res, format([[
 
-        if data.%s and type(data.%s) == "table" then
+        if data["%s"] and type(data["%s"]) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
 
-            local len = #data.%s
+            local len = #data["%s"]
             write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
 
             for i=1, len do
-                write_val(buf + pos, data.%s[i], %d, i - 1) -- 8 bits
+                write_val(buf + pos, data["%s"][i], %d, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end]], field.name, field.name, name, off, field.name, name, off,
@@ -481,10 +481,10 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        if data.%s and type(data.%s) == "table" then
+        if data["%s"] and type(data["%s"]) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
             write_structp_buf(buf, _M.%s, _M.%s, %d, data_off)
-            local size = _M.%s.flat_serialize(data.%s, buf + pos)
+            local size = _M.%s.flat_serialize(data["%s"], buf + pos)
             pos = pos + size
         end]], field.name, field.name, name, off, name, field.type_display_name,
                     off, field.type_display_name, field.name))
@@ -493,13 +493,13 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        if data.%s and type(data.%s) == "string" then
+        if data["%s"] and type(data["%s"]) == "string" then
             local data_off = get_data_off(_M.%s, %d, pos)
 
-            local len = #data.%s + 1
+            local len = #data["%s"] + 1
             write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(buf + pos, data.%s)
+            ffi_copy(buf + pos, data["%s"])
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 
@@ -507,13 +507,13 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        if data.%s and type(data.%s) == "string" then
+        if data["%s"] and type(data["%s"]) == "string" then
             local data_off = get_data_off(_M.%s, %d, pos)
 
-            local len = #data.%s
+            local len = #data["%s"]
             write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(buf + pos, data.%s)
+            ffi_copy(buf + pos, data["%s"])
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 
@@ -522,10 +522,10 @@ function comp_flat_serialize(res, struct, fields, size, name)
             if field.type_name ~= "void" then
                 insert(res, format([[
 
-        if data.%s and (type(data.%s) == "number"
-                or type(data.%s) == "boolean") then
+        if data["%s"] and (type(data["%s"]) == "number"
+                or type(data["%s"]) == "boolean") then
 
-            write_val(buf, data.%s, %d, %d, %s)
+            write_val(buf, data["%s"], %d, %d, %s)
         end]], field.name, field.name, field.name, field.name, field.size,
                     field.slot.offset, default))
             end
@@ -873,11 +873,11 @@ function gen_%s()
                 break
             end
             ]]
-            insert(res, format("    %s.%s = rand.%s(rand.uint8(), rand.%s)\n", name,
+            insert(res, format('    %s["%s"] = rand.%s(rand.uint8(), rand.%s)\n', name,
                     field.name, field.type_name, list_type))
 
         else
-            insert(res, format("    %s.%s = rand.%s()\n", name,
+            insert(res, format('    %s["%s"] = rand.%s()\n', name,
                     field.name, field.type_name))
         end
     end
