@@ -89,7 +89,7 @@ function _M.write_file(name, content)
 end
 
 function _M.get_output_name(schema)
-    return string.gsub(schema.requestedFiles[1].filename, "%.", "_")
+    return string.gsub(schema.requestedFiles[1].filename, "%.capnp", "_capnp")
 end
 
 function _M.hex_buf_str(buf, len)

@@ -1,7 +1,11 @@
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
+CAPNP_TEST:=../capnp_test
+PWD:=$(shell pwd)
 #CXX:=g++-4.7
 
+export PATH:=bin:$(PATH)
+export LUA_PATH:=$(PWD)/lua/?.lua;$(PWD)/proto/?.lua;$(PWD)/$(CAPNP_TEST)/?.lua;$(LUA_PATH);;
 
 compiled: proto/example.capnp proto/enums.capnp
 	capnp compile -oc++ $+
@@ -24,6 +28,10 @@ cpp/main: cpp/main.o cpp/example_capnp.o cpp/enums_capnp.o
 
 test:
 	test/run_tests.sh
+
+test1:
+	capnp compile -olua $(CAPNP_TEST)/test.capnp
+	$(MAKE) -C $(CAPNP_TEST) CAPNP_TEST_APP=`pwd`/bin/lua-capnproto-test
 
 all: cpp/main
 

@@ -54,12 +54,12 @@ schema.__compiler = "lua-capnp(decoded by capnp tool)"
 util.write_file(schema_json_file, cjson.encode(schema))
 
 local outfile = util.get_output_name(schema) .. ".lua"
-
+print(outfile)
 print("set config:")
 compile.init(config)
 local res = compile.compile(schema)
 
-local file = io.open(outfile, "w")
+local file = assert(io.open(outfile, "w"))
 file:write(res)
 file:close()
 
