@@ -1,0 +1,65 @@
+#!/usr/bin/env luajit
+
+local test = require("test_capnp")
+local cjson = require("cjson")
+
+local insert = table.insert
+local concat = table.concat
+-- print(arg[1], arg[2])
+
+local action = arg[1]
+local test_case = arg[2]
+
+-- print(action, test_case)
+
+function pprint(val, T)
+    local is_print
+    if not res then
+        res = {}
+        is_print = true
+    end
+
+    local typ = type(val)
+    if typ == "table" then
+        insert(res, "(")
+        local i = 1
+        for _, item in pairs(T.fields) do
+            local k = item.name
+            local default = item.default
+            if val[k] ~= default then
+                if i ~= 1 then
+                    insert(res, ", ")
+                end
+                insert(res, k)
+                insert(res, " = ")
+                pprint(val[k], T[k])
+                i = i + 1
+            end
+        end
+        insert(res, ")")
+    elseif typ == "string" then
+        insert(res, '"')
+        insert(res, val)
+        insert(res, '"')
+    else
+        insert(res, val)
+    end
+
+    if is_print then
+        print(concat(res))
+    end
+end
+
+local type_map = {
+    simpleTest              = "SimpleTestStruct",
+    textListTypeTest        = "ListTest",
+    uInt8DefaultValueTest   = "TestDefaults",
+    constTest               = "SimpleTestStruct",
+}
+
+if action == "decode" then
+    local content = io.stdin:read("*a")
+    local typ = assert(type_map[test_case])
+    local r = test[typ].parse(content)
+    pprint(r, test[typ])
+end

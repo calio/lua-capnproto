@@ -183,17 +183,24 @@ function comp_field(res, nodes, field)
             and field.type_name ~= "object" then
 
         for k, v in pairs(slot.defaultValue) do
-            if v ~= 0 then
+             -- if v ~= 0 then
                 if field.type_name == "bool" then
-                    field.default_value = v and 1 or 0
+                    field.print_default_value = v and 1 or 0
+                elseif field.type_name == "text" or field.type_name == "data" then
+                    field.print_default_value = '"' .. v .. '"'
+                elseif field.type_name == "struct" or field.type_name == "list" or field.type_name == "object" then
+                    field.print_default_value = '"' .. v .. '"'
                 else
-                    field.default_value = v
+                    field.print_default_value = v
                 end
-            end
+             -- end
             break
         end
     end
-
+    if field.print_default_value ~= 0 then
+        field.default_value = field.print_default_value
+    end
+    -- print("default:", field.name, field.default_value)
     if not type_name then
         field.type_name = "void"
         field.size = 0
@@ -664,7 +671,10 @@ function comp_struct(res, nodes, node, struct, name)
         struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
-            local field_names = {}
+            insert(res, [[
+
+    fields = {
+]])
             for i, field in ipairs(struct.fields) do
                 comp_field(res, nodes, field)
                 if field.group then
@@ -673,13 +683,14 @@ function comp_struct(res, nodes, node, struct, name)
                     end
                     insert(node.nestedNodes, { name = field.name, id = field.group.typeId })
                 end
-                insert(field_names, '"' .. field.name .. '"')
+                insert(res, format([[
+        { name = "%s", default = %s },
+]], field.name, field.print_default_value))
             end
             print("struct:", name)
             insert(res, format([[
-
-    fields = { %s },
-]], concat(field_names, ",")))
+    },
+]]))
             if not struct.isGroup then
                 comp_calc_size(res, struct.fields, struct.size, struct.type_name)
             end
