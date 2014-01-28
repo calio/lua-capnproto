@@ -57,6 +57,7 @@ _M.T1 = {
     discriminantCount = 3,
     discriminantOffset = 10,
 
+    fields = { "i0","i1","b0","i2","b1","i3","s0","e0","l0","t0","e1","d0","ui0","ui1","uv0","g0","u0","ls0","du0","db0","end" },
     calc_size_struct = function(data)
         local size = 80
         -- struct
@@ -403,6 +404,8 @@ _M.T1 = {
             return nil
         end
     end,
+
+    fields = { },
 }
 
 _M.T1.T2 = {
@@ -411,6 +414,7 @@ _M.T1.T2 = {
     dataWordCount = 2,
     pointerCount = 0,
 
+    fields = { "f0","f1" },
     calc_size_struct = function(data)
         local size = 16
         return size
@@ -511,6 +515,7 @@ _M.T1.g0 = {
     pointerCount = 5,
     isGroup = true,
 
+    fields = { "ui2" },
     -- size is included in the parent struct, so no need to calculate size here
     flat_serialize = function(data, buf)
         local pos = 80
@@ -537,6 +542,7 @@ _M.T1.u0 = {
     discriminantOffset = 14,
     isGroup = true,
 
+    fields = { "ui3","uv1","ug0" },
     flat_serialize = function(data, buf)
         local pos = 80
         local dscrm
@@ -619,6 +625,7 @@ _M.T1.u0.ug0 = {
     pointerCount = 5,
     isGroup = true,
 
+    fields = { "ugv0","ugu0" },
     flat_serialize = function(data, buf)
         local pos = 80
         local dscrm

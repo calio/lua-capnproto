@@ -3,6 +3,7 @@ local encode = cjson.encode
 local util = require "util"
 
 local insert = table.insert
+local concat = table.concat
 local format = string.format
 local lower = string.lower
 local gsub = string.gsub
@@ -663,6 +664,7 @@ function comp_struct(res, nodes, node, struct, name)
         struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
+            local field_names = {}
             for i, field in ipairs(struct.fields) do
                 comp_field(res, nodes, field)
                 if field.group then
@@ -671,7 +673,13 @@ function comp_struct(res, nodes, node, struct, name)
                     end
                     insert(node.nestedNodes, { name = field.name, id = field.group.typeId })
                 end
+                insert(field_names, '"' .. field.name .. '"')
             end
+            print("struct:", name)
+            insert(res, format([[
+
+    fields = { %s },
+]], concat(field_names, ",")))
             if not struct.isGroup then
                 comp_calc_size(res, struct.fields, struct.size, struct.type_name)
             end
