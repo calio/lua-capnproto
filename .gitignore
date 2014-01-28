@@ -15,6 +15,7 @@
 # Vim files
 *.swp
 *.swo
+*.swn
 *~
 
 # Project temp files
@@ -30,3 +31,5 @@ test.schema.lua
 CLIP
 example_capnp.lua
 data_generator.lua
+*.json
+*.log
