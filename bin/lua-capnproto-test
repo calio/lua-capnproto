@@ -2,6 +2,7 @@
 
 local test = require("test_capnp")
 local cjson = require("cjson")
+local util = require("util")
 
 local insert = table.insert
 local concat = table.concat
@@ -57,9 +58,14 @@ local type_map = {
     constTest               = "SimpleTestStruct",
 }
 
+local typ = assert(type_map[test_case])
 if action == "decode" then
     local content = io.stdin:read("*a")
-    local typ = assert(type_map[test_case])
+    util.write_file("decode_" .. test_case, content)
     local r = test[typ].parse(content)
     pprint(r, test[typ])
+elseif action == "encode" then
+    local r = test[typ].serialize({})
+    util.write_file("encode_" .. test_case, r)
+    print(r)
 end
