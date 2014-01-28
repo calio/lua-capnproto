@@ -21,9 +21,11 @@
 # Project temp files
 *.data
 proto/example.capnp.c++
-proto/example.capnp.h
-proto/enums.capnp.c++
-proto/enums.capnp.h
+proto/*.capnp.h
+proto/*.capnp.c++
+proto/*_capnp.lua
+proto/*_capnp.llua
+#proto/enums.capnp.h
 test.schema.txt
 main
 *.bak
@@ -33,3 +35,4 @@ example_capnp.lua
 data_generator.lua
 *.json
 *.log
+*.bin
