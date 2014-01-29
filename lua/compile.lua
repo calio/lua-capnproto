@@ -706,7 +706,7 @@ function compile(schema)
 end
 
 function get_output_name(schema)
-    return string.gsub(schema.requestedFiles[1].filename, "%.", "_") .. ".lua"
+    return string.gsub(schema.requestedFiles[1].filename, "%.capnp", "_capnp") .. ".lua"
 end
 
 local f = arg[1]
