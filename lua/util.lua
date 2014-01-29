@@ -5,6 +5,10 @@ local format = string.format
 
 local _M = {}
 
+function _M.upper_dash_naming(name)
+    return upper(gsub(name, "(%u+)", "-%1"))
+end
+
 function _M.lower_underscore_naming(name)
     return lower(gsub(name, "(%u+)", "_%1"))
 end
