@@ -1,11 +1,11 @@
 #!/bin/bash
-if [ $(uname) != "Linux" ]; then
-    echo "Only linux is supported currently"
-    exit 1
-fi
+#if [ $(uname) != "Linux" ]; then
+#    echo "Only linux is supported currently"
+#    exit 1
+#fi
 
-BASE=$(dirname $(readlink -f $0))/..
-
+BASE=$(dirname $(perl -e "use Cwd \"abs_path\"; print abs_path(\"$0\")"))/..
+echo $BASE
 export LUA_PATH="$BASE/lua/?.lua;$BASE/proto/?.lua;$LUA_PATH;;"
 
 cat - > /tmp/schema.bin

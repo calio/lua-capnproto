@@ -710,7 +710,7 @@ function comp_struct(res, nodes, node, struct, name)
         end
 end
 
-function comp_enum(res, enum, name, naming_func)
+function comp_enum(res, nodes, enum, name, naming_func)
     if not naming_func then
         naming_func = config.default_enum_naming_func
     end
@@ -724,8 +724,22 @@ _M.%s = {
         if not v.codeOrder then
             v.codeOrder = 0
         end
+
+        local func
+        if v.annotations then
+            local anno_res = {}
+
+            process_annotations(v.annotations, nodes, anno_res)
+            if anno_res.naming_func then
+                func = anno_res.naming_func
+            else
+                func = naming_func
+            end
+        else
+            func = naming_func
+        end
         insert(res, format("    [\"%s\"] = %s,\n",
-                naming_func(v.name), v.codeOrder))
+                func(v.name), v.codeOrder))
     end
     insert(res, "\n}\n")
 
@@ -745,17 +759,31 @@ _M.%sStr = {
 end
 
 _M.naming_funcs = {
+    upper_dash       = util.upper_dash_naming,
     lower_underscore = util.lower_underscore_naming,
     upper_underscore = util.upper_underscore_naming,
     camel            = util.camel_naming,
 }
 
+
+function is_naming_anno(anno, nodes)
+    local id = anno.id
+    local anno_node = nodes[id]
+    if get_name(anno_node.displayName) == "naming" then
+        return true
+    end
+
+    return false
+end
+
+function get_naming_func(anno)
+    return _M.naming_funcs[anno.value.text]
+end
+
 function process_annotations(annos, nodes, res)
     for i, anno in ipairs(annos) do
-        local id = anno.id
-        local anno_node = nodes[id]
-        if get_name(anno_node.displayName) == "naming" then
-            local func = _M.naming_funcs[anno.value.text]
+        if (is_naming_anno(anno, nodes)) then
+            local func = get_naming_func(anno)
             if func then
                 res.naming_func = func
             end
@@ -801,7 +829,7 @@ _M.%s = {
             process_annotations(node.annotations, nodes, anno_res)
         end
 
-        comp_enum(res, e, name, anno_res.naming_func)
+        comp_enum(res, nodes, e, name, anno_res.naming_func)
     end
 
     if node.nestedNodes then
