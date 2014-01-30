@@ -528,7 +528,6 @@ naming_funcs = {
 
 
 function is_naming_anno(anno, nodes)
-    print(cjson.encode(anno))
     local id = anno.id
     local anno_node = nodes[id]
     if get_name(anno_node.displayName) == "naming" then
