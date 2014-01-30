@@ -131,6 +131,9 @@ struct Node {
     interface :group {
       methods @15 :List(Method);
       # Methods ordered by ordinal.
+
+      extends @31 :List(Id);
+      # Superclasses of this interface.
     }
 
     const :group {
@@ -172,10 +175,11 @@ struct Field {
 
   annotations @2 :List(Annotation);
 
-  discriminantValue @3 :UInt16 = 0xffff;
+  const noDiscriminant :UInt16 = 0xffff;
+
+  discriminantValue @3 :UInt16 = Field.noDiscriminant;
   # If the field is in a union, this is the value which the union's discriminant should take when
-  # the field is active.  If the field is not in a union, this is 0xffff (so hasDiscriminantValue()
-  # returns false).
+  # the field is active.  If the field is not in a union, this is 0xffff.
 
   union {
     slot :group {
@@ -188,6 +192,12 @@ struct Field {
 
       type @5 :Type;
       defaultValue @6 :Value;
+
+      hadExplicitDefault @10 :Bool;
+      # Whether the default value was specified explicitly.  Non-explicit default values are always
+      # zero or empty values.  Usually, whether the default value was explicit shouldn't matter.
+      # The main use case for this flag is for structs representing method parameters:
+      # explicitly-defaulted parameters may be allowed to be omitted when calling the method.
     }
 
     group :group {
@@ -229,22 +239,16 @@ struct Method {
   # Specifies order in which the methods were declared in the code.
   # Like Struct.Field.codeOrder.
 
-  params @2 :List(Param);
-  struct Param {
-    name @0 :Text;
-    type @1 :Type;
-    defaultValue @2 :Value;
-    annotations @3 :List(Annotation);
-  }
+  paramStructType @2 :Id;
+  # ID of the parameter struct type.  If a named parameter list was specified in the method
+  # declaration (rather than a single struct parameter type) then a corresponding struct type is
+  # auto-generated.  Such an auto-generated type will not be listed in the interface's
+  # `nestedNodes` and its `scopeId` will be zero -- it is completely detached from the namespace.
 
-  requiredParamCount @3 :UInt16;
-  # One plus the index of the last parameter that has no default value.  In languages where
-  # method calls look like function calls, this is the minimum number of parameters that must
-  # always be specified, while subsequent parameters are optional.
+  resultStructType @3 :Id;
+  # ID of the return struct type; similar to `paramStructType`.
 
-  returnType @4 :Type;
-
-  annotations @5 :List(Annotation);
+  annotations @4 :List(Annotation);
 }
 
 struct Type {
@@ -282,7 +286,7 @@ struct Type {
       typeId @17 :Id;
     }
 
-    object @18 :Void;
+    anyPointer @18 :Void;
   }
 }
 
@@ -307,16 +311,16 @@ struct Value {
     text @12 :Text;
     data @13 :Data;
 
-    list @14 :Object;
+    list @14 :AnyPointer;
 
     enum @15 :UInt16;
-    struct @16 :Object;
+    struct @16 :AnyPointer;
 
     interface @17 :Void;
     # The only interface value that can be represented statically is "null", whose methods always
     # throw exceptions.
 
-    object @18 :Object;
+    anyPointer @18 :AnyPointer;
   }
 }
 

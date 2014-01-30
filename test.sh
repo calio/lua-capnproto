@@ -8,7 +8,11 @@ make test || exit
 
 echo
 echo "[Serialization test...]"
-CXX=g++-4.7 make all
+if [ $(uname) != "Linux" ]; then
+    make all
+else
+    CXX=g++-4.7 make all
+fi
 cpp/main > a.data || exit
 capnp compile -olua proto/example.capnp || exit
 luajit test.lua c.data || exit
