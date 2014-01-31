@@ -41,7 +41,8 @@ function _M.parse_capnp_decode_txt(infile)
     s = gsub(s, "id = (%d+)", "id = \"%1\"")
     s = gsub(s, "typeId = (%d+)", "typeId = \"%1\"")
     s = gsub(s, "scopeId = (%d+)", "scopeId = \"%1\"")
-    s = gsub(s, "([^\"])void([^\"])", "%1\"void\"%2")
+    s = gsub(s, "= void([^\"])", "= \"void\"%1")
+    s = gsub(s, "type = {", '[\"type\"] = {')
     s = "return " .. s
 
     return s

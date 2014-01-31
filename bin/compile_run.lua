@@ -48,7 +48,7 @@ end
 local lua_schema = util.parse_capnp_decode_txt(f)
 util.write_file(schema_lua_file, lua_schema)
 
-local schema = assert(loadstring(lua_schema)())
+local schema = assert(assert(loadstring(lua_schema))())
 
 schema.__compiler = "lua-capnp(decoded by capnp tool)"
 util.write_file(schema_json_file, cjson.encode(schema))
