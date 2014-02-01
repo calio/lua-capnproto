@@ -12,9 +12,10 @@ make test  || exit
 echo
 echo "[Serialization test...]"
 if [ $(uname) != "Linux" ]; then
-    make all
+    make all || exit
 else
-    CXX=g++-4.7 make all
+    CXX=g++-4.7 make all || exit
+
 fi
 cpp/main > a.data || exit
 luajit test.lua c.data || exit
