@@ -8,6 +8,9 @@ local format = string.format
 local lower = string.lower
 local gsub = string.gsub
 
+local debug = false
+local NOT_UNION = 65535
+
 local _M = {}
 
 local missing_enums = {}
@@ -16,6 +19,19 @@ local config = {
     default_naming_func = util.lower_underscore_naming,
     default_enum_naming_func = util.upper_underscore_naming,
 }
+
+function dbg(...)
+    if not debug then
+        return
+    end
+    print(...)
+end
+function dbgf(...)
+    if not debug then
+        return
+    end
+    print(format(...))
+end
 
 function get_schema_text(file)
     local f = io.open(file)
@@ -129,6 +145,7 @@ size_map = {
     struct  = 8,  -- struct pointer
     enum    = 16,
     object  = 8, -- FIXME object is a pointer ?
+    anyPointer = 8, -- FIXME object is a pointer ?
 }
 
 function get_size(type_name)
@@ -140,23 +157,38 @@ function get_size(type_name)
     return size
 end
 
-function comp_field(res, nodes, field)
-    local slot = field.slot
-    if not slot then
-        return
-    end
-    if not slot.offset then
-        slot.offset = 0
-    end
+function _set_field_default(field, slot)
+    local default
+    if slot.defaultValue and field.type_name ~= "void"
+            and field.type_name ~= "object" and field.type_name ~= "anyPointer" then
 
-    field.name = config.default_naming_func(field.name)
+        for k, v in pairs(slot.defaultValue) do
+             -- if v ~= 0 then
+                if field.type_name == "bool" then
+                    field.print_default_value = v and 1 or 0
+                elseif field.type_name == "text" or field.type_name == "data" then
+                    field.print_default_value = '"' .. v .. '"'
+                elseif field.type_name == "struct" or field.type_name == "list" or field.type_name == "object" or field.type_name == "anyPointer" then
+                    field.print_default_value = '"' .. v .. '"'
+                else
+                    field.print_default_value = v
+                end
+             -- end
+            break
+        end
+        dbgf("[%s] %s.print_default_value=%s", field.type_name, field.name, field.print_default_value)
+    end
+    if field.print_default_value ~= 0 or field.type_name == "bool" then
+        field.default_value = field.print_default_value
+    end
+end
 
-    local type_name, default
+function _set_field_type(field, slot, nodes)
+    local type_name
     for k, v in pairs(slot["type"]) do
         type_name   = k
         if type_name == "struct" then
             field.type_display_name = get_name(nodes[v.typeId].displayName)
-            --default     = "opaque object"
         elseif type_name == "enum" then
             field.enum_id = v.typeId
             field.type_display_name = get_name(nodes[v.typeId].displayName)
@@ -179,33 +211,31 @@ function comp_field(res, nodes, field)
 
         break
     end
-    if slot.defaultValue and field.type_name ~= "void"
-            and field.type_name ~= "object" then
+    dbgf("field %s.type_name = %s", field.name, field.type_name)
+    assert(field.type_name)
+end
 
-        for k, v in pairs(slot.defaultValue) do
-             -- if v ~= 0 then
-                if field.type_name == "bool" then
-                    field.print_default_value = v and 1 or 0
-                elseif field.type_name == "text" or field.type_name == "data" then
-                    field.print_default_value = '"' .. v .. '"'
-                elseif field.type_name == "struct" or field.type_name == "list" or field.type_name == "object" then
-                    field.print_default_value = '"' .. v .. '"'
-                else
-                    field.print_default_value = v
-                end
-             -- end
-            break
-        end
+function comp_field(res, nodes, field)
+    dbg("comp_field")
+    local slot = field.slot
+    if not slot then
+        return
     end
-    if field.print_default_value ~= 0 then
-        field.default_value = field.print_default_value
+    if not slot.offset then
+        slot.offset = 0
     end
+
+    field.name = config.default_naming_func(field.name)
+
+    _set_field_type(field, slot, nodes)
+    _set_field_default(field, slot)
+
     -- print("default:", field.name, field.default_value)
-    if not type_name then
+    if not field.type_name then
         field.type_name = "void"
         field.size = 0
     else
-        field.size      = get_size(type_name)
+        field.size      = get_size(field.type_name)
     end
 end
 
@@ -216,7 +246,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         local s = tab
 ]], size))
 
-    if struct.discriminantCount and struct.discriminantOffset then
+    if struct.discriminantCount and struct.discriminantCount > 0 then
         insert(res, format([[
 
         local dscrm = _M.%s.which(buf, %d) --buf, dscrmriminantOffset, dscrmriminantValue
@@ -225,7 +255,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
     end
 
     for i, field in ipairs(fields) do
-        if field.discriminantValue then
+        if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
             insert(res, format([[
 
         if dscrm == %d then
@@ -329,6 +359,8 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         end
 ]], name, off, field.name, struct.dataWordCount, off, field.name))
 
+        elseif field.type_name == "anyPointer" then
+            -- TODO support anyPointer
         else
             local default = field.default_value and field.default_value or "nil"
             insert(res, format([[
@@ -336,7 +368,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         s["%s"] = read_val(buf, "%s", %d, %d, %s)]], field.name, field.type_name, field.size, field.slot.offset, default))
 
         end
-        if field.discriminantValue then
+        if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
             insert(res, format([[
 
         else
@@ -410,6 +442,7 @@ function comp_serialize(res, name)
 end
 
 function comp_flat_serialize(res, struct, fields, size, name)
+    dbgf("comp_flat_serialize")
     insert(res, format([[
 
     flat_serialize = function(data, buf)
@@ -419,7 +452,8 @@ function comp_flat_serialize(res, struct, fields, size, name)
     for i, field in ipairs(fields) do
         --print("comp_field", field.name)
         -- union
-        if field.discriminantValue then
+        if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
+            dbgf("field %s: union", field.name)
             insert(res, format([[
 
         if data["%s"] then
@@ -428,6 +462,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
 ]], field.name, field.discriminantValue))
         end
         if field.group then
+            dbgf("field %s: group", field.name)
             insert(res, format([[
 
         if data["%s"] and type(data["%s"]) == "table" then
@@ -438,6 +473,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
 ]], field.name, field.name, name, field.name, field.name))
 
         elseif field.type_name == "enum" then
+            dbgf("field %s: enum", field.name)
             insert(res, format([[
 
         if data["%s"] and type(data["%s"]) == "string" then
@@ -447,8 +483,10 @@ function comp_flat_serialize(res, struct, fields, size, name)
                      name, field.name, field.size, field.slot.offset))
 
         elseif field.type_name == "list" then
+            dbgf("field %s: list", field.name)
             local off = field.slot.offset
             if field.element_type == "struct" then
+                dbgf("list of struct", field.name)
                 insert(res, format([[
 
         if data["%s"] and type(data["%s"]) == "table" then
@@ -470,6 +508,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
                     field.type_display_name, field.type_display_name, field.name,
                     name, off))
             else
+                dbgf("list of other type", field.name)
                 insert(res, format([[
 
         if data["%s"] and type(data["%s"]) == "table" then
@@ -486,6 +525,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
                     field.size, field.name, list_size_map[field.size] * 8))
             end
         elseif field.type_name == "struct" then
+            dbgf("field %s: struct", field.name)
             local off = field.slot.offset
             insert(res, format([[
 
@@ -498,6 +538,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
                     off, field.type_display_name, field.name))
 
         elseif field.type_name == "text" then
+            dbgf("field %s: text", field.name)
             local off = field.slot.offset
             insert(res, format([[
 
@@ -512,6 +553,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 
         elseif field.type_name == "data" then
+            dbgf("field %s: data", field.name)
             local off = field.slot.offset
             insert(res, format([[
 
@@ -526,6 +568,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
 
         else
+            dbgf("field %s: %s", field.name, field.type_name)
             local default = field.default_value and field.default_value or "nil"
             if field.type_name ~= "void" then
                 insert(res, format([[
@@ -541,7 +584,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
     end
 
-    if struct.discriminantOffset then
+    if struct.discriminantCount and struct.discriminantCount ~= 0 then
         insert(res, format([[
 
         if dscrm then
@@ -558,11 +601,13 @@ end
 
 
 function comp_calc_size(res, fields, size, name)
+    dbgf("comp_calc_size")
     insert(res, format([[
     calc_size_struct = function(data)
         local size = %d]], size))
 
     for i, field in ipairs(fields) do
+        dbgf("field %s is %s", field.name, field.type_name)
         if field.type_name == "list" then
             if field.element_type == "struct" then
                 -- composite
@@ -638,6 +683,29 @@ function comp_which(res)
 ]])
 end
 
+function comp_fields(res, nodes, node, struct)
+    insert(res, [[
+
+    fields = {
+]])
+    for i, field in ipairs(struct.fields) do
+        comp_field(res, nodes, field)
+        if field.group then
+            if not node.nestedNodes then
+                node.nestedNodes = {}
+            end
+            insert(node.nestedNodes, { name = field.name, id = field.group.typeId })
+        end
+        insert(res, format([[
+        { name = "%s", default = %s },
+]], field.name, field.print_default_value))
+    end
+    dbg("struct:", name)
+    insert(res, format([[
+    },
+]]))
+end
+
 function comp_struct(res, nodes, node, struct, name)
 
         if not struct.dataWordCount then
@@ -671,26 +739,7 @@ function comp_struct(res, nodes, node, struct, name)
         struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
-            insert(res, [[
-
-    fields = {
-]])
-            for i, field in ipairs(struct.fields) do
-                comp_field(res, nodes, field)
-                if field.group then
-                    if not node.nestedNodes then
-                        node.nestedNodes = {}
-                    end
-                    insert(node.nestedNodes, { name = field.name, id = field.group.typeId })
-                end
-                insert(res, format([[
-        { name = "%s", default = %s },
-]], field.name, field.print_default_value))
-            end
-            print("struct:", name)
-            insert(res, format([[
-    },
-]]))
+            comp_fields(res, nodes, node, struct)
             if not struct.isGroup then
                 comp_calc_size(res, struct.fields, struct.size, struct.type_name)
             end
@@ -699,7 +748,7 @@ function comp_struct(res, nodes, node, struct, name)
             if not struct.isGroup then
                 comp_serialize(res, struct.type_name)
             end
-            if struct.discriminantCount and struct.discriminantOffset then
+            if struct.discriminantCount and struct.discriminantCount > 0 then
                 comp_which(res)
             end
             comp_parse_struct_data(res, struct, struct.fields, struct.size,
@@ -978,13 +1027,13 @@ function _M.compile(schema)
 end
 
 function _M.init(user_conf)
-    print("set config init")
+    dbg("set config init")
     for k, v in pairs(user_conf) do
         if not config[k] then
             print(format("Unknown user config: %s, ignored.", k))
         end
         config[k] = v
-        print("set config " .. k)
+        dbg("set config " .. k)
     end
 end
 

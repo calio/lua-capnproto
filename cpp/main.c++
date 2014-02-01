@@ -50,8 +50,8 @@ void writeT1(int fd) {
     ls0[1].setF0(2.71828182846);
     ls0[1].setF1(2.71828182846);
 
-    auto o0 = t1.initO0< ::T1::U0 >();
-    o0.setUv1();
+    //auto o0 = t1.initO0< ::T1::U0 >();
+    //o0.setUv1();
     //o0.set(0, 2);
 
     writeMessageToFd(fd, message);

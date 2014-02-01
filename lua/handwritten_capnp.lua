@@ -53,13 +53,36 @@ _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/example.capnp:T1",
     dataWordCount = 5,
-    pointerCount = 5,
+    pointerCount = 6,
     discriminantCount = 3,
     discriminantOffset = 10,
 
-    fields = { "i0","i1","b0","i2","b1","i3","s0","e0","l0","t0","e1","d0","ui0","ui1","uv0","g0","u0","ls0","du0","db0","end" },
+    fields = {
+        { name = "i0", default = 0 },
+        { name = "i1", default = 0 },
+        { name = "b0", default = 0 },
+        { name = "i2", default = 0 },
+        { name = "b1", default = 0 },
+        { name = "i3", default = 0 },
+        { name = "s0", default = "opaque pointer" },
+        { name = "e0", default = 0 },
+        { name = "l0", default = "opaque pointer" },
+        { name = "t0", default = "" },
+        { name = "e1", default = 0 },
+        { name = "d0", default = "" },
+        { name = "ui0", default = 0 },
+        { name = "ui1", default = 0 },
+        { name = "uv0", default = nil },
+        { name = "g0", default = nil },
+        { name = "u0", default = nil },
+        { name = "ls0", default = "opaque pointer" },
+        { name = "du0", default = 65535 },
+        { name = "db0", default = 1 },
+        { name = "end", default = 0 },
+        { name = "o0", default = nil },
+    },
     calc_size_struct = function(data)
-        local size = 80
+        local size = 88
         -- struct
         if data.s0 then
             size = size + _M.T1.T2.calc_size_struct(data.s0)
@@ -94,7 +117,7 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, buf)
-        local pos = 80
+        local pos = 88
         local dscrm
         if data["i0"] and (type(data["i0"]) == "number"
                 or type(data["i0"]) == "boolean") then
@@ -405,7 +428,6 @@ _M.T1 = {
         end
     end,
 
-    fields = { },
 }
 
 _M.T1.T2 = {
@@ -413,8 +435,13 @@ _M.T1.T2 = {
     displayName = "proto/example.capnp:T1.T2",
     dataWordCount = 2,
     pointerCount = 0,
+    discriminantCount = 0,
+    discriminantOffset = 0,
 
-    fields = { "f0","f1" },
+    fields = {
+        { name = "f0", default = 0 },
+        { name = "f1", default = 0 },
+    },
     calc_size_struct = function(data)
         local size = 16
         return size
@@ -512,13 +539,16 @@ _M.T1.g0 = {
     id = 10312822589529145224,
     displayName = "proto/example.capnp:T1.g0",
     dataWordCount = 5,
-    pointerCount = 5,
+    pointerCount = 6,
     isGroup = true,
 
-    fields = { "ui2" },
+    fields = {
+        { name = "ui2", default = 0 },
+    },
+
     -- size is included in the parent struct, so no need to calculate size here
     flat_serialize = function(data, buf)
-        local pos = 80
+        local pos = 88
         local dscrm
         if data["ui2"] and (type(data["ui2"]) == "number"
                 or type(data["ui2"]) == "boolean") then
@@ -537,14 +567,18 @@ _M.T1.u0 = {
     id = 12188145960292142197,
     displayName = "proto/example.capnp:T1.u0",
     dataWordCount = 5,
-    pointerCount = 5,
+    pointerCount = 6,
     discriminantCount = 3,
     discriminantOffset = 14,
     isGroup = true,
 
-    fields = { "ui3","uv1","ug0" },
+    fields = {
+        { name = "ui3", default = 0 },
+        { name = "uv1", default = nil },
+        { name = "ug0", default = nil },
+    },
     flat_serialize = function(data, buf)
-        local pos = 80
+        local pos = 88
         local dscrm
         if data["ui3"] then
             dscrm = 0
@@ -622,12 +656,15 @@ _M.T1.u0.ug0 = {
     id = 17270536655881866717,
     displayName = "proto/example.capnp:T1.u0.ug0",
     dataWordCount = 5,
-    pointerCount = 5,
+    pointerCount = 6,
     isGroup = true,
 
-    fields = { "ugv0","ugu0" },
+    fields = {
+        { name = "ugv0", default = nil },
+        { name = "ugu0", default = 0 },
+    },
     flat_serialize = function(data, buf)
-        local pos = 80
+        local pos = 88
         local dscrm
         if data["ugu0"] and (type(data["ugu0"]) == "number"
                 or type(data["ugu0"]) == "boolean") then
@@ -650,6 +687,9 @@ _M.EnumType2 = {
     ["enum5"] = 0,
     ["enum6"] = 1,
     ["enum7"] = 2,
+    ["UPPER-DASH"] = 3,
+    ["lower_under_score"] = 4,
+    ["UPPER_UNDER_SCORE"] = 5,
 }
 
 
@@ -657,6 +697,9 @@ _M.EnumType2Str = {
     [0] = "enum5",
     [1] = "enum6",
     [2] = "enum7",
+    [3] = "upper_dash",
+    [4] = "lower_under_score",
+    [5] = "upper_under_score",
 }
 
 return _M
