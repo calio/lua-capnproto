@@ -71,7 +71,7 @@ local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
 local read_struct_buf   = capnp.read_struct_buf
-local read_listp_buf    = capnp.read_listp_buf
+local read_listp_struct    = capnp.read_listp_struct
 local read_list_data    = capnp.read_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
@@ -283,7 +283,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
                 insert(res, format([[
 
         -- composite list
-        local off, size, words = read_listp_buf(buf, header, _M.%s, %d)
+        local off, size, words = read_listp_struct(buf, header, _M.%s, %d)
         if off and words then
             local start = (%d + %d + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -306,7 +306,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             else
                 insert(res, format([[
 
-        local off, size, num = read_listp_buf(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
         if off and num then
             s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
         else
@@ -339,7 +339,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = read_listp_buf(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
         if off and num then
             s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -351,7 +351,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = read_listp_buf(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
         if off and num then
             s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else

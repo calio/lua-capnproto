@@ -155,7 +155,7 @@ end
 
 function _M.read_text(buf, header, T, offset, default)
     local res
-    local data_off, size, num = _M.read_listp_buf(buf, header, T, 2)
+    local data_off, size, num = _M.read_listp_struct(buf, header, T, 2)
     if data_off and num then
         res = ffistr(buf + (T.dataWordCount + offset + 1 + data_off) * 2, num - 1) -- dataWordCount + offset + pointerSize + data_off
     else
@@ -276,6 +276,7 @@ function _M.read_list_data(p, size_type, elm_type, num)
     return t
 end
 
+--[[
 function read_list_pointer(buf)
     local p = buf
     local val = p[0]
@@ -287,27 +288,52 @@ function read_list_pointer(buf)
 
     return offset, size_type, num
 end
+--]]
 
-function _M.read_listp_buf(buf, header, T, offset)
-    local p = cast(pint32, buf)
-    local base = T.dataWordCount * 2 + offset * 2
+function _M.read_listp(p32, header)
+    local val0 = p32[0]
+    local val1 = p32[1]
 
-    local val = p[base]
-
-    if p[base] == 0 and p[base + 1] == 0 then
+    if val0 == 0 and val1 == 0 then
         return
     end
 
-    local sig = band(val, 0x03)
+    local sig = band(val0, 0x03)
     if sig == 1 then
-        --print("plain pointer")
-        return read_list_pointer(p + base)
+        local offset = rshift(val0, 2)
+
+        local size_type = band(val1, 0x07)
+        local num = rshift(val1, 3)
+
+        return offset, size_type, num
+        -- return read_list_pointer(p32)
     elseif sig == 2 then
         --print("single far pointer")
-        return read_far_pointer(p + base, header, read_list_pointer)
+        return read_far_pointer(p32, header, _M.read_listp)
     else
         error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
     end
+end
+
+-- @index: start from 1
+function _M.read_listp_list(p32, header, index)
+    return _M.read_listp(p32 + index - 1, header)
+end
+
+function _M.read_listp_struct(buf, header, T, offset)
+    local p = cast(pint32, buf)
+    local base = T.dataWordCount * 2 + offset * 2
+
+--    local sig = band(val, 0x03)
+--    if sig == 1 then
+        --print("plain pointer")
+        return _M.read_listp(p + base, header)
+--    elseif sig == 2 then
+        --print("single far pointer")
+--        return read_far_pointer(p + base, header, read_list_pointer)
+--    else
+--        error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
+--    end
 
 end
 
@@ -330,7 +356,7 @@ function read_far_pointer(buf, header, parser)
     --print("op_offset:", op_offset)
     local pp = header.base + op_offset * 2 -- header.base is uint32_t *
 
-    local p_offset, r1, r2 = parser(pp)
+    local p_offset, r1, r2 = parser(pp, header)
     --print("p_offset:", p_offset)
     p_offset = p_offset + (pp - p) / 2 -- p and pp are uint32_t *
 

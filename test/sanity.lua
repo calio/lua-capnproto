@@ -212,7 +212,7 @@ function test_far_pointer_to_list()
     local T = {
         dataWordCount = 0
     }
-    local off, size_type, num = capnp.read_listp_buf(buf + 4, header, T, 0)
+    local off, size_type, num = capnp.read_listp_struct(buf + 4, header, T, 0)
     assert_equal(2, off)
     assert_equal(7, size_type)
     assert_equal(4, num)
