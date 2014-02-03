@@ -7,6 +7,7 @@ local band, bor, bxor = bit.band, bit.bor, bit.bxor
 local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 local typeof    = ffi.typeof
+local cast      = ffi.cast
 local format    = string.format
 local lower     = string.lower
 local ceil      = math.ceil
@@ -45,6 +46,18 @@ local function get_bit_offset(bit_off, size)
     return n, s
 end
 
+local pint8    = typeof("int8_t *")
+local pint16   = typeof("int16_t *")
+local pint32   = typeof("int32_t *")
+local pint64   = typeof("int64_t *")
+local puint8   = typeof("uint8_t *")
+local puint16  = typeof("uint16_t *")
+local puint32  = typeof("uint32_t *")
+local puint64  = typeof("uint64_t *")
+local pbool    = typeof("uint8_t *")
+local pfloat32 = typeof("float *")
+local pfloat64 = typeof("double *")
+
 local pointer_map = {
     int8    = typeof("int8_t *"),
     int16   = typeof("int16_t *"),
@@ -65,33 +78,33 @@ local function get_pointer_from_type(buf, field_type)
         error("not supported type: " .. field_type)
     end
 
-    return ffi.cast(t, buf)
+    return cast(t, buf)
 end
 
 local function get_pointer_from_val(buf, size, val)
     local p = buf
     if size == 1 then
-        p = ffi.cast("uint8_t *", buf)
+        p = cast(puint8, buf)
     else
         local i, f = modf(val)
         -- float number
         if (f ~= 0) then
             if size == 32 then
-                p = ffi.cast("float *", p)
+                p = cast(pfloat32, p)
             elseif size == 64 then
-                p = ffi.cast("double *", p)
+                p = cast(pfloat64, p)
             else
                 error("float size other than 32 and 64")
             end
         else
             if size == 64 then
-                p = ffi.cast("uint64_t *", buf)
+                p = cast(puint64, buf)
             elseif size == 32 then
-                p = ffi.cast("uint32_t *", buf)
+                p = cast(puint32, buf)
             elseif size == 16 then
-                p = ffi.cast("uint16_t *", buf)
+                p = cast(puint16, buf)
             elseif size == 8 then
-                p = ffi.cast("uint8_t *", buf)
+                p = cast(puint8, buf)
             else
                 error("unknown in size " .. size)
             end
@@ -189,13 +202,13 @@ function _M.write_composite_tag(buf, T, num)
 end
 
 function _M.write_structp(buf, T, data_off)
-    local p = ffi.cast("int32_t *", buf)
+    local p = cast(pint32, buf)
     p[0] = lshift(data_off, 2)
     p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
 function _M.write_structp_buf(buf, T, TSub, offset, data_off)
-    local p = ffi.cast("int32_t *", buf)
+    local p = cast(pint32, buf)
     local base = T.dataWordCount * 2 + offset * 2
     p[base] = lshift(data_off, 2)
     p[base + 1] = lshift(TSub.pointerCount, 16) + TSub.dataWordCount
@@ -213,7 +226,7 @@ function _M.get_enum_val(v, enum_schema, name)
 end
 
 function _M.write_listp_buf(buf, T, offset, size_type, num, data_off)
-    local p = ffi.cast("int32_t *", buf)
+    local p = cast(pint32, buf)
     local base = T.dataWordCount * 2 + offset * 2
 
     p[base] = lshift(data_off, 2) + 1
@@ -244,7 +257,7 @@ function _M.parse_list_data(p, size_type, elm_type, num)
 
     local p = get_pointer_from_type(p, elm_type)
 
-    for i=1, num do
+    for i = 1, num do
         t[i] = p[i - 1]
     end
 
@@ -264,7 +277,7 @@ function parse_list_pointer(buf)
 end
 
 function _M.parse_listp_buf(buf, header, T, offset)
-    local p = ffi.cast("int32_t *", buf)
+    local p = cast(pint32, buf)
     local base = T.dataWordCount * 2 + offset * 2
 
     local val = p[base]
