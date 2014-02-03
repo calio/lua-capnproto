@@ -12,9 +12,9 @@ local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
-local parse_struct_buf  = capnp.parse_struct_buf
-local parse_listp_buf   = capnp.parse_listp_buf
-local parse_list_data   = capnp.parse_list_data
+local read_struct_buf   = capnp.read_struct_buf
+local read_listp_buf    = capnp.read_listp_buf
+local read_list_data    = capnp.read_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
@@ -305,7 +305,7 @@ _M.T1 = {
         s["b1"] = read_val(buf, "bool", 1, 49, 0)
         s["i3"] = read_val(buf, "int32", 32, 2, nil)
         local p = buf + (5 + 0) * 2 -- buf, dataWordCount, offset
-        local off, dw, pw = parse_struct_buf(p, header)
+        local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
             if not s["s0"] then
                 s["s0"] = new_tab(0, 2)
@@ -318,14 +318,14 @@ _M.T1 = {
 
         local val = read_val(buf, "uint16", 16, 6)
         s["e0"] = get_enum_val(val, _M.T1.EnumType1Str)
-        local off, size, num = parse_listp_buf(buf, header, _M.T1, 1)
+        local off, size, num = read_listp_buf(buf, header, _M.T1, 1)
         if off and num then
-            s["l0"] = parse_list_data(buf + (5 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+            s["l0"] = read_list_data(buf + (5 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
         else
             s["l0"] = nil
         end
 
-        local off, size, num = parse_listp_buf(buf, header, _M.T1, 2)
+        local off, size, num = read_listp_buf(buf, header, _M.T1, 2)
         if off and num then
             s["t0"] = ffi.string(buf + (5 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -334,7 +334,7 @@ _M.T1 = {
 
         local val = read_val(buf, "uint16", 16, 7)
         s["e1"] = get_enum_val(val, _M.EnumType2Str)
-        local off, size, num = parse_listp_buf(buf, header, _M.T1, 3)
+        local off, size, num = read_listp_buf(buf, header, _M.T1, 3)
         if off and num then
             s["d0"] = ffi.string(buf + (5 + 3 + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
@@ -375,7 +375,7 @@ _M.T1 = {
                 header, s["u0"])
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, header, _M.T1, 4)
+        local off, size, words = read_listp_buf(buf, header, _M.T1, 4)
         if off and words then
             local start = (5 + 4 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -420,7 +420,7 @@ _M.T1 = {
         if not tab then
             tab = new_tab(0, 8)
         end
-        local off, dw, pw = parse_struct_buf(p, header)
+        local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
             return _M.T1.parse_struct_data(p + 2 + off * 2, dw, pw, header, tab)
         else
@@ -515,7 +515,7 @@ _M.T1.T2 = {
         if not tab then
             tab = new_tab(0, 8)
         end
-        local off, dw, pw = parse_struct_buf(p, header)
+        local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
             return _M.T1.T2.parse_struct_data(p + 2 + off * 2, dw, pw, header, tab)
         else

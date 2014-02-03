@@ -245,7 +245,7 @@ local list_size_map = {
     -- 7 = ?,
 }
 
-function _M.parse_list_data(p, size_type, elm_type, num)
+function _M.read_list_data(p, size_type, elm_type, num)
     local t = new_tab(num, 0)
 
     local size = list_size_map[size_type]
@@ -264,7 +264,7 @@ function _M.parse_list_data(p, size_type, elm_type, num)
     return t
 end
 
-function parse_list_pointer(buf)
+function read_list_pointer(buf)
     local p = buf
     local val = p[0]
     local offset = rshift(val, 2)
@@ -276,7 +276,7 @@ function parse_list_pointer(buf)
     return offset, size_type, num
 end
 
-function _M.parse_listp_buf(buf, header, T, offset)
+function _M.read_listp_buf(buf, header, T, offset)
     local p = cast(pint32, buf)
     local base = T.dataWordCount * 2 + offset * 2
 
@@ -289,17 +289,17 @@ function _M.parse_listp_buf(buf, header, T, offset)
     local sig = band(val, 0x03)
     if sig == 1 then
         --print("plain pointer")
-        return parse_list_pointer(p + base)
+        return read_list_pointer(p + base)
     elseif sig == 2 then
         --print("single far pointer")
-        return parse_far_pointer(p + base, header, parse_list_pointer)
+        return read_far_pointer(p + base, header, read_list_pointer)
     else
         error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
     end
 
 end
 
-function parse_far_pointer(buf, header, parser)
+function read_far_pointer(buf, header, parser)
     local p = buf
 
     local landing = rshift(band(p[0], 0x04), 2)
@@ -325,7 +325,7 @@ function parse_far_pointer(buf, header, parser)
     return p_offset, r1, r2
 end
 
-function parse_struct_pointer(p)
+function read_struct_pointer(p)
     local offset = rshift(p[0], 2)
     local data_word_count = band(p[1], 0xffff)
     local pointer_count = rshift(p[1], 16)
@@ -333,7 +333,7 @@ function parse_struct_pointer(p)
     return offset, data_word_count, pointer_count
 end
 
-function _M.parse_struct_buf(buf, header)
+function _M.read_struct_buf(buf, header)
     local p = buf
     if p[0] == 0 and p[1] == 0 then
         -- not set
@@ -343,9 +343,9 @@ function _M.parse_struct_buf(buf, header)
     local sig = band(p[0], 0x03)
 
     if sig == 0 then
-        return parse_struct_pointer(p)
+        return read_struct_pointer(p)
     elseif sig == 2 then
-        return parse_far_pointer(p, header, parse_struct_pointer)
+        return read_far_pointer(p, header, read_struct_pointer)
     else
         error("corrupt data, expected struct signiture 0 or far pointer 2, but have " .. sig)
     end

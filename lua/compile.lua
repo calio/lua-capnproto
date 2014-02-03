@@ -70,9 +70,9 @@ local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
-local parse_struct_buf  = capnp.parse_struct_buf
-local parse_listp_buf   = capnp.parse_listp_buf
-local parse_list_data   = capnp.parse_list_data
+local read_struct_buf   = capnp.read_struct_buf
+local read_listp_buf    = capnp.read_listp_buf
+local read_list_data    = capnp.read_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
@@ -283,7 +283,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
                 insert(res, format([[
 
         -- composite list
-        local off, size, words = parse_listp_buf(buf, header, _M.%s, %d)
+        local off, size, words = read_listp_buf(buf, header, _M.%s, %d)
         if off and words then
             local start = (%d + %d + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
             local num, dt, pt = capnp.read_composite_tag(buf + start)
@@ -306,9 +306,9 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             else
                 insert(res, format([[
 
-        local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_buf(buf, header, _M.%s, %d)
         if off and num then
-            s["%s"] = parse_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end
@@ -322,7 +322,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             insert(res, format([[
 
         local p = buf + (%d + %d) * 2 -- buf, dataWordCount, offset
-        local off, dw, pw = parse_struct_buf(p, header)
+        local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
             if not s["%s"] then
                 s["%s"] = new_tab(0, 2)
@@ -339,7 +339,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_buf(buf, header, _M.%s, %d)
         if off and num then
             s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
@@ -351,7 +351,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = parse_listp_buf(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_buf(buf, header, _M.%s, %d)
         if off and num then
             s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
@@ -408,7 +408,7 @@ function comp_parse(res, name)
         if not tab then
             tab = new_tab(0, 8)
         end
-        local off, dw, pw = parse_struct_buf(p, header)
+        local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
             return _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, header, tab)
         else

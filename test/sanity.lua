@@ -165,9 +165,9 @@ end
 ]]
 
 
-function test_parse_struct_buf()
+function test_read_struct_buf()
     local buf = util.new_buf({ 0x10, 0x00, 0x00, 0x00, 0x02, 0x00, 0x04, 0x00 })
-    local off, dw, pw = capnp.parse_struct_buf(buf)
+    local off, dw, pw = capnp.read_struct_buf(buf)
     assert_equal(4, off)
     assert_equal(2, dw)
     assert_equal(4, pw)
@@ -189,7 +189,7 @@ function test_far_pointer_to_struct()
         seg_sizes = { 1, 2, },
     }
 
-    local off, dw, pw = capnp.parse_struct_buf(buf + 4, header)
+    local off, dw, pw = capnp.read_struct_buf(buf + 4, header)
     assert_equal(4, off)
     assert_equal(2, dw)
     assert_equal(4, pw)
@@ -212,7 +212,7 @@ function test_far_pointer_to_list()
     local T = {
         dataWordCount = 0
     }
-    local off, size_type, num = capnp.parse_listp_buf(buf + 4, header, T, 0)
+    local off, size_type, num = capnp.read_listp_buf(buf + 4, header, T, 0)
     assert_equal(2, off)
     assert_equal(7, size_type)
     assert_equal(4, num)
