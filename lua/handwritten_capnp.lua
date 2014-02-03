@@ -7,6 +7,7 @@ local util = require "util"
 local ceil              = math.ceil
 local write_val         = capnp.write_val
 local read_val          = capnp.read_val
+local read_text         = capnp.read_text
 local get_enum_val      = capnp.get_enum_val
 local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
@@ -325,13 +326,15 @@ _M.T1 = {
             s["l0"] = nil
         end
 
+        s["t0"] = read_text(buf, header, _M.T1, 2, nil)
+--[[
         local off, size, num = read_listp_buf(buf, header, _M.T1, 2)
         if off and num then
             s["t0"] = ffi.string(buf + (5 + 2 + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
             s["t0"] = nil
         end
-
+]]
         local val = read_val(buf, "uint16", 16, 7)
         s["e1"] = get_enum_val(val, _M.EnumType2Str)
         local off, size, num = read_listp_buf(buf, header, _M.T1, 3)

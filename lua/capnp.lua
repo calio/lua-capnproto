@@ -8,6 +8,7 @@ local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 
 local typeof    = ffi.typeof
 local cast      = ffi.cast
+local ffistr    = ffi.string
 local format    = string.format
 local lower     = string.lower
 local ceil      = math.ceil
@@ -150,6 +151,17 @@ function _M.read_val(buf, field_type, size, off, default)
     else
         return tonumber(val)
     end
+end
+
+function _M.read_text(buf, header, T, offset, default)
+    local res
+    local data_off, size, num = _M.read_listp_buf(buf, header, T, 2)
+    if data_off and num then
+        res = ffistr(buf + (T.dataWordCount + offset + 1 + data_off) * 2, num - 1) -- dataWordCount + offset + pointerSize + data_off
+    else
+        res = default
+    end
+    return res
 end
 
 -- default: optional
