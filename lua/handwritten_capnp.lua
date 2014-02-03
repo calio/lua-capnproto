@@ -6,7 +6,7 @@ local util = require "util"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
-local read_val          = capnp.read_val
+local read_struct_field = capnp.read_struct_field
 local read_text         = capnp.read_text
 local get_enum_val      = capnp.get_enum_val
 local get_data_off      = capnp.get_data_off
@@ -289,7 +289,7 @@ _M.T1 = {
             write_val(buf, n, 16, offset)
         else
             -- get value
-            return read_val(buf, "uint16", 16, offset)
+            return read_struct_field(buf, "uint16", 16, offset)
         end
     end,
 
@@ -299,12 +299,12 @@ _M.T1 = {
         local dscrm = _M.T1.which(buf, 10) --buf, dscrmriminantOffset, dscrmriminantValue
 
 
-        s["i0"] = read_val(buf, "uint32", 32, 0, nil)
-        s["i1"] = read_val(buf, "uint16", 16, 2, nil)
-        s["b0"] = read_val(buf, "bool", 1, 48, 0)
-        s["i2"] = read_val(buf, "int8", 8, 7, nil)
-        s["b1"] = read_val(buf, "bool", 1, 49, 0)
-        s["i3"] = read_val(buf, "int32", 32, 2, nil)
+        s["i0"] = read_struct_field(buf, "uint32", 32, 0, nil)
+        s["i1"] = read_struct_field(buf, "uint16", 16, 2, nil)
+        s["b0"] = read_struct_field(buf, "bool", 1, 48, 0)
+        s["i2"] = read_struct_field(buf, "int8", 8, 7, nil)
+        s["b1"] = read_struct_field(buf, "bool", 1, 49, 0)
+        s["i3"] = read_struct_field(buf, "int32", 32, 2, nil)
         local p = buf + (5 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
@@ -317,7 +317,7 @@ _M.T1 = {
         end
 
 
-        local val = read_val(buf, "uint16", 16, 6)
+        local val = read_struct_field(buf, "uint16", 16, 6)
         s["e0"] = get_enum_val(val, _M.T1.EnumType1Str)
 
         local off, size, num = read_listp_struct(buf, header, _M.T1, 1)
@@ -336,7 +336,7 @@ _M.T1 = {
             s["t0"] = nil
         end
 ]]
-        local val = read_val(buf, "uint16", 16, 7)
+        local val = read_struct_field(buf, "uint16", 16, 7)
         s["e1"] = get_enum_val(val, _M.EnumType2Str)
         local off, size, num = read_listp_struct(buf, header, _M.T1, 3)
         if off and num then
@@ -347,21 +347,21 @@ _M.T1 = {
 
         if dscrm == 0 then
 
-        s["ui0"] = read_val(buf, "int32", 32, 4, nil)
+        s["ui0"] = read_struct_field(buf, "int32", 32, 4, nil)
         else
             s["ui0"] = nil
         end
 
         if dscrm == 1 then
 
-        s["ui1"] = read_val(buf, "int32", 32, 4, nil)
+        s["ui1"] = read_struct_field(buf, "int32", 32, 4, nil)
         else
             s["ui1"] = nil
         end
 
         if dscrm == 2 then
 
-        s["uv0"] = read_val(buf, "void", 0, 0, nil)
+        s["uv0"] = read_struct_field(buf, "void", 0, 0, nil)
         else
             s["uv0"] = nil
         end
@@ -397,9 +397,9 @@ _M.T1 = {
         else
             s["ls0"] = nil
         end
-        s["du0"] = read_val(buf, "uint32", 32, 9, 65535)
-        s["db0"] = read_val(buf, "bool", 1, 50, 1)
-        s["end"] = read_val(buf, "bool", 1, 51, 0)
+        s["du0"] = read_struct_field(buf, "uint32", 32, 9, 65535)
+        s["db0"] = read_struct_field(buf, "bool", 1, 50, 1)
+        s["end"] = read_struct_field(buf, "bool", 1, 51, 0)
         return s
     end,
 
@@ -492,8 +492,8 @@ _M.T1.T2 = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s["f0"] = read_val(buf, "float32", 32, 0, nil)
-        s["f1"] = read_val(buf, "float64", 64, 1, nil)
+        s["f0"] = read_struct_field(buf, "float32", 32, 0, nil)
+        s["f1"] = read_struct_field(buf, "float64", 64, 1, nil)
         return s
     end,
 
@@ -563,7 +563,7 @@ _M.T1.g0 = {
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s["ui2"] = read_val(buf, "uint32", 32, 6, nil)
+        s["ui2"] = read_struct_field(buf, "uint32", 32, 6, nil)
         return s
     end,
 }
@@ -618,7 +618,7 @@ _M.T1.u0 = {
             write_val(buf, n, 16, offset)
         else
             -- get value
-            return read_val(buf, "uint16", 16, offset)
+            return read_struct_field(buf, "uint16", 16, offset)
         end
     end,
 
@@ -629,14 +629,14 @@ _M.T1.u0 = {
 
 
         if dscrm == 0 then
-        s["ui3"] = read_val(buf, "uint16", 16, 11, nil)
+        s["ui3"] = read_struct_field(buf, "uint16", 16, 11, nil)
         else
             s["ui3"] = nil
         end
 
         if dscrm == 1 then
 
-        s["uv1"] = read_val(buf, "void", 0, 0, nil)
+        s["uv1"] = read_struct_field(buf, "void", 0, 0, nil)
         else
             s["uv1"] = nil
         end
@@ -680,8 +680,8 @@ _M.T1.u0.ug0 = {
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 
-        s["ugv0"] = read_val(buf, "void", 0, 0, nil)
-        s["ugu0"] = read_val(buf, "uint32", 32, 8, nil)
+        s["ugv0"] = read_struct_field(buf, "void", 0, 0, nil)
+        s["ugu0"] = read_struct_field(buf, "uint32", 32, 8, nil)
         return s
     end,
 }

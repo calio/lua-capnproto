@@ -36,6 +36,7 @@ if not ok then
     new_tab = function (narr, nrec) return {} end
 end
 
+-- TODO
 local _M = new_tab(2, 32)
 
 
@@ -115,7 +116,7 @@ local function get_pointer_from_val(buf, size, val)
 end
 
 -- default: optional
-function _M.read_val(buf, field_type, size, off, default)
+function _M.read_struct_field(buf, field_type, size, off, default)
     if field_type == "void" then
         return "Void"
     end
@@ -266,6 +267,12 @@ function _M.read_list_data(p, size_type, elm_type, num)
     end
 
     size = size * 8
+
+    if elm_type == "text" then
+        for i = 1, num do
+            -- TODO
+        end
+    end
 
     local p = get_pointer_from_type(p, elm_type)
 

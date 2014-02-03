@@ -64,7 +64,7 @@ local util = require "util"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
-local read_val          = capnp.read_val
+local read_struct_field          = capnp.read_struct_field
 local get_enum_val      = capnp.get_enum_val
 local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
@@ -274,7 +274,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
         elseif field.type_name == "enum" then
             insert(res, format([[
 
-        local val = read_val(buf, "uint16", %d, %d)
+        local val = read_struct_field(buf, "uint16", %d, %d)
         s["%s"] = get_enum_val(val, _M.%sStr)]], field.size, field.slot.offset, field.name, field.type_display_name))
 
         elseif field.type_name == "list" then
@@ -365,7 +365,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local default = field.default_value and field.default_value or "nil"
             insert(res, format([[
 
-        s["%s"] = read_val(buf, "%s", %d, %d, %s)]], field.name, field.type_name, field.size, field.slot.offset, default))
+        s["%s"] = read_struct_field(buf, "%s", %d, %d, %s)]], field.name, field.type_name, field.size, field.slot.offset, default))
 
         end
         if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
@@ -677,7 +677,7 @@ function comp_which(res)
             write_val(buf, n, 16, offset)
         else
             -- get value
-            return read_val(buf, "uint16", 16, offset)
+            return read_struct_field(buf, "uint16", 16, offset)
         end
     end,
 ]])
