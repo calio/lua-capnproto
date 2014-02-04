@@ -126,7 +126,7 @@ function _M.read_struct_field(buf, field_type, size, off, default)
     local val
     if size >= 8 then
         local n, s = get_bit_offset(size * off, size)
-        val = p[n]
+        val = tonumber(p[n])
     else
         local n, s = get_bit_offset(size * off, 8)
         local mask = 2^size - 1
@@ -136,6 +136,7 @@ function _M.read_struct_field(buf, field_type, size, off, default)
 
     -- TODO int64/uint64 support
     if default then
+        -- print(type(val), type(default), val)
         val = bxor(val, default)
     end
 

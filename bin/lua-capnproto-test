@@ -23,6 +23,7 @@ function pprint(val, T)
     local typ = type(val)
     if typ == "table" then
         if #val > 0 then
+            -- list
             insert(res, "[")
             for i = 1, #val do
                 if i ~= 1 then
@@ -34,12 +35,13 @@ function pprint(val, T)
             end
             insert(res, "]")
         else
+            -- struct
             insert(res, "(")
             local i = 1
             for _, item in pairs(T.fields) do
                 local k = item.name
                 local default = item.default
-                if val[k] ~= default then
+                if val[k] and val[k] ~= default then
                     if i ~= 1 then
                         insert(res, ", ")
                     end
@@ -55,6 +57,8 @@ function pprint(val, T)
         insert(res, '"')
         insert(res, val)
         insert(res, '"')
+    elseif typ == "boolean" then
+        insert(res, tonumber(val))
     else
         insert(res, val)
     end
