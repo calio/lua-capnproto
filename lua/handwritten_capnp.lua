@@ -81,6 +81,7 @@ _M.T1 = {
         { name = "db0", default = 1 },
         { name = "end", default = 0 },
         { name = "o0", default = nil },
+        { name = "lt0", default = "opaque pointer" },
     },
     calc_size_struct = function(data)
         local size = 88
@@ -322,7 +323,7 @@ _M.T1 = {
 
         local off, size, num = read_listp_struct(buf, header, _M.T1, 1)
         if off and num then
-            s["l0"] = read_list_data(buf + (5 + 1 + 1 + off) * 2, size, "int8", num) -- dataWordCount + offset + pointerSize + off
+            s["l0"] = read_list_data(buf + (5 + 1 + 1 + off) * 2, header, size, num, "int8") -- dataWordCount + offset + pointerSize + off
         else
             s["l0"] = nil
         end

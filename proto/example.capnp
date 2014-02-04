@@ -56,6 +56,7 @@ struct T1 {
     db0 @22 :Bool = true;
     end @23 :Bool; # "end" is lua's reserved word
     o0  @24 :AnyPointer;
+    lt0 @25 :List(Text);
 #    u1: union {
 #        g1 :group {
 #            v1 @17 :Void;

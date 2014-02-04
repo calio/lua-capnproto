@@ -64,14 +64,14 @@ local util = require "util"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val
-local read_struct_field          = capnp.read_struct_field
+local read_struct_field = capnp.read_struct_field
 local get_enum_val      = capnp.get_enum_val
 local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
 local read_struct_buf   = capnp.read_struct_buf
-local read_listp_struct    = capnp.read_listp_struct
+local read_listp_struct = capnp.read_listp_struct
 local read_list_data    = capnp.read_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
@@ -308,7 +308,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
         if off and num then
-            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, size, "%s", num) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, header, size, num, "%s") -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end

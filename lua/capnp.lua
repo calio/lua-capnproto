@@ -154,6 +154,10 @@ function _M.read_struct_field(buf, field_type, size, off, default)
     end
 end
 
+function _M.read_text_data(buf, num)
+    return ffistr(buf, num) -- dataWordCount + offset + pointerSize + data_off
+end
+
 function _M.read_text(buf, header, T, offset, default)
     local res
     local data_off, size, num = _M.read_listp_struct(buf, header, T, 2)
@@ -258,28 +262,51 @@ local list_size_map = {
     -- 7 = ?,
 }
 
-function _M.read_list_data(p, size_type, elm_type, num)
+function _M.read_list_data(p, header, size_type, num, elm_type, ...)
+    p = cast(puint32, p)
+    if not elm_type then
+        return
+    end
+
     local t = new_tab(num, 0)
 
-    local size = list_size_map[size_type]
-    if not size then
-        error("corrupt data, unknown size type: " .. size_type)
-    end
-
-    size = size * 8
-
-    if elm_type == "text" then
+    if elm_type == "list" then
+        -- print("list data: list")
         for i = 1, num do
-            -- TODO
+            local off, child_size, child_num = _M.read_listp_list(p, header, i)
+            if off and num then
+                t[i] = _M.read_list_data(p, header, child_size, child_num, select(1, ...))
+            end
         end
+
+    elseif elm_type == "text" then
+        -- print("list data: text: ", num)
+        for i = 1, num do
+            local off, child_size, child_num = _M.read_listp_list(p, header, i)
+            t[i] = _M.read_text_data(p + (i + off) * 2, child_num - 1)
+            -- print(off, child_size, child_num, t[i])
+        end
+    elseif elm_type == "data" then
+        -- print("list data: data")
+        for i = 1, num do
+            local off, child_size, child_num = _M.read_listp_list(p, header, i)
+            t[i] = _M.read_text_data(p + (1 + off) * 2, child_num)
+        end
+    else
+        local size = list_size_map[size_type]
+        if not size then
+            error("corrupt data, unknown size type: " .. size_type)
+        end
+
+        size = size * 8
+
+        local p = get_pointer_from_type(p, elm_type)
+
+        for i = 1, num do
+            t[i] = p[i - 1]
+        end
+
     end
-
-    local p = get_pointer_from_type(p, elm_type)
-
-    for i = 1, num do
-        t[i] = p[i - 1]
-    end
-
     return t
 end
 
@@ -324,7 +351,7 @@ end
 
 -- @index: start from 1
 function _M.read_listp_list(p32, header, index)
-    return _M.read_listp(p32 + index - 1, header)
+    return _M.read_listp(p32 + (index - 1) * 2, header)
 end
 
 function _M.read_listp_struct(buf, header, T, offset)

@@ -54,6 +54,10 @@ void writeT1(int fd) {
     //o0.setUv1();
     //o0.set(0, 2);
 
+    ::capnp::List< ::capnp::Text>::Builder lt0 = t1.initLt0(2);
+    lt0.set(0, "foo");
+    lt0.set(1, "bar");
+
     writeMessageToFd(fd, message);
 }
 
