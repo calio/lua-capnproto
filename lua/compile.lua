@@ -159,7 +159,7 @@ end
 
 function _set_field_default(field, slot)
     local default
-    if slot.defaultValue and field.type_name ~= "void"
+    if slot.defaultValue
             and field.type_name ~= "object" and field.type_name ~= "anyPointer" then
 
         for k, v in pairs(slot.defaultValue) do
@@ -170,6 +170,8 @@ function _set_field_default(field, slot)
                     field.print_default_value = '"' .. v .. '"'
                 elseif field.type_name == "struct" or field.type_name == "list" or field.type_name == "object" or field.type_name == "anyPointer" then
                     field.print_default_value = '"' .. v .. '"'
+                elseif field.type_name == "void" then
+                    field.print_default_value = "\"Void\""
                 else
                     field.print_default_value = v
                 end
@@ -178,7 +180,7 @@ function _set_field_default(field, slot)
         end
         dbgf("[%s] %s.print_default_value=%s", field.type_name, field.name, field.print_default_value)
     end
-    if field.print_default_value ~= 0 or field.type_name == "bool" then
+    if field.print_default_value ~= 0 or field.type_name == "bool" or field.type_name == "void" then
         field.default_value = field.print_default_value
     end
 end
@@ -361,6 +363,10 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         elseif field.type_name == "anyPointer" then
             -- TODO support anyPointer
+        elseif field.type_name == "void" then
+            insert(res, format([[
+
+        s["%s"] = "Void"]], field.name))
         else
             local default = field.default_value and field.default_value or "nil"
             insert(res, format([[
