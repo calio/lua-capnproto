@@ -14,58 +14,7 @@ local test_case = arg[2]
 -- print(action, test_case)
 
 function pprint(val, T)
-    local is_print
-    if not res then
-        res = {}
-        is_print = true
-    end
-
-    local typ = type(val)
-    if typ == "table" then
-        if #val > 0 then
-            -- list
-            insert(res, "[")
-            for i = 1, #val do
-                if i ~= 1 then
-                    insert(res, ", ")
-                end
-                insert(res, '"')
-                insert(res, val[i])
-                insert(res, '"')
-            end
-            insert(res, "]")
-        else
-            -- struct
-            insert(res, "(")
-            local i = 1
-            for _, item in pairs(T.fields) do
-                local k = item.name
-                local default = item.default
-                if val[k] and val[k] ~= default then
-                    if i ~= 1 then
-                        insert(res, ", ")
-                    end
-                    insert(res, k)
-                    insert(res, " = ")
-                    pprint(val[k], T[k])
-                    i = i + 1
-                end
-            end
-            insert(res, ")")
-        end
-    elseif typ == "string" then
-        insert(res, '"')
-        insert(res, val)
-        insert(res, '"')
-    elseif typ == "boolean" then
-        insert(res, tonumber(val))
-    else
-        insert(res, val)
-    end
-
-    if is_print then
-        print(concat(res))
-    end
+    print(util.to_text(val, T))
 end
 
 local type_map = {

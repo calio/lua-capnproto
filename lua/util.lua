@@ -3,6 +3,8 @@ local lower = string.lower
 local upper = string.upper
 local gsub = string.gsub
 local format = string.format
+local concat = table.concat
+local insert = table.insert
 
 local _M = {}
 
@@ -123,6 +125,57 @@ function _M.new_buf(hex, ct)
         ct = "uint32_t *"
     end
     return ffi.cast(ct, buf)
+end
+
+function to_text_core(val, T, res)
+    local typ = type(val)
+    if typ == "table" then
+        if #val > 0 then
+            -- list
+            insert(res, "[")
+            for i = 1, #val do
+                if i ~= 1 then
+                    insert(res, ", ")
+                end
+                insert(res, '"')
+                insert(res, val[i])
+                insert(res, '"')
+            end
+            insert(res, "]")
+        else
+            -- struct
+            insert(res, "(")
+            local i = 1
+            for _, item in pairs(T.fields) do
+                local k = item.name
+                local default = item.default
+                if val[k] and val[k] ~= default then
+                    if i ~= 1 then
+                        insert(res, ", ")
+                    end
+                    insert(res, k)
+                    insert(res, " = ")
+                    to_text_core(val[k], T[k], res)
+                    i = i + 1
+                end
+            end
+            insert(res, ")")
+        end
+    elseif typ == "string" then
+        insert(res, '"')
+        insert(res, val)
+        insert(res, '"')
+    elseif typ == "boolean" then
+        insert(res, val and 1 or 0)
+    else
+        insert(res, val)
+    end
+end
+
+function _M.to_text(val, T)
+    local res = {}
+    to_text_core(val, T, res)
+    return concat(res)
 end
 
 return _M
