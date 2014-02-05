@@ -270,12 +270,21 @@ function _M.write_structp_buf(buf, T, TSub, offset, data_off)
 end
 
 
-function _M.get_enum_val(v, enum_schema, name)
+function _M.get_enum_name(v, default, enum_schema, name)
+    v = bxor(v, default) -- starts from 0
     local r = enum_schema[v]
     if not r then
-        print(name, "Unknown enum val: " .. v)
+        error(name, " Unknown enum val:", v, ", out of range")
+    end
+    return r
+end
+
+function _M.get_enum_val(v, default, enum_schema, name)
+    local r = enum_schema[v]
+    if not r then
+        print(name, " Unknown enum val: " .. v)
         --error("Unknown enum val:" .. v)
-        return 0
+        return default
     end
     return r
 end

@@ -67,6 +67,7 @@ local ceil              = math.ceil
 local write_val         = capnp.write_val
 local read_struct_field = capnp.read_struct_field
 local get_enum_val      = capnp.get_enum_val
+local get_enum_name     = capnp.get_enum_name
 local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
@@ -158,34 +159,44 @@ function get_size(type_name)
     return size
 end
 
-function _set_field_default(field, slot)
+function _set_field_default(nodes, field, slot)
     local default
     if slot.defaultValue
             and field.type_name ~= "object" and field.type_name ~= "anyPointer" then
 
         for k, v in pairs(slot.defaultValue) do
-             -- if v ~= 0 then
-                if field.type_name == "bool" then
-                    field.print_default_value = v and 1 or 0
-                elseif field.type_name == "text" or field.type_name == "data" then
-                    field.print_default_value = '"' .. v .. '"'
-                elseif field.type_name == "struct" or field.type_name == "list" or field.type_name == "object" or field.type_name == "anyPointer" then
-                    field.print_default_value = '"' .. v .. '"'
-                elseif field.type_name == "void" then
-                    field.print_default_value = "\"Void\""
+            if field.type_name == "bool" then
+                field.print_default_value = v and 1 or 0
+                field.default_value = field.print_default_value
+            elseif field.type_name == "text" or field.type_name == "data" then
+                field.print_default_value = '"' .. v .. '"'
+                field.default_value = field.print_default_value
+            elseif field.type_name == "struct" or field.type_name == "list" or field.type_name == "object" or field.type_name == "anyPointer" then
+                field.print_default_value = '"' .. v .. '"'
+            elseif field.type_name == "void" then
+                field.print_default_value = "\"Void\""
+                field.default_value = field.print_default_value
 --                elseif sub(field.type_name, 1, 4) == "uint" then
 --                    field.print_default_value = v .. "ULL"
-                else
-                    field.print_default_value = v
-                end
-             -- end
+            elseif field.type_name == "enum" then
+                local enum = assert(nodes[slot["type"].enum.typeId].enum)
+                -- print(cjson.encode(enum.enumerants[v + 1 ]))
+                field.print_default_value = '"' .. enum.enumerants[v + 1].name .. '"'
+                field.default_value = v
+--                print(field.name, v, field.print_default_value)
+            else
+                field.print_default_value = v
+                field.default_value = field.print_default_value
+            end
             break
         end
         dbgf("[%s] %s.print_default_value=%s", field.type_name, field.name, field.print_default_value)
     end
+--[[
     if field.print_default_value ~= 0 or field.type_name == "bool" or field.type_name == "void" then
         field.default_value = field.print_default_value
     end
+    ]]
 end
 
 function _set_field_type(field, slot, nodes)
@@ -233,7 +244,7 @@ function comp_field(res, nodes, field)
     field.name = config.default_naming_func(field.name)
 
     _set_field_type(field, slot, nodes)
-    _set_field_default(field, slot)
+    _set_field_default(nodes, field, slot)
 
     -- print("default:", field.name, field.default_value)
     if not field.type_name then
@@ -280,7 +291,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             insert(res, format([[
 
         local val = read_struct_field(buf, "uint16", %d, %d)
-        s["%s"] = get_enum_val(val, _M.%sStr)]], field.size, field.slot.offset, field.name, field.type_display_name))
+        s["%s"] = get_enum_name(val, %d, _M.%sStr)]], field.size, field.slot.offset, field.name, field.default_value, field.type_display_name))
 
         elseif field.type_name == "list" then
             local off = field.slot.offset
@@ -486,10 +497,11 @@ function comp_flat_serialize(res, struct, fields, size, name)
             insert(res, format([[
 
         if data["%s"] and type(data["%s"]) == "string" then
-            local val = get_enum_val(data["%s"], _M.%s, "%s.%s")
+            local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
             write_val(buf, val, %d, %d)
-        end]], field.name, field.name, field.name, field.type_display_name,
-                     name, field.name, field.size, field.slot.offset))
+        end]], field.name, field.name, field.name, field.default_value,
+                    field.type_display_name, name, field.name, field.size,
+                    field.slot.offset))
 
         elseif field.type_name == "list" then
             dbgf("field %s: list", field.name)

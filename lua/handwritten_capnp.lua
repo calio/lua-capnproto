@@ -9,12 +9,13 @@ local write_val         = capnp.write_val
 local read_struct_field = capnp.read_struct_field
 local read_text         = capnp.read_text
 local get_enum_val      = capnp.get_enum_val
+local get_enum_name     = capnp.get_enum_name
 local get_data_off      = capnp.get_data_off
 local write_listp_buf   = capnp.write_listp_buf
 local write_structp_buf = capnp.write_structp_buf
 local write_structp     = capnp.write_structp
 local read_struct_buf   = capnp.read_struct_buf
-local read_listp_struct  = capnp.read_listp_struct
+local read_listp_struct = capnp.read_listp_struct
 local read_list_data    = capnp.read_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
@@ -54,7 +55,7 @@ _M.T1 = {
     id = 13624321058757364083,
     displayName = "proto/example.capnp:T1",
     dataWordCount = 5,
-    pointerCount = 6,
+    pointerCount = 7,
     discriminantCount = 3,
     discriminantOffset = 10,
 
@@ -158,7 +159,7 @@ _M.T1 = {
             pos = pos + size
         end
         if data["e0"] and type(data["e0"]) == "string" then
-            local val = get_enum_val(data["e0"], _M.T1.EnumType1, "T1.e0")
+            local val = get_enum_val(data["e0"], 1, _M.T1.EnumType1, "T1.e0")
             write_val(buf, val, 16, 6)
         end
         if data["l0"] and type(data["l0"]) == "table" then
@@ -182,7 +183,7 @@ _M.T1 = {
             pos = pos + round8(len)
         end
         if data["e1"] and type(data["e1"]) == "string" then
-            local val = get_enum_val(data["e1"], _M.EnumType2, "T1.e1")
+            local val = get_enum_val(data["e1"], 1, _M.EnumType2, "T1.e1")
             write_val(buf, val, 16, 7)
         end
         if data["d0"] and type(data["d0"]) == "string" then
@@ -319,7 +320,7 @@ _M.T1 = {
 
 
         local val = read_struct_field(buf, "uint16", 16, 6)
-        s["e0"] = get_enum_val(val, _M.T1.EnumType1Str)
+        s["e0"] = get_enum_name(val, 0, _M.T1.EnumType1Str)
 
         local off, size, num = read_listp_struct(buf, header, _M.T1, 1)
         if off and num then
@@ -338,7 +339,7 @@ _M.T1 = {
         end
 ]]
         local val = read_struct_field(buf, "uint16", 16, 7)
-        s["e1"] = get_enum_val(val, _M.EnumType2Str)
+        s["e1"] = get_enum_name(val, 0, _M.EnumType2Str)
         local off, size, num = read_listp_struct(buf, header, _M.T1, 3)
         if off and num then
             s["d0"] = ffi.string(buf + (5 + 3 + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
