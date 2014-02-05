@@ -150,8 +150,14 @@ function _M.read_struct_field(buf, field_type, size, off, default)
 
     if field_type == "int64" or field_type == "uint64" then
         return substr(tostring(val), 1, -4)
+    elseif field_type == "uint32" then
+        -- uint32 is treated as signed int32 by bit operations
+        if val < 0 then
+            val = 2^32 + val
+        end
+        return val
     else
-        return tonumber(val)
+        return val
     end
 end
 
