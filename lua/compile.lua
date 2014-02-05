@@ -5,8 +5,9 @@ local util = require "util"
 local insert = table.insert
 local concat = table.concat
 local format = string.format
-local lower = string.lower
-local gsub = string.gsub
+local lower  = string.lower
+local gsub   = string.gsub
+local sub    = string.sub
 
 local debug = false
 local NOT_UNION = 65535
@@ -172,6 +173,8 @@ function _set_field_default(field, slot)
                     field.print_default_value = '"' .. v .. '"'
                 elseif field.type_name == "void" then
                     field.print_default_value = "\"Void\""
+--                elseif sub(field.type_name, 1, 4) == "uint" then
+--                    field.print_default_value = v .. "ULL"
                 else
                     field.print_default_value = v
                 end

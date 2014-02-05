@@ -127,6 +127,7 @@ function test_read_struct_field_with_default()
     assert_equal(8,             capnp.read_struct_field(seg.data, "int8", 8, 1, 8))
     assert_equal(65535,         capnp.read_struct_field(seg.data, "uint16", 16, 1, 65535))
     assert_equal(1048576,       capnp.read_struct_field(seg.data, "int32", 32, 1, 1048576))
+    assert_equal(3456789012,       capnp.read_struct_field(seg.data, "uint32", 32, 1, 3456789012ULL))
     -- TODO 64 bit number support
     --assert_equal('4294967296',    capnp.read_struct_field(seg.data, "uint64", 64, 1, '4294967296'))
     -- TODO make this work
