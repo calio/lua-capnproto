@@ -5,7 +5,7 @@ using Lua = import "lua.capnp";
 
 struct T1 {
     struct T2 {
-        f0 @0 :Float32;
+        f0 @0 :Float32 = 3.13;
         f1 @1 :Float64;
     }
 

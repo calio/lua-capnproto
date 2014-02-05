@@ -2,8 +2,11 @@ local ffi = require "ffi"
 local lunit = require "lunitx"
 local capnp = require "capnp"
 local util = require "util"
-
 local handwritten = require "handwritten_capnp"
+
+
+local format = string.format
+
 
 local T1 = handwritten.T1
 
@@ -14,7 +17,7 @@ else
 end
 
 function assert_equalf(expected, actual)
-    assert_true(math.abs(expected - actual) < 0.000001)
+    assert_true(math.abs(expected - actual) < 0.000001, format("expected %s, got %s", expected, actual))
 end
 
 local to_hex_string = function(seg)
@@ -132,9 +135,9 @@ function test_read_struct_field_with_default()
     assert_equal(-123456789012345LL,    capnp.read_struct_field(seg.data, "int64", 64, 1, -123456789012345LL))
     assert_equal(345678901234567890ULL,    capnp.read_struct_field(seg.data, "uint64", 64, 1, 345678901234567890ULL))
     -- TODO make this work
---    assert_equalf(3.14,          capnp.read_struct_field(seg.data, "float32", 32, 4, 3.14))
---    assert_equalf(1.41421,       capnp.read_struct_field(seg.data, "float32", 32, 5, 1.41421))
---    assert_equal(3.14159265358979, capnp.read_struct_field(seg.data, "float64", 64, 3, 3.14159265358979))
+    assert_equalf(3.14,          capnp.read_struct_field(seg.data, "float32", 32, 4, 3.14))
+    assert_equalf(1.41421,       capnp.read_struct_field(seg.data, "float32", 32, 5, 1.41421))
+    assert_equal(3.14159265358, capnp.read_struct_field(seg.data, "float64", 64, 3, 3.14159265358))
 end
 
 --[[

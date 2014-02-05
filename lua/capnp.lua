@@ -24,6 +24,12 @@ assert(ffi.sizeof("float") == 4)
 assert(ffi.sizeof("double") == 8)
 
 
+local bfloat32 = ffi.new('float[?]', 1)
+local bfloat64 = ffi.new('double[?]', 1)
+local bint32   = ffi.new('int[?]', 1)
+local bint64   = ffi.new('int64_t[?]', 1)
+local buint64  = ffi.new('uint64_t[?]', 1)
+
 local round8 = function(size)
     return ceil(size / 8) * 8
 end
@@ -115,6 +121,27 @@ local function get_pointer_from_val(buf, size, val)
     return p
 end
 
+local function fix_float32_default(val, default)
+    local uint, float
+    bfloat32[0] = default
+    uint = cast(puint32, bfloat32)
+    val = bxor(val, uint[0])
+    bint32[0] = val
+    float = cast(pfloat32, bint32)
+    return float[0]
+end
+
+local function fix_float64_default(val, default)
+    local uint, float
+    bfloat64[0] = default
+    uint = cast(puint64, bfloat64)
+    val = bxor(val, uint[0])
+    buint64[0] = val
+    float = cast(pfloat64, buint64)
+    return float[0]
+end
+
+
 -- default: optional
 function _M.read_struct_field(buf, field_type, size, off, default)
     if field_type == "void" then
@@ -135,7 +162,13 @@ function _M.read_struct_field(buf, field_type, size, off, default)
     end
 
     if default then
-        val = bxor(val, default)
+        if field_type == "float32" then
+            val = fix_float32_default(val, default)
+        elseif field_type == "float64" then
+            val = fix_float64_default(val, default)
+        else
+            val = bxor(val, default)
+        end
     end
 
     if field_type == "bool" then
