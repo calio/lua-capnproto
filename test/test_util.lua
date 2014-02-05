@@ -20,10 +20,12 @@ function test_hex_utils()
     assert_equal("01 02 03 04 0a 0b 0c 0d", util.hex_buf_str(buf, 8))
 end
 
+
 function test_to_text()
     local T1 = hw_capnp.T1
     local val = {
-        b0 = true,
+        b0 = true, -- default 0
+        db0 = true, -- default 1
     }
 
     assert_equal("(b0 = 1)", util.to_text(val, T1))
@@ -32,8 +34,9 @@ end
 function test_to_text1()
     local T1 = hw_capnp.T1
     local val = {
-        b0 = false,
+        b0 = false, -- default 0
+        db0 = false, -- default 1
     }
 
-    assert_equal("()", util.to_text(val, T1))
+    assert_equal("(db0 = 0)", util.to_text(val, T1))
 end

@@ -127,6 +127,16 @@ function _M.new_buf(hex, ct)
     return ffi.cast(ct, buf)
 end
 
+function equal(a, b)
+    if type(a) == "boolean" then
+        a = a and 1 or 0
+    end
+    if type(b) == "boolean" then
+        b = b and 1 or 0
+    end
+    return a == b
+end
+
 function to_text_core(val, T, res)
     local typ = type(val)
     if typ == "table" then
@@ -149,14 +159,19 @@ function to_text_core(val, T, res)
             for _, item in pairs(T.fields) do
                 local k = item.name
                 local default = item.default
-                if val[k] and val[k] ~= default then
-                    if i ~= 1 then
-                        insert(res, ", ")
+                if type(default) == "boolean" then
+                    default = default and 1 or 0
+                end
+                if val[k] ~= nil then
+                    if not equal(val[k], default) then
+                        if i ~= 1 then
+                            insert(res, ", ")
+                        end
+                        insert(res, k)
+                        insert(res, " = ")
+                        to_text_core(val[k], T[k], res)
+                        i = i + 1
                     end
-                    insert(res, k)
-                    insert(res, " = ")
-                    to_text_core(val[k], T[k], res)
-                    i = i + 1
                 end
             end
             insert(res, ")")
