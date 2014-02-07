@@ -17,7 +17,11 @@ else
 end
 
 function assert_equalf(expected, actual)
-    assert_true(math.abs(expected - actual) < 0.000001, format("expected %s, got %s", expected, actual))
+    if math.abs(expected - actual) < 0.000001 then
+        assert_true(true)
+        return
+    end
+    error(format("expected %s, got %s", expected, actual))
 end
 
 local to_hex_string = function(seg)
@@ -39,6 +43,8 @@ local function assert_hex_string(expected, actual)
     end
     assert_equal(expected, table.concat(t, " "))
 end
+
+-----------------------------------------------------------------
 
 function test_write_plain_val()
     local seg = { len = 32, pos = 0 }

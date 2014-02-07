@@ -89,6 +89,13 @@ function _M.table_diff(t1, t2, namespace)
     end
 end
 
+function _M.read_file(name)
+    local f = assert(io.open(name, "r"))
+    local content = f:read("*a")
+    f:close()
+    return content
+end
+
 function _M.write_file(name, content)
     local f = assert(io.open(name, "w"))
     f:write(content)
@@ -177,12 +184,20 @@ function to_text_core(val, T, res)
             insert(res, ")")
         end
     elseif typ == "string" then
-        insert(res, '"')
-        insert(res, val)
-        insert(res, '"')
+        if val == "Void" then
+            insert(res, "void")
+        else
+            insert(res, '"')
+            insert(res, val)
+            insert(res, '"')
+        end
     elseif typ == "boolean" then
-        insert(res, val and 1 or 0)
+        insert(res, val and "true" or "false")
     else
+        if type(val) == "cdata" then
+            --val = string.sub(tostring(val), 1, -3)
+            val = tostring(val)
+        end
         insert(res, val)
     end
 end

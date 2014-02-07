@@ -24,6 +24,18 @@ local type_map = {
     constTest               = "SimpleTestStruct",
 }
 
+local proto_file = "test.capnp"
+local proto
+
+--[[
+function get_input()
+    if not proto then
+        proto = util.read_file(proto_file)
+    end
+    print(string.find(proto, "const simpleTest.*=(.*);"))
+end
+]]
+
 local typ = assert(type_map[test_case])
 if action == "decode" then
     local content = io.stdin:read("*a")
@@ -31,7 +43,9 @@ if action == "decode" then
     local r = test[typ].parse(content)
     pprint(r, test[typ])
 elseif action == "encode" then
+    --print(get_input())
     local r = test[typ].serialize({})
     util.write_file("encode_" .. test_case, r)
     print(r)
+    os.exit(127)
 end

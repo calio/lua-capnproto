@@ -162,7 +162,9 @@ end
 function _set_field_default(nodes, field, slot)
     local default
     if slot.defaultValue
-            and field.type_name ~= "object" and field.type_name ~= "anyPointer" then
+            and field.type_name ~= "object"
+            and field.type_name ~= "anyPointer"
+    then
 
         for k, v in pairs(slot.defaultValue) do
             if field.type_name == "bool" then
@@ -171,7 +173,10 @@ function _set_field_default(nodes, field, slot)
             elseif field.type_name == "text" or field.type_name == "data" then
                 field.print_default_value = '"' .. v .. '"'
                 field.default_value = field.print_default_value
-            elseif field.type_name == "struct" or field.type_name == "list" or field.type_name == "object" or field.type_name == "anyPointer" then
+            elseif field.type_name == "struct" or field.type_name == "list"
+                    or field.type_name == "object"
+                    or field.type_name == "anyPointer"
+            then
                 field.print_default_value = '"' .. v .. '"'
             elseif field.type_name == "void" then
                 field.print_default_value = "\"Void\""
@@ -181,7 +186,9 @@ function _set_field_default(nodes, field, slot)
             elseif field.type_name == "enum" then
                 local enum = assert(nodes[slot["type"].enum.typeId].enum)
                 -- print(cjson.encode(enum.enumerants[v + 1 ]))
-                field.print_default_value = '"' .. enum.enumerants[v + 1].name .. '"'
+                field.print_default_value = '"' .. enum.enumerants[v + 1].name
+                        .. '"'
+
                 field.default_value = v
 --                print(field.name, v, field.print_default_value)
             else
@@ -190,13 +197,9 @@ function _set_field_default(nodes, field, slot)
             end
             break
         end
-        dbgf("[%s] %s.print_default_value=%s", field.type_name, field.name, field.print_default_value)
+        dbgf("[%s] %s.print_default_value=%s", field.type_name, field.name,
+                field.print_default_value)
     end
---[[
-    if field.print_default_value ~= 0 or field.type_name == "bool" or field.type_name == "void" then
-        field.default_value = field.print_default_value
-    end
-    ]]
 end
 
 function _set_field_type(field, slot, nodes)
@@ -291,7 +294,9 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             insert(res, format([[
 
         local val = read_struct_field(buf, "uint16", %d, %d)
-        s["%s"] = get_enum_name(val, %d, _M.%sStr)]], field.size, field.slot.offset, field.name, field.default_value, field.type_display_name))
+        s["%s"] = get_enum_name(val, %d, _M.%sStr)]], field.size,
+                field.slot.offset, field.name, field.default_value,
+                field.type_display_name))
 
         elseif field.type_name == "list" then
             local off = field.slot.offset
@@ -385,7 +390,8 @@ function comp_parse_struct_data(res, struct, fields, size, name)
             local default = field.default_value and field.default_value or "nil"
             insert(res, format([[
 
-        s["%s"] = read_struct_field(buf, "%s", %d, %d, %s)]], field.name, field.type_name, field.size, field.slot.offset, default))
+        s["%s"] = read_struct_field(buf, "%s", %d, %d, %s)]], field.name,
+                    field.type_name, field.size, field.slot.offset, default))
 
         end
         if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
@@ -571,7 +577,8 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
             ffi_copy(buf + pos, data["%s"])
             pos = pos + round8(len)
-        end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
+        end]], field.name, field.name, name, off, field.name, name, off, 2,
+                    field.name))
 
         elseif field.type_name == "data" then
             dbgf("field %s: data", field.name)
@@ -586,7 +593,8 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
             ffi_copy(buf + pos, data["%s"])
             pos = pos + round8(len)
-        end]], field.name, field.name, name, off, field.name, name, off, 2, field.name))
+        end]], field.name, field.name, name, off, field.name, name, off, 2,
+                    field.name))
 
         else
             dbgf("field %s: %s", field.name, field.type_name)
@@ -715,7 +723,8 @@ function comp_fields(res, nodes, node, struct)
             if not node.nestedNodes then
                 node.nestedNodes = {}
             end
-            insert(node.nestedNodes, { name = field.name, id = field.group.typeId })
+            insert(node.nestedNodes,
+                    { name = field.name, id = field.group.typeId })
         end
         insert(res, format([[
         { name = "%s", default = %s },

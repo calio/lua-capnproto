@@ -18,7 +18,7 @@ local type      = type
 local modf      = math.modf
 local substr    = string.sub
 
--- works only with Little Endian
+-- Only works with Little Endian for now
 assert(ffi.abi("le") == true)
 assert(ffi.sizeof("float") == 4)
 assert(ffi.sizeof("double") == 8)
@@ -34,16 +34,14 @@ local round8 = function(size)
     return ceil(size / 8) * 8
 end
 
-local SEGMENT_SIZE = 4096
-
 
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
     new_tab = function (narr, nrec) return {} end
 end
 
--- TODO
-local _M = new_tab(2, 32)
+-- 
+local _M = new_tab(0, 32)
 
 
 local function get_bit_offset(bit_off, size)
