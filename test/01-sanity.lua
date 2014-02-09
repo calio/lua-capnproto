@@ -235,11 +235,10 @@ function test_far_pointer_to_list()
     assert_equal(4, num)
 end
 
-function test_underscore_naming()
-    assert_equal("request_uri", util.lower_underscore_naming("requestURI"))
-    assert_equal("REQUEST_URI", util.upper_underscore_naming("requestURI"))
-    assert_equal("REQUEST", util.upper_underscore_naming("request"))
-    assert_equal("TEST_RES", util.upper_underscore_naming("testRes"))
-    assert_equal("request_uri", util.lower_underscore_naming("requestURI"))
-    assert_equal("VERSION-CONTROL", util.upper_dash_naming("versionControl"))
+function test_write_text()
+    local buf = ffi.new("char[?]", 8 * 4)
+    local p32 = ffi.cast("int32_t *", buf)
+    capnp.write_text(p32, "12345678", 1)
+
+    assert_equal("05 00 00 00 4a 00 00 00 00 00 00 00 00 00 00 00 31 32 33 34 35 36 37 38 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 32))
 end

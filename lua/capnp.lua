@@ -9,6 +9,7 @@ local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
 local typeof    = ffi.typeof
 local cast      = ffi.cast
 local ffistr    = ffi.string
+local copy      = ffi.copy
 local format    = string.format
 local lower     = string.lower
 local ceil      = math.ceil
@@ -242,6 +243,16 @@ function _M.read_text(buf, header, T, offset, default)
     return res
 end
 
+-- write text
+-- @p32
+-- @text
+-- @data_off            words between the end of list pointer and the first byte of text data
+function _M.write_text(p32, text, data_off)
+    local len = #text + 1
+    _M.write_listp(p32, 2, len, data_off)
+    copy(p32 + data_off*2 + 2, text)
+    return round8(len)
+end
 
 function _M.get_data_off(T, offset, pos)
     return (pos - T.dataWordCount * 8 - offset * 8 - 8) / 8
