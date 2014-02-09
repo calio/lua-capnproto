@@ -27,25 +27,29 @@ local type_map = {
 local proto_file = "test.capnp"
 local proto
 
---[[
-function get_input()
+
+function get_input(test_case)
     if not proto then
         proto = util.read_file(proto_file)
     end
-    print(string.find(proto, "const simpleTest.*=(.*);"))
+    local start, stop, _1 = string.find(proto, "const ".. test_case .. " :%w+ = ([^\n]*);")
+    local lua_str = util.parse_capnp_txt(_1)
+    return assert(loadstring(lua_str)())
 end
-]]
+
 
 local typ = assert(type_map[test_case])
 if action == "decode" then
     local content = io.stdin:read("*a")
-    util.write_file("decode_" .. test_case, content)
+    --util.write_file("decode_" .. test_case, content)
     local r = test[typ].parse(content)
     pprint(r, test[typ])
 elseif action == "encode" then
-    --print(get_input())
-    local r = test[typ].serialize({})
-    util.write_file("encode_" .. test_case, r)
-    print(r)
-    os.exit(127)
+    local input = get_input(test_case)
+    local r = test[typ].serialize(input)
+    --util.write_file("encode_" .. test_case, r)
+    io.stdout:write(r)
+    if test_case ~= "simpleTest" and test_case ~= "textListTypeTest"  then
+        os.exit(127)
+    end
 end

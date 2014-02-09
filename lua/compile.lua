@@ -727,8 +727,8 @@ function comp_fields(res, nodes, node, struct)
                     { name = field.name, id = field.group.typeId })
         end
         insert(res, format([[
-        { name = "%s", default = %s },
-]], field.name, field.print_default_value))
+        { name = "%s", default = %s, ["type"] = "%s" },
+]], field.name, field.print_default_value, field.type_name))
     end
     dbg("struct:", name)
     insert(res, format([[

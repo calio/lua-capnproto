@@ -25,15 +25,7 @@ function _M.camel_naming(name)
     return name
 end
 
-function _M.parse_capnp_decode_txt(infile)
-    local f = io.open(infile)
-    if not f then
-        return nil, "Can't open file: " .. tostring(infile)
-    end
-
-    local s = f:read("*a")
-    f:close()
-
+function _M.parse_capnp_txt(s)
     s = gsub(s, "%(", "{")
     s = gsub(s, "%)", "}")
     s = gsub(s, "%[", "{")
@@ -48,6 +40,18 @@ function _M.parse_capnp_decode_txt(infile)
     s = "return " .. s
 
     return s
+end
+
+function _M.parse_capnp_decode_txt(infile)
+    local f = io.open(infile)
+    if not f then
+        return nil, "Can't open file: " .. tostring(infile)
+    end
+
+    local s = f:read("*a")
+    f:close()
+
+    return _M.parse_capnp_txt(s)
 end
 
 function _M.table_diff(t1, t2, namespace)
@@ -170,7 +174,7 @@ function to_text_core(val, T, res)
                     default = default and 1 or 0
                 end
                 if val[k] ~= nil then
-                    if not equal(val[k], default) then
+--                    if not equal(val[k], default) then
                         if i ~= 1 then
                             insert(res, ", ")
                         end
@@ -178,7 +182,7 @@ function to_text_core(val, T, res)
                         insert(res, " = ")
                         to_text_core(val[k], T[k], res)
                         i = i + 1
-                    end
+ --                   end
                 end
             end
             insert(res, ")")
