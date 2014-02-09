@@ -13,6 +13,12 @@ function test_underscore_naming()
     assert_equal("REQUEST_URI", util.upper_underscore_naming("requestURI"))
     assert_equal("REQUEST", util.upper_underscore_naming("request"))
     assert_equal("TEST_RES", util.upper_underscore_naming("testRes"))
+    assert_equal("request_uri", util.lower_underscore_naming("requestURI"))
+    assert_equal("REQUEST_URI", util.upper_underscore_naming("requestURI"))
+    assert_equal("REQUEST", util.upper_underscore_naming("request"))
+    assert_equal("TEST_RES", util.upper_underscore_naming("testRes"))
+    assert_equal("request_uri", util.lower_underscore_naming("requestURI"))
+    assert_equal("VERSION-CONTROL", util.upper_dash_naming("versionControl"))
 end
 
 function test_hex_utils()

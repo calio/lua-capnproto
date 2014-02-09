@@ -8,6 +8,7 @@ local ceil              = math.ceil
 local write_val         = capnp.write_val
 local read_struct_field = capnp.read_struct_field
 local read_text         = capnp.read_text
+local write_text        = capnp.write_text
 local get_enum_val      = capnp.get_enum_val
 local get_enum_name     = capnp.get_enum_name
 local get_data_off      = capnp.get_data_off
@@ -111,6 +112,7 @@ _M.T1 = {
             end
         end
         -- list
+        -- TODO fix this
         if data.lt0 then
             size = size + round8(#data.lt0 * 1) -- num * acutal size
         end
@@ -263,6 +265,23 @@ _M.T1 = {
 
             write_val(p32, data["end"], "bool", 1, 51, 0)
         end
+        if data["lt0"] and type(data["lt0"]) == "table" then
+            local data_off = get_data_off(_M.T1, 6, pos)
+
+            local len = #data["lt0"]
+            write_listp_buf(p32, _M.T1, 6, 2, len, data_off)
+
+            local off = pos
+            local dp32 = p32 + pos
+            pos = pos + len * 8
+            for i=1, len do
+                local n = write_text(dp32 + (i - 1) * 2, data["lt0"][i], pos - (off + 8))
+                off = off + 8
+                pos = pos + n
+                --write_val(p32 + pos, data["lt0"][i], "text", 8, i - 1) -- 8 bits
+            end
+            --pos = pos + round8(len * 1) -- 1 ** actual size
+        end
         if dscrm then
             _M.T1.which(p32, 10, dscrm) --buf, discriminantOffset, discriminantValue
         end
@@ -407,9 +426,9 @@ _M.T1 = {
         s["end"] = read_struct_field(buf, "bool", 1, 51, 0)
         local off, size, num = read_listp_struct(buf, header, _M.T1, 6)
         if off and num then
-            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, size, num, "text") -- dataWordCount + offset + pointerSize + off
+            --s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, size, num, "text") -- dataWordCount + offset + pointerSize + off
         else
-            s["lt0"] = nil
+            --s["lt0"] = nil
         end
         return s
     end,
