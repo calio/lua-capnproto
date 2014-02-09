@@ -24,11 +24,11 @@ assert(ffi.sizeof("float") == 4)
 assert(ffi.sizeof("double") == 8)
 
 
-local bfloat32 = ffi.new('float[?]', 1)
-local bfloat64 = ffi.new('double[?]', 1)
-local bint32   = ffi.new('int[?]', 1)
-local bint64   = ffi.new('int64_t[?]', 1)
-local buint64  = ffi.new('uint64_t[?]', 1)
+local bfloat32 = ffi.new('float[?]', 2)
+local bfloat64 = ffi.new('double[?]', 3)
+local bint32   = ffi.new('int[?]', 2)
+local bint64   = ffi.new('int64_t[?]', 2)
+local buint64  = ffi.new('uint64_t[?]', 2)
 
 local round8 = function(size)
     return ceil(size / 8) * 8
@@ -119,21 +119,27 @@ local function get_pointer_from_val(buf, size, val)
     return p
 end
 
-local function fix_float32_default(val, default)
+function _M.fix_float32_default(val, default)
     local uint, float
     bfloat32[0] = default
-    uint = cast(puint32, bfloat32)
-    val = bxor(val, uint[0])
+    bfloat32[1] = val
+    uint_def = cast(puint32, bfloat32)
+    uint_val = cast(puint32, bfloat32 + 1)
+    --print("before float32_def", uint_val[0], uint_def[0])
+    val = bxor(uint_val[0], uint_def[0])
+    --print("after float32_def", uint_val[0], uint_def[0])
     bint32[0] = val
     float = cast(pfloat32, bint32)
     return float[0]
 end
 
-local function fix_float64_default(val, default)
+function _M.fix_float64_default(val, default)
     local uint, float
     bfloat64[0] = default
-    uint = cast(puint64, bfloat64)
-    val = bxor(val, uint[0])
+    bfloat64[1] = val
+    uint_def = cast(puint64, bfloat64)
+    uint_val = cast(puint64, bfloat64 + 1)
+    val = bxor(uint_val[0], uint_def[0])
     buint64[0] = val
     float = cast(pfloat64, buint64)
     return float[0]
@@ -161,9 +167,9 @@ function _M.read_struct_field(buf, field_type, size, off, default)
 
     if default then
         if field_type == "float32" then
-            val = fix_float32_default(val, default)
+            val = _M.fix_float32_default(val, default)
         elseif field_type == "float64" then
-            val = fix_float64_default(val, default)
+            val = _M.fix_float64_default(val, default)
         else
             val = bxor(val, default)
         end
@@ -206,15 +212,25 @@ function _M.read_text(buf, header, T, offset, default)
 end
 
 -- default: optional
-function _M.write_val(buf, val, size, off, default)
+function _M.write_val(buf, val, field_type, size, off, default)
     local p = get_pointer_from_val(buf, size, val)
-
     if type(val) == "boolean" then
         val = val and 1 or 0
     end
 
     if default then
-        val = bxor(val, default)
+        if field_type == "float32" then
+            print("float32", val, default)
+            val = _M.fix_float32_default(val, default)
+            print("float32", val)
+        elseif field_type == "float64" then
+            val = _M.fix_float64_default(val, default)
+            print("float64", val)
+        else
+            val = bxor(val, default)
+            print(field_type, val)
+        end
+        --val = bxor(val, default)
     end
 
     if size >= 8 then
@@ -307,6 +323,12 @@ local list_size_map = {
     -- 7 = ?,
 }
 
+-- read data part of a list
+-- @p           start of data buffer
+-- @header      stream header, see http://kentonv.github.io/capnproto/encoding.html#serialization_over_a_stream
+-- @size_type   size of each list element, see http://kentonv.github.io/capnproto/encoding.html#list
+-- @num         number of elements in this list
+-- @elm_type    elememt type: "int32", "data", "list", etc.
 function _M.read_list_data(p, header, size_type, num, elm_type, ...)
     p = cast(puint32, p)
     if not elm_type then

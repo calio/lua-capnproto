@@ -1,5 +1,5 @@
 package.path = package.path .. ";test/?.lua;;"
-local handwritten = require "handwritten"
+local handwritten = require "11-handwritten"
 
 
 for k, v in pairs(handwritten) do

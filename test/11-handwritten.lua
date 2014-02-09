@@ -201,6 +201,7 @@ function test_basic_value6()
     assert_equal("enum3", copy.e0)
     assert_equal("enum7", copy.e1)
     assert_not_nil(copy.s0)
+    -- TODO
     -- assert_equal(3.14, copy.s0.f0)
     assert_equal(3.14159265358979, copy.s0.f1)
     assert_not_nil(copy.l0)

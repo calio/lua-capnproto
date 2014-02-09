@@ -504,10 +504,10 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
         if data["%s"] and type(data["%s"]) == "string" then
             local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
-            write_val(buf, val, %d, %d)
+            write_val(buf, val, "%s", %d, %d)
         end]], field.name, field.name, field.name, field.default_value,
-                    field.type_display_name, name, field.name, field.size,
-                    field.slot.offset))
+                    field.type_display_name, name, field.name, field.type_name,
+                    field.size, field.slot.offset))
 
         elseif field.type_name == "list" then
             dbgf("field %s: list", field.name)
@@ -545,11 +545,11 @@ function comp_flat_serialize(res, struct, fields, size, name)
             write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
 
             for i=1, len do
-                write_val(buf + pos, data["%s"][i], %d, i - 1) -- 8 bits
+                write_val(buf + pos, data["%s"][i], "%s", %d, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end]], field.name, field.name, name, off, field.name, name, off,
-                    field.size, field.name, list_size_map[field.size] * 8))
+                    field.size, field.name, field.type_name, list_size_map[field.size] * 8))
             end
         elseif field.type_name == "struct" then
             dbgf("field %s: struct", field.name)
@@ -605,9 +605,9 @@ function comp_flat_serialize(res, struct, fields, size, name)
         if data["%s"] and (type(data["%s"]) == "number"
                 or type(data["%s"]) == "boolean") then
 
-            write_val(buf, data["%s"], %d, %d, %s)
-        end]], field.name, field.name, field.name, field.name, field.size,
-                    field.slot.offset, default))
+            write_val(buf, data["%s"], "%s", %d, %d, %s)
+        end]], field.name, field.name, field.name, field.name, field.type_name,
+                    field.size, field.slot.offset, default))
             end
         end
 
@@ -703,7 +703,7 @@ function comp_which(res)
     which = function(buf, offset, n)
         if n then
             -- set value
-            write_val(buf, n, 16, offset)
+            write_val(buf, n, "uint16", 16, offset)
         else
             -- get value
             return read_struct_field(buf, "uint16", 16, offset)

@@ -51,17 +51,22 @@ function test_write_plain_val()
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
     -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, true, 1, 0)
-    capnp.write_val(seg.data, 8, 8, 1)
-    capnp.write_val(seg.data, 65535, 16, 1)
-    capnp.write_val(seg.data, 1048576, 32, 1)
-    capnp.write_val(seg.data, 4294967296, 64, 1)
-    capnp.write_val(seg.data, 3.14, 32, 4)
-    capnp.write_val(seg.data, 1.41421, 32, 5)
-    capnp.write_val(seg.data, 3.14159265358979, 64, 3)
+    capnp.write_val(seg.data, true, "bool", 1, 0)
+    capnp.write_val(seg.data, 8, "uint8", 8, 1)
+    capnp.write_val(seg.data, 65535, "uint16", 16, 1)
+    capnp.write_val(seg.data, 1048576, "uint32", 32, 1)
+    capnp.write_val(seg.data, 4294967296, "uint64", 64, 1)
+    capnp.write_val(seg.data, 3.14, "flat32", 32, 4)
+    capnp.write_val(seg.data, 1.41421, "float32", 32, 5)
+    capnp.write_val(seg.data, 3.14159265358979, "float64", 64, 3)
 
     seg.pos = seg.pos + 32
     assert_hex("01 08 ff ff 00 00 10 00 00 00 00 00 01 00 00 00 c3 f5 48 40 d5 04 b5 3f 11 2d 44 54 fb 21 09 40", seg)
+end
+
+function test_fix_float_default()
+    assert_equal(0, capnp.fix_float32_default(3.14, 3.14))
+    assert_equal(0, capnp.fix_float64_default(3.1415926, 3.1415926))
 end
 
 function test_write_plain_val_with_default()
@@ -69,14 +74,14 @@ function test_write_plain_val_with_default()
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
     -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, true, 1, 0, 1)
-    capnp.write_val(seg.data, 8, 8, 1, 8)
-    capnp.write_val(seg.data, 65535, 16, 1, 65535)
-    capnp.write_val(seg.data, 1048576, 32, 1, 1048576)
-    capnp.write_val(seg.data, 4294967296, 64, 1, 4294967296)
-    capnp.write_val(seg.data, 3.14, 32, 4, 3.14)
-    capnp.write_val(seg.data, 1.41421, 32, 5, 1.41421)
-    capnp.write_val(seg.data, 3.14159265358979, 64, 3, 3.14159265358979)
+    capnp.write_val(seg.data, true, "bool", 1, 0, 1)
+    capnp.write_val(seg.data, 8, "uint8", 8, 1, 8)
+    capnp.write_val(seg.data, 65535, "uint16", 16, 1, 65535)
+    capnp.write_val(seg.data, 1048576, "uint32", 32, 1, 1048576)
+    capnp.write_val(seg.data, 4294967296, "uint64", 64, 1, 4294967296)
+    capnp.write_val(seg.data, 3.14, "float32", 32, 4, 3.14)
+    capnp.write_val(seg.data, 1.41421, "float32", 32, 5, 1.41421)
+    capnp.write_val(seg.data, 3.14159265358979, "float64", 64, 3, 3.14159265358979)
 
     seg.pos = seg.pos + 32
     assert_hex("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
@@ -87,7 +92,7 @@ function test_write_plain_val1()
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
     -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, -1, 8, 0)
+    capnp.write_val(seg.data, -1, "int8", 8, 0)
     --[[
     capnp.write_val(seg.data, 8, 8, 1)
     capnp.write_val(seg.data, 65535, 16, 1)
@@ -107,14 +112,14 @@ function test_read_struct_field()
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
     -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, true, 1, 0)
-    capnp.write_val(seg.data, 8, 8, 1)
-    capnp.write_val(seg.data, 65535, 16, 1)
-    capnp.write_val(seg.data, 1048576, 32, 1)
-    capnp.write_val(seg.data, 4294967296, 64, 1)
-    capnp.write_val(seg.data, 3.14, 32, 4)
-    capnp.write_val(seg.data, 1.41421, 32, 5)
-    capnp.write_val(seg.data, 3.14159265358979, 64, 3)
+    capnp.write_val(seg.data, true, "bool", 1, 0)
+    capnp.write_val(seg.data, 8, "uint8", 8, 1)
+    capnp.write_val(seg.data, 65535, "uint16", 16, 1)
+    capnp.write_val(seg.data, 1048576, "uint32", 32, 1)
+    capnp.write_val(seg.data, 4294967296, "uint64", 64, 1)
+    capnp.write_val(seg.data, 3.14, "flat32", 32, 4)
+    capnp.write_val(seg.data, 1.41421, "float32", 32, 5)
+    capnp.write_val(seg.data, 3.14159265358979, "float64", 64, 3)
 
     assert_equal(true,          capnp.read_struct_field(seg.data, "bool", 1, 0))
     assert_equal(8,             capnp.read_struct_field(seg.data, "int8", 8, 1))

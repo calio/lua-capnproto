@@ -60,32 +60,32 @@ _M.T1 = {
     discriminantOffset = 10,
 
     fields = {
-        { name = "i0", default = 0 },
-        { name = "i1", default = 0 },
-        { name = "b0", default = 0 },
-        { name = "i2", default = 0 },
-        { name = "b1", default = 0 },
-        { name = "i3", default = 0 },
-        { name = "s0", default = "opaque pointer" },
-        { name = "e0", default = 0 },
-        { name = "l0", default = "opaque pointer" },
-        { name = "t0", default = "" },
-        { name = "e1", default = 0 },
-        { name = "d0", default = "" },
-        { name = "ui0", default = 0 },
-        { name = "ui1", default = 0 },
-        { name = "uv0", default = nil },
-        { name = "g0", default = nil },
-        { name = "u0", default = nil },
-        { name = "ls0", default = "opaque pointer" },
-        { name = "du0", default = 65535 },
-        { name = "db0", default = 1 },
-        { name = "end", default = 0 },
-        { name = "o0", default = nil },
-        { name = "lt0", default = "opaque pointer" },
+        { name = "i0", default = 0, ["type"] = "uint32" },
+        { name = "i1", default = 0, ["type"] = "uint16" },
+        { name = "b0", default = 0, ["type"] = "bool" },
+        { name = "i2", default = 0, ["type"] = "int8" },
+        { name = "b1", default = 0, ["type"] = "bool" },
+        { name = "i3", default = 0, ["type"] = "int32" },
+        { name = "s0", default = "opaque pointer", ["type"] = "struct" },
+        { name = "e0", default = "enum1", ["type"] = "enum" },
+        { name = "l0", default = "opaque pointer", ["type"] = "list" },
+        { name = "t0", default = "", ["type"] = "text" },
+        { name = "e1", default = "enum5", ["type"] = "enum" },
+        { name = "d0", default = "", ["type"] = "data" },
+        { name = "ui0", default = 0, ["type"] = "int32" },
+        { name = "ui1", default = 0, ["type"] = "int32" },
+        { name = "uv0", default = "Void", ["type"] = "void" },
+        { name = "g0", default = nil, ["type"] = "nil" },
+        { name = "u0", default = nil, ["type"] = "nil" },
+        { name = "ls0", default = "opaque pointer", ["type"] = "list" },
+        { name = "du0", default = 65535, ["type"] = "uint32" },
+        { name = "db0", default = 1, ["type"] = "bool" },
+        { name = "end", default = 0, ["type"] = "bool" },
+        { name = "o0", default = nil, ["type"] = "anyPointer" },
+        { name = "lt0", default = "opaque pointer", ["type"] = "list" },
     },
     calc_size_struct = function(data)
-        local size = 88
+        local size = 96
         -- struct
         if data.s0 then
             size = size + _M.T1.T2.calc_size_struct(data.s0)
@@ -120,37 +120,37 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, buf)
-        local pos = 88
+        local pos = 96
         local dscrm
         if data["i0"] and (type(data["i0"]) == "number"
                 or type(data["i0"]) == "boolean") then
 
-            write_val(buf, data["i0"], 32, 0, nil)
+            write_val(buf, data["i0"], "uint32", 32, 0, 0)
         end
         if data["i1"] and (type(data["i1"]) == "number"
                 or type(data["i1"]) == "boolean") then
 
-            write_val(buf, data["i1"], 16, 2, nil)
+            write_val(buf, data["i1"], "uint16", 16, 2, 0)
         end
         if data["b0"] and (type(data["b0"]) == "number"
                 or type(data["b0"]) == "boolean") then
 
-            write_val(buf, data["b0"], 1, 48, 0)
+            write_val(buf, data["b0"], "bool", 1, 48, 0)
         end
         if data["i2"] and (type(data["i2"]) == "number"
                 or type(data["i2"]) == "boolean") then
 
-            write_val(buf, data["i2"], 8, 7, nil)
+            write_val(buf, data["i2"], "int8", 8, 7, 0)
         end
         if data["b1"] and (type(data["b1"]) == "number"
                 or type(data["b1"]) == "boolean") then
 
-            write_val(buf, data["b1"], 1, 49, 0)
+            write_val(buf, data["b1"], "bool", 1, 49, 0)
         end
         if data["i3"] and (type(data["i3"]) == "number"
                 or type(data["i3"]) == "boolean") then
 
-            write_val(buf, data["i3"], 32, 2, nil)
+            write_val(buf, data["i3"], "int32", 32, 2, 0)
         end
         if data["s0"] and type(data["s0"]) == "table" then
             local data_off = get_data_off(_M.T1, 0, pos)
@@ -159,8 +159,8 @@ _M.T1 = {
             pos = pos + size
         end
         if data["e0"] and type(data["e0"]) == "string" then
-            local val = get_enum_val(data["e0"], 1, _M.T1.EnumType1, "T1.e0")
-            write_val(buf, val, 16, 6)
+            local val = get_enum_val(data["e0"], 0, _M.T1.EnumType1, "T1.e0")
+            write_val(buf, val, "enum", 16, 6)
         end
         if data["l0"] and type(data["l0"]) == "table" then
             local data_off = get_data_off(_M.T1, 1, pos)
@@ -169,7 +169,7 @@ _M.T1 = {
             write_listp_buf(buf, _M.T1, 1, 2, len, data_off)
 
             for i=1, len do
-                write_val(buf + pos, data["l0"][i], 8, i - 1) -- 8 bits
+                write_val(buf + pos, data["l0"][i], "list", 8, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end
@@ -183,8 +183,8 @@ _M.T1 = {
             pos = pos + round8(len)
         end
         if data["e1"] and type(data["e1"]) == "string" then
-            local val = get_enum_val(data["e1"], 1, _M.EnumType2, "T1.e1")
-            write_val(buf, val, 16, 7)
+            local val = get_enum_val(data["e1"], 0, _M.EnumType2, "T1.e1")
+            write_val(buf, val, "enum", 16, 7)
         end
         if data["d0"] and type(data["d0"]) == "string" then
             local data_off = get_data_off(_M.T1, 3, pos)
@@ -202,7 +202,7 @@ _M.T1 = {
         if data["ui0"] and (type(data["ui0"]) == "number"
                 or type(data["ui0"]) == "boolean") then
 
-            write_val(buf, data["ui0"], 32, 4, nil)
+            write_val(buf, data["ui0"], "int32", 32, 4, 0)
         end
         if data["ui1"] then
             dscrm = 1
@@ -211,7 +211,7 @@ _M.T1 = {
         if data["ui1"] and (type(data["ui1"]) == "number"
                 or type(data["ui1"]) == "boolean") then
 
-            write_val(buf, data["ui1"], 32, 4, nil)
+            write_val(buf, data["ui1"], "int32", 32, 4, 0)
         end
         if data["uv0"] then
             dscrm = 2
@@ -248,17 +248,17 @@ _M.T1 = {
         if data["du0"] and (type(data["du0"]) == "number"
                 or type(data["du0"]) == "boolean") then
 
-            write_val(buf, data["du0"], 32, 9, 65535)
+            write_val(buf, data["du0"], "uint32", 32, 9, 65535)
         end
         if data["db0"] and (type(data["db0"]) == "number"
                 or type(data["db0"]) == "boolean") then
 
-            write_val(buf, data["db0"], 1, 50, 1)
+            write_val(buf, data["db0"], "bool", 1, 50, 1)
         end
         if data["end"] and (type(data["end"]) == "number"
                 or type(data["end"]) == "boolean") then
 
-            write_val(buf, data["end"], 1, 51, 0)
+            write_val(buf, data["end"], "bool", 1, 51, 0)
         end
         if dscrm then
             _M.T1.which(buf, 10, dscrm) --buf, discriminantOffset, discriminantValue
@@ -288,7 +288,7 @@ _M.T1 = {
     which = function(buf, offset, n)
         if n then
             -- set value
-            write_val(buf, n, 16, offset)
+            write_val(buf, n, "uint16", 16, offset)
         else
             -- get value
             return read_struct_field(buf, "uint16", 16, offset)
@@ -301,12 +301,12 @@ _M.T1 = {
         local dscrm = _M.T1.which(buf, 10) --buf, dscrmriminantOffset, dscrmriminantValue
 
 
-        s["i0"] = read_struct_field(buf, "uint32", 32, 0, nil)
-        s["i1"] = read_struct_field(buf, "uint16", 16, 2, nil)
+        s["i0"] = read_struct_field(buf, "uint32", 32, 0, 0)
+        s["i1"] = read_struct_field(buf, "uint16", 16, 2, 0)
         s["b0"] = read_struct_field(buf, "bool", 1, 48, 0)
-        s["i2"] = read_struct_field(buf, "int8", 8, 7, nil)
+        s["i2"] = read_struct_field(buf, "int8", 8, 7, 0)
         s["b1"] = read_struct_field(buf, "bool", 1, 49, 0)
-        s["i3"] = read_struct_field(buf, "int32", 32, 2, nil)
+        s["i3"] = read_struct_field(buf, "int32", 32, 2, 0)
         local p = buf + (5 + 0) * 2 -- buf, dataWordCount, offset
         local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
@@ -349,21 +349,21 @@ _M.T1 = {
 
         if dscrm == 0 then
 
-        s["ui0"] = read_struct_field(buf, "int32", 32, 4, nil)
+        s["ui0"] = read_struct_field(buf, "int32", 32, 4, 0)
         else
             s["ui0"] = nil
         end
 
         if dscrm == 1 then
 
-        s["ui1"] = read_struct_field(buf, "int32", 32, 4, nil)
+        s["ui1"] = read_struct_field(buf, "int32", 32, 4, 0)
         else
             s["ui1"] = nil
         end
 
         if dscrm == 2 then
 
-        s["uv0"] = read_struct_field(buf, "void", 0, 0, nil)
+        s["uv0"] = "Void"
         else
             s["uv0"] = nil
         end
@@ -402,6 +402,12 @@ _M.T1 = {
         s["du0"] = read_struct_field(buf, "uint32", 32, 9, 65535)
         s["db0"] = read_struct_field(buf, "bool", 1, 50, 1)
         s["end"] = read_struct_field(buf, "bool", 1, 51, 0)
+        local off, size, num = read_listp_struct(buf, header, _M.T1, 6)
+        if off and num then
+            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, size, num, "text") -- dataWordCount + offset + pointerSize + off
+        else
+            s["lt0"] = nil
+        end
         return s
     end,
 
@@ -445,8 +451,8 @@ _M.T1.T2 = {
     discriminantOffset = 0,
 
     fields = {
-        { name = "f0", default = 0 },
-        { name = "f1", default = 0 },
+        { name = "f0", default = 0, ["type"] = "float32" },
+        { name = "f1", default = 0, ["type"] = "float64" },
     },
     calc_size_struct = function(data)
         local size = 16
@@ -464,12 +470,12 @@ _M.T1.T2 = {
         if data["f0"] and (type(data["f0"]) == "number"
                 or type(data["f0"]) == "boolean") then
 
-            write_val(buf, data["f0"], 32, 0, nil)
+            write_val(buf, data["f0"], "float32", 32, 0, 0)
         end
         if data["f1"] and (type(data["f1"]) == "number"
                 or type(data["f1"]) == "boolean") then
 
-            write_val(buf, data["f1"], 64, 1, nil)
+            write_val(buf, data["f1"], "float64", 64, 1, 0)
         end
         return pos
     end,
@@ -545,27 +551,27 @@ _M.T1.g0 = {
     id = 10312822589529145224,
     displayName = "proto/example.capnp:T1.g0",
     dataWordCount = 5,
-    pointerCount = 6,
+    pointerCount = 7,
     isGroup = true,
 
     fields = {
-        { name = "ui2", default = 0 },
+        { name = "ui2", default = 0, ["type"] = "uint32" },
     },
 
     -- size is included in the parent struct, so no need to calculate size here
     flat_serialize = function(data, buf)
-        local pos = 88
+        local pos = 96
         local dscrm
         if data["ui2"] and (type(data["ui2"]) == "number"
                 or type(data["ui2"]) == "boolean") then
 
-            write_val(buf, data["ui2"], 32, 6, nil)
+            write_val(buf, data["ui2"], "uint32", 32, 6, 0)
         end
     end,
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s["ui2"] = read_struct_field(buf, "uint32", 32, 6, nil)
+        s["ui2"] = read_struct_field(buf, "uint32", 32, 6, 0)
         return s
     end,
 }
@@ -573,18 +579,18 @@ _M.T1.u0 = {
     id = 12188145960292142197,
     displayName = "proto/example.capnp:T1.u0",
     dataWordCount = 5,
-    pointerCount = 6,
+    pointerCount = 7,
     discriminantCount = 3,
     discriminantOffset = 14,
     isGroup = true,
 
     fields = {
-        { name = "ui3", default = 0 },
-        { name = "uv1", default = nil },
-        { name = "ug0", default = nil },
+        { name = "ui3", default = 0, ["type"] = "uint16" },
+        { name = "uv1", default = "Void", ["type"] = "void" },
+        { name = "ug0", default = nil, ["type"] = "nil" },
     },
     flat_serialize = function(data, buf)
-        local pos = 88
+        local pos = 96
         local dscrm
         if data["ui3"] then
             dscrm = 0
@@ -593,7 +599,7 @@ _M.T1.u0 = {
         if data["ui3"] and (type(data["ui3"]) == "number"
                 or type(data["ui3"]) == "boolean") then
 
-            write_val(buf, data["ui3"], 16, 11, nil)
+            write_val(buf, data["ui3"], "uint16", 16, 11, 0)
         end
         if data["uv1"] then
             dscrm = 1
@@ -617,7 +623,7 @@ _M.T1.u0 = {
     which = function(buf, offset, n)
         if n then
             -- set value
-            write_val(buf, n, 16, offset)
+            write_val(buf, n, "uint16", 16, offset)
         else
             -- get value
             return read_struct_field(buf, "uint16", 16, offset)
@@ -631,14 +637,14 @@ _M.T1.u0 = {
 
 
         if dscrm == 0 then
-        s["ui3"] = read_struct_field(buf, "uint16", 16, 11, nil)
+        s["ui3"] = read_struct_field(buf, "uint16", 16, 11, 0)
         else
             s["ui3"] = nil
         end
 
         if dscrm == 1 then
 
-        s["uv1"] = read_struct_field(buf, "void", 0, 0, nil)
+        s["uv1"] = "Void"
         else
             s["uv1"] = nil
         end
@@ -662,28 +668,28 @@ _M.T1.u0.ug0 = {
     id = 17270536655881866717,
     displayName = "proto/example.capnp:T1.u0.ug0",
     dataWordCount = 5,
-    pointerCount = 6,
+    pointerCount = 7,
     isGroup = true,
 
     fields = {
-        { name = "ugv0", default = nil },
-        { name = "ugu0", default = 0 },
+        { name = "ugv0", default = "Void", ["type"] = "void" },
+        { name = "ugu0", default = 0, ["type"] = "uint32" },
     },
     flat_serialize = function(data, buf)
-        local pos = 88
+        local pos = 96
         local dscrm
         if data["ugu0"] and (type(data["ugu0"]) == "number"
                 or type(data["ugu0"]) == "boolean") then
 
-            write_val(buf, data["ugu0"], 32, 8, nil)
+            write_val(buf, data["ugu0"], "uint32", 32, 8, 0)
         end
         return pos
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
 
-        s["ugv0"] = read_struct_field(buf, "void", 0, 0, nil)
-        s["ugu0"] = read_struct_field(buf, "uint32", 32, 8, nil)
+        s["ugv0"] = "Void"
+        s["ugu0"] = read_struct_field(buf, "uint32", 32, 8, 0)
         return s
     end,
 }
