@@ -472,7 +472,6 @@ function comp_flat_serialize(res, struct, fields, size, name)
     insert(res, format([[
 
     flat_serialize = function(data, p32)
-        local buf = p32
         local pos = %d
         local dscrm]], size))
 
@@ -505,9 +504,9 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
         if data["%s"] and type(data["%s"]) == "string" then
             local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
-            write_val(p32, val, "%s", %d, %d)
+            write_val(p32, val, "uint16", %d, %d)
         end]], field.name, field.name, field.name, field.default_value,
-                    field.type_display_name, name, field.name, field.type_name,
+                    field.type_display_name, name, field.name,
                     field.size, field.slot.offset))
 
         elseif field.type_name == "list" then
@@ -536,7 +535,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
                     field.type_display_name, field.type_display_name, field.name,
                     name, off))
             else
-                dbgf("list of other type", field.name)
+                dbg("list of other type", field.name, field.element_type)
                 insert(res, format([[
 
         if data["%s"] and type(data["%s"]) == "table" then
@@ -550,7 +549,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end]], field.name, field.name, name, off, field.name, name, off,
-                    field.size, field.name, field.type_name, list_size_map[field.size] * 8))
+                    field.size, field.name, field.element_type, list_size_map[field.size] * 8))
             end
         elseif field.type_name == "struct" then
             dbgf("field %s: struct", field.name)

@@ -110,7 +110,10 @@ _M.T1 = {
                 size = size + _M.T1.T2.calc_size_struct(data.ls0[i])
             end
         end
-
+        -- list
+        if data.lt0 then
+            size = size + round8(#data.lt0 * 1) -- num * acutal size
+        end
         return size
     end,
 
@@ -119,57 +122,57 @@ _M.T1 = {
         return size + _M.T1.calc_size_struct(data)
     end,
 
-    flat_serialize = function(data, buf)
+    flat_serialize = function(data, p32)
         local pos = 96
         local dscrm
         if data["i0"] and (type(data["i0"]) == "number"
                 or type(data["i0"]) == "boolean") then
 
-            write_val(buf, data["i0"], "uint32", 32, 0, 0)
+            write_val(p32, data["i0"], "uint32", 32, 0, 0)
         end
         if data["i1"] and (type(data["i1"]) == "number"
                 or type(data["i1"]) == "boolean") then
 
-            write_val(buf, data["i1"], "uint16", 16, 2, 0)
+            write_val(p32, data["i1"], "uint16", 16, 2, 0)
         end
         if data["b0"] and (type(data["b0"]) == "number"
                 or type(data["b0"]) == "boolean") then
 
-            write_val(buf, data["b0"], "bool", 1, 48, 0)
+            write_val(p32, data["b0"], "bool", 1, 48, 0)
         end
         if data["i2"] and (type(data["i2"]) == "number"
                 or type(data["i2"]) == "boolean") then
 
-            write_val(buf, data["i2"], "int8", 8, 7, 0)
+            write_val(p32, data["i2"], "int8", 8, 7, 0)
         end
         if data["b1"] and (type(data["b1"]) == "number"
                 or type(data["b1"]) == "boolean") then
 
-            write_val(buf, data["b1"], "bool", 1, 49, 0)
+            write_val(p32, data["b1"], "bool", 1, 49, 0)
         end
         if data["i3"] and (type(data["i3"]) == "number"
                 or type(data["i3"]) == "boolean") then
 
-            write_val(buf, data["i3"], "int32", 32, 2, 0)
+            write_val(p32, data["i3"], "int32", 32, 2, 0)
         end
         if data["s0"] and type(data["s0"]) == "table" then
             local data_off = get_data_off(_M.T1, 0, pos)
-            write_structp_buf(buf, _M.T1, _M.T1.T2, 0, data_off)
-            local size = _M.T1.T2.flat_serialize(data["s0"], buf + pos)
+            write_structp_buf(p32, _M.T1, _M.T1.T2, 0, data_off)
+            local size = _M.T1.T2.flat_serialize(data["s0"], p32 + pos/ 4)
             pos = pos + size
         end
         if data["e0"] and type(data["e0"]) == "string" then
             local val = get_enum_val(data["e0"], 0, _M.T1.EnumType1, "T1.e0")
-            write_val(buf, val, "enum", 16, 6)
+            write_val(p32, val, "uint16", 16, 6)
         end
         if data["l0"] and type(data["l0"]) == "table" then
             local data_off = get_data_off(_M.T1, 1, pos)
 
             local len = #data["l0"]
-            write_listp_buf(buf, _M.T1, 1, 2, len, data_off)
+            write_listp_buf(p32, _M.T1, 1, 2, len, data_off)
 
             for i=1, len do
-                write_val(buf + pos, data["l0"][i], "list", 8, i - 1) -- 8 bits
+                write_val(p32 + pos, data["l0"][i], "int8", 8, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end
@@ -177,22 +180,22 @@ _M.T1 = {
             local data_off = get_data_off(_M.T1, 2, pos)
 
             local len = #data["t0"] + 1
-            write_listp_buf(buf, _M.T1, 2, 2, len, data_off)
+            write_listp_buf(p32, _M.T1, 2, 2, len, data_off)
 
-            ffi_copy(buf + pos, data["t0"])
+            ffi_copy(p32 + pos/4, data["t0"])
             pos = pos + round8(len)
         end
         if data["e1"] and type(data["e1"]) == "string" then
             local val = get_enum_val(data["e1"], 0, _M.EnumType2, "T1.e1")
-            write_val(buf, val, "enum", 16, 7)
+            write_val(p32, val, "uint16", 16, 7)
         end
         if data["d0"] and type(data["d0"]) == "string" then
             local data_off = get_data_off(_M.T1, 3, pos)
 
             local len = #data["d0"]
-            write_listp_buf(buf, _M.T1, 3, 2, len, data_off)
+            write_listp_buf(p32, _M.T1, 3, 2, len, data_off)
 
-            ffi_copy(buf + pos, data["d0"])
+            ffi_copy(p32 + pos/4, data["d0"])
             pos = pos + round8(len)
         end
         if data["ui0"] then
@@ -202,7 +205,7 @@ _M.T1 = {
         if data["ui0"] and (type(data["ui0"]) == "number"
                 or type(data["ui0"]) == "boolean") then
 
-            write_val(buf, data["ui0"], "int32", 32, 4, 0)
+            write_val(p32, data["ui0"], "int32", 32, 4, 0)
         end
         if data["ui1"] then
             dscrm = 1
@@ -211,7 +214,7 @@ _M.T1 = {
         if data["ui1"] and (type(data["ui1"]) == "number"
                 or type(data["ui1"]) == "boolean") then
 
-            write_val(buf, data["ui1"], "int32", 32, 4, 0)
+            write_val(p32, data["ui1"], "int32", 32, 4, 0)
         end
         if data["uv0"] then
             dscrm = 2
@@ -220,13 +223,13 @@ _M.T1 = {
         if data["g0"] and type(data["g0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.T1.g0.flat_serialize(data["g0"], buf)
+            _M.T1.g0.flat_serialize(data["g0"], p32)
         end
 
         if data["u0"] and type(data["u0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.T1.u0.flat_serialize(data["u0"], buf)
+            _M.T1.u0.flat_serialize(data["u0"], p32)
         end
 
         if data["ls0"] and type(data["ls0"]) == "table" then
@@ -234,55 +237,55 @@ _M.T1 = {
             local data_off = get_data_off(_M.T1, 4, pos)
 
             -- write tag
-            capnp.write_composite_tag(buf + pos, _M.T1.T2, num)
+            capnp.write_composite_tag(p32 + pos, _M.T1.T2, num)
             pos = pos + 8 -- tag
 
             -- write data
             for i=1, num do
-                pos = pos + _M.T1.T2.flat_serialize(data["ls0"][i], buf + pos)
+                pos = pos + _M.T1.T2.flat_serialize(data["ls0"][i], p32 + pos/4)
             end
 
             -- write list pointer
-            write_listp_buf(buf, _M.T1, 4, 7, (pos - old_pos - 8) / 8, data_off)
+            write_listp_buf(p32, _M.T1, 4, 7, (pos - old_pos - 8) / 8, data_off)
         end
         if data["du0"] and (type(data["du0"]) == "number"
                 or type(data["du0"]) == "boolean") then
 
-            write_val(buf, data["du0"], "uint32", 32, 9, 65535)
+            write_val(p32, data["du0"], "uint32", 32, 9, 65535)
         end
         if data["db0"] and (type(data["db0"]) == "number"
                 or type(data["db0"]) == "boolean") then
 
-            write_val(buf, data["db0"], "bool", 1, 50, 1)
+            write_val(p32, data["db0"], "bool", 1, 50, 1)
         end
         if data["end"] and (type(data["end"]) == "number"
                 or type(data["end"]) == "boolean") then
 
-            write_val(buf, data["end"], "bool", 1, 51, 0)
+            write_val(p32, data["end"], "bool", 1, 51, 0)
         end
         if dscrm then
-            _M.T1.which(buf, 10, dscrm) --buf, discriminantOffset, discriminantValue
+            _M.T1.which(p32, 10, dscrm) --buf, discriminantOffset, discriminantValue
         end
 
         return pos
     end,
 
-    serialize = function(data, buf, size)
-        if not buf then
+    serialize = function(data, p8, size)
+        if not p8 then
             size = _M.T1.calc_size(data)
 
-            buf = get_str_buf(size)
+            p8 = get_str_buf(size)
         end
-        ffi_fill(buf, size)
-        local p = ffi_cast("int32_t *", buf)
+        ffi_fill(p8, size)
+        local p32 = ffi_cast("int32_t *", p8)
 
-        p[0] = 0                                    -- 1 segment
-        p[1] = (size - 8) / 8
+        p32[0] = 0                                    -- 1 segment
+        p32[1] = (size - 8) / 8
 
-        write_structp(buf + 8, _M.T1, 0)
-        _M.T1.flat_serialize(data, buf + 16)
+        write_structp(p32 + 2, _M.T1, 0)               -- skip header
+        _M.T1.flat_serialize(data, p32 + 4)            -- skip header & struct pointer
 
-        return ffi_string(buf, size)
+        return ffi_string(p8, size)
     end,
 
     which = function(buf, offset, n)
@@ -464,44 +467,45 @@ _M.T1.T2 = {
         return size + _M.T1.T2.calc_size_struct(data)
     end,
 
-    flat_serialize = function(data, buf)
+    flat_serialize = function(data, p32)
         local pos = 16
         local dscrm
         if data["f0"] and (type(data["f0"]) == "number"
                 or type(data["f0"]) == "boolean") then
 
-            write_val(buf, data["f0"], "float32", 32, 0, 0)
+            write_val(p32, data["f0"], "float32", 32, 0, 0)
         end
         if data["f1"] and (type(data["f1"]) == "number"
                 or type(data["f1"]) == "boolean") then
 
-            write_val(buf, data["f1"], "float64", 64, 1, 0)
+            write_val(p32, data["f1"], "float64", 64, 1, 0)
         end
         return pos
     end,
-
-    serialize = function(data, buf, size)
-        if not buf then
+    serialize = function(data, p8, size)
+        if not p8 then
             size = _M.T1.T2.calc_size(data)
 
-            buf = get_str_buf(size)
+            p8 = get_str_buf(size)
         end
-        ffi_fill(buf, size)
-        local p = ffi_cast("int32_t *", buf)
+        ffi_fill(p8, size)
+        local p32 = ffi_cast("int32_t *", p8)
 
-        p[0] = 0                                    -- 1 segment
-        p[1] = (size - 8) / 8
+        p32[0] = 0                                    -- 1 segment
+        p32[1] = (size - 8) / 8
 
-        write_structp(buf + 8, _M.T1.T2, 0)
-        _M.T1.T2.flat_serialize(data, buf + 16)
+        write_structp(p32 + 2, _M.T1.T2, 0)               -- skip header
+        _M.T1.T2.flat_serialize(data, p32 + 4)            -- skip header & struct pointer
 
-        return ffi_string(buf, size)
+        return ffi_string(p8, size)
     end,
+
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
-        s["f0"] = read_struct_field(buf, "float32", 32, 0, nil)
-        s["f1"] = read_struct_field(buf, "float64", 64, 1, nil)
+
+        s["f0"] = read_struct_field(buf, "float32", 32, 0, 0)
+        s["f1"] = read_struct_field(buf, "float64", 64, 1, 0)
         return s
     end,
 
@@ -559,13 +563,13 @@ _M.T1.g0 = {
     },
 
     -- size is included in the parent struct, so no need to calculate size here
-    flat_serialize = function(data, buf)
+    flat_serialize = function(data, p32)
         local pos = 96
         local dscrm
         if data["ui2"] and (type(data["ui2"]) == "number"
                 or type(data["ui2"]) == "boolean") then
 
-            write_val(buf, data["ui2"], "uint32", 32, 6, 0)
+            write_val(p32, data["ui2"], "uint32", 32, 6, 0)
         end
     end,
 
@@ -589,7 +593,7 @@ _M.T1.u0 = {
         { name = "uv1", default = "Void", ["type"] = "void" },
         { name = "ug0", default = nil, ["type"] = "nil" },
     },
-    flat_serialize = function(data, buf)
+    flat_serialize = function(data, p32)
         local pos = 96
         local dscrm
         if data["ui3"] then
@@ -599,7 +603,7 @@ _M.T1.u0 = {
         if data["ui3"] and (type(data["ui3"]) == "number"
                 or type(data["ui3"]) == "boolean") then
 
-            write_val(buf, data["ui3"], "uint16", 16, 11, 0)
+            write_val(p32, data["ui3"], "uint16", 16, 11, 0)
         end
         if data["uv1"] then
             dscrm = 1
@@ -612,11 +616,11 @@ _M.T1.u0 = {
         if data["ug0"] and type(data["ug0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.T1.u0.ug0.flat_serialize(data["ug0"], buf)
+            _M.T1.u0.ug0.flat_serialize(data["ug0"], p32)
         end
 
         if dscrm then
-            _M.T1.u0.which(buf, 14, dscrm) --buf, discriminantOffset, discriminantValue
+            _M.T1.u0.which(p32, 14, dscrm) --buf, discriminantOffset, discriminantValue
         end
         return pos
     end,
@@ -675,13 +679,13 @@ _M.T1.u0.ug0 = {
         { name = "ugv0", default = "Void", ["type"] = "void" },
         { name = "ugu0", default = 0, ["type"] = "uint32" },
     },
-    flat_serialize = function(data, buf)
+    flat_serialize = function(data, p32)
         local pos = 96
         local dscrm
         if data["ugu0"] and (type(data["ugu0"]) == "number"
                 or type(data["ugu0"]) == "boolean") then
 
-            write_val(buf, data["ugu0"], "uint32", 32, 8, 0)
+            write_val(p32, data["ugu0"], "uint32", 32, 8, 0)
         end
         return pos
     end,

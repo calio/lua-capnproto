@@ -40,7 +40,7 @@ if not ok then
     new_tab = function (narr, nrec) return {} end
 end
 
--- 
+
 local _M = new_tab(0, 32)
 
 
@@ -78,15 +78,15 @@ local pointer_map = {
     float64 = typeof("double *"),
 }
 
-local function get_pointer_from_type(buf, field_type)
+local function get_pointer_from_type(p32, field_type)
     local t = pointer_map[field_type]
     if not t then
         error("not supported type: " .. field_type)
     end
 
-    return cast(t, buf)
+    return cast(t, p32)
 end
-
+--[[
 local function get_pointer_from_val(p32, size, val)
     local buf = p32
     local p = buf
@@ -119,7 +119,7 @@ local function get_pointer_from_val(p32, size, val)
     end
     return p
 end
-
+]]
 function _M.fix_float32_default(val, default)
     local uint, float
     bfloat32[0] = default
@@ -146,7 +146,6 @@ function _M.fix_float64_default(val, default)
     return float[0]
 end
 
-
 -- default: optional
 function _M.read_struct_field(p32, field_type, size, off, default)
     local buf = p32
@@ -154,7 +153,7 @@ function _M.read_struct_field(p32, field_type, size, off, default)
         return "Void"
     end
 
-    local p = get_pointer_from_type(buf, field_type)
+    local p = get_pointer_from_type(p32, field_type)
 
     local val
     if size >= 8 then
@@ -198,6 +197,36 @@ function _M.read_struct_field(p32, field_type, size, off, default)
     end
 end
 
+-- default: optional
+function _M.write_val(p32, val, field_type, size, off, default)
+    --local p = get_pointer_from_val(p32, size, val)
+    local p = get_pointer_from_type(p32, field_type)
+    if type(val) == "boolean" then
+        val = val and 1 or 0
+    end
+
+    if default then
+        if field_type == "float32" then
+            val = _M.fix_float32_default(val, default)
+        elseif field_type == "float64" then
+            val = _M.fix_float64_default(val, default)
+        else
+            val = bxor(val, default)
+        end
+        --val = bxor(val, default)
+    end
+
+    if size >= 8 then
+        local n, s = get_bit_offset(size * off, size)
+        p[n] = val
+    else
+        local n, s = get_bit_offset(size * off, 8)
+        p[n] = bor(p[n], lshift(val, s))
+    end
+    --print(string.format("n %d, s %d, %d\n", n, s, val))
+
+end
+
 function _M.read_text_data(buf, num)
     return ffistr(buf, num) -- dataWordCount + offset + pointerSize + data_off
 end
@@ -213,38 +242,6 @@ function _M.read_text(buf, header, T, offset, default)
     return res
 end
 
--- default: optional
-function _M.write_val(p32, val, field_type, size, off, default)
-    local p = get_pointer_from_val(p32, size, val)
-    if type(val) == "boolean" then
-        val = val and 1 or 0
-    end
-
-    if default then
-        if field_type == "float32" then
-            print("float32", val, default)
-            val = _M.fix_float32_default(val, default)
-            print("float32", val)
-        elseif field_type == "float64" then
-            val = _M.fix_float64_default(val, default)
-            print("float64", val)
-        else
-            val = bxor(val, default)
-            print(field_type, val)
-        end
-        --val = bxor(val, default)
-    end
-
-    if size >= 8 then
-        local n, s = get_bit_offset(size * off, size)
-        p[n] = val
-    else
-        local n, s = get_bit_offset(size * off, 8)
-        p[n] = bor(p[n], lshift(val, s))
-    end
-    --print(string.format("n %d, s %d, %d\n", n, s, val))
-
-end
 
 function _M.get_data_off(T, offset, pos)
     return (pos - T.dataWordCount * 8 - offset * 8 - 8) / 8
@@ -271,6 +268,14 @@ function _M.write_composite_tag(p32, T, num)
     local p = p32
     p[0] = lshift(num, 2)   -- pointer offset (B) instead indicates the number of elements in the list
     p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
+end
+
+function read_struct_pointer(p)
+    local offset = rshift(p[0], 2)
+    local data_word_count = band(p[1], 0xffff)
+    local pointer_count = rshift(p[1], 16)
+
+    return offset, data_word_count, pointer_count
 end
 
 function _M.write_structp(p32, T, data_off)
@@ -306,6 +311,30 @@ function _M.get_enum_val(v, default, enum_schema, name)
     return r
 end
 
+function _M.read_listp(p32, header)
+    local val0 = p32[0]
+    local val1 = p32[1]
+
+    if val0 == 0 and val1 == 0 then
+        return
+    end
+
+    local sig = band(val0, 0x03)
+    if sig == 1 then
+        local offset = rshift(val0, 2)
+
+        local size_type = band(val1, 0x07)
+        local num = rshift(val1, 3)
+
+        return offset, size_type, num
+        -- return read_list_pointer(p32)
+    elseif sig == 2 then
+        --print("single far pointer")
+        return read_far_pointer(p32, header, _M.read_listp)
+    else
+        error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
+    end
+end
 -- write list pointer to a pointed memory
 -- @p32         32 bit pointer
 -- @size_type   element size type
@@ -404,31 +433,6 @@ function read_list_pointer(buf)
 end
 --]]
 
-function _M.read_listp(p32, header)
-    local val0 = p32[0]
-    local val1 = p32[1]
-
-    if val0 == 0 and val1 == 0 then
-        return
-    end
-
-    local sig = band(val0, 0x03)
-    if sig == 1 then
-        local offset = rshift(val0, 2)
-
-        local size_type = band(val1, 0x07)
-        local num = rshift(val1, 3)
-
-        return offset, size_type, num
-        -- return read_list_pointer(p32)
-    elseif sig == 2 then
-        --print("single far pointer")
-        return read_far_pointer(p32, header, _M.read_listp)
-    else
-        error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
-    end
-end
-
 -- @index: start from 1
 function _M.read_listp_list(p32, header, index)
     return _M.read_listp(p32 + (index - 1) * 2, header)
@@ -475,14 +479,6 @@ function read_far_pointer(buf, header, parser)
     p_offset = p_offset + (pp - p) / 2 -- p and pp are uint32_t *
 
     return p_offset, r1, r2
-end
-
-function read_struct_pointer(p)
-    local offset = rshift(p[0], 2)
-    local data_word_count = band(p[1], 0xffff)
-    local pointer_count = rshift(p[1], 16)
-
-    return offset, data_word_count, pointer_count
 end
 
 function _M.read_struct_buf(p32, header)
