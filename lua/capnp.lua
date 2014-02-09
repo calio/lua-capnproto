@@ -87,7 +87,8 @@ local function get_pointer_from_type(buf, field_type)
     return cast(t, buf)
 end
 
-local function get_pointer_from_val(buf, size, val)
+local function get_pointer_from_val(p32, size, val)
+    local buf = p32
     local p = buf
     if size == 1 then
         p = cast(puint8, buf)
@@ -147,7 +148,8 @@ end
 
 
 -- default: optional
-function _M.read_struct_field(buf, field_type, size, off, default)
+function _M.read_struct_field(p32, field_type, size, off, default)
+    local buf = p32
     if field_type == "void" then
         return "Void"
     end
@@ -212,8 +214,8 @@ function _M.read_text(buf, header, T, offset, default)
 end
 
 -- default: optional
-function _M.write_val(buf, val, field_type, size, off, default)
-    local p = get_pointer_from_val(buf, size, val)
+function _M.write_val(p32, val, field_type, size, off, default)
+    local p = get_pointer_from_val(p32, size, val)
     if type(val) == "boolean" then
         val = val and 1 or 0
     end
@@ -264,23 +266,24 @@ function _M.read_composite_tag(buf)
     return num, dt, pt
 end
 
-function _M.write_composite_tag(buf, T, num)
-    local p = ffi.cast("int32_t *", buf)
+function _M.write_composite_tag(p32, T, num)
+    --local p = ffi.cast("int32_t *", buf)
+    local p = p32
     p[0] = lshift(num, 2)   -- pointer offset (B) instead indicates the number of elements in the list
     p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
-function _M.write_structp(buf, T, data_off)
-    local p = cast(pint32, buf)
-    p[0] = lshift(data_off, 2)
-    p[1] = lshift(T.pointerCount, 16) + T.dataWordCount
+function _M.write_structp(p32, T, data_off)
+    local p32 = cast(pint32, p32)
+    p32[0] = lshift(data_off, 2)
+    p32[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
-function _M.write_structp_buf(buf, T, TSub, offset, data_off)
-    local p = cast(pint32, buf)
+function _M.write_structp_buf(p32, T, TSub, offset, data_off)
+    local p32 = cast(pint32, p32)
     local base = T.dataWordCount * 2 + offset * 2
-    p[base] = lshift(data_off, 2)
-    p[base + 1] = lshift(TSub.pointerCount, 16) + TSub.dataWordCount
+    p32[base] = lshift(data_off, 2)
+    p32[base + 1] = lshift(TSub.pointerCount, 16) + TSub.dataWordCount
 end
 
 
@@ -303,12 +306,22 @@ function _M.get_enum_val(v, default, enum_schema, name)
     return r
 end
 
-function _M.write_listp_buf(buf, T, offset, size_type, num, data_off)
-    local p = cast(pint32, buf)
+-- write list pointer to a pointed memory
+-- @p32         32 bit pointer
+-- @size_type   element size type
+-- @num         number of elements
+-- @data_off    data offset of this list pointer
+function _M.write_listp(p32, size_type, num, data_off)
+    p32[0] = lshift(data_off, 2) + 1
+    p32[1] = lshift(num, 3) + size_type
+end
+
+function _M.write_listp_buf(p32, T, offset, size_type, num, data_off)
+    local p32 = cast(pint32, p32)
     local base = T.dataWordCount * 2 + offset * 2
 
-    p[base] = lshift(data_off, 2) + 1
-    p[base + 1] = lshift(num, 3) + size_type
+    p32[base] = lshift(data_off, 2) + 1
+    p32[base + 1] = lshift(num, 3) + size_type
 end
 
 -- see http://kentonv.github.io/_Mroto/encoding.html#lists
@@ -329,8 +342,8 @@ local list_size_map = {
 -- @size_type   size of each list element, see http://kentonv.github.io/capnproto/encoding.html#list
 -- @num         number of elements in this list
 -- @elm_type    elememt type: "int32", "data", "list", etc.
-function _M.read_list_data(p, header, size_type, num, elm_type, ...)
-    p = cast(puint32, p)
+function _M.read_list_data(p32, header, size_type, num, elm_type, ...)
+    p32 = cast(puint32, p32)
     if not elm_type then
         return
     end
@@ -340,24 +353,24 @@ function _M.read_list_data(p, header, size_type, num, elm_type, ...)
     if elm_type == "list" then
         -- print("list data: list")
         for i = 1, num do
-            local off, child_size, child_num = _M.read_listp_list(p, header, i)
+            local off, child_size, child_num = _M.read_listp_list(p32, header, i)
             if off and num then
-                t[i] = _M.read_list_data(p, header, child_size, child_num, select(1, ...))
+                t[i] = _M.read_list_data(p32, header, child_size, child_num, select(1, ...))
             end
         end
 
     elseif elm_type == "text" then
         -- print("list data: text: ", num)
         for i = 1, num do
-            local off, child_size, child_num = _M.read_listp_list(p, header, i)
-            t[i] = _M.read_text_data(p + (i + off) * 2, child_num - 1)
+            local off, child_size, child_num = _M.read_listp_list(p32, header, i)
+            t[i] = _M.read_text_data(p32 + (i + off) * 2, child_num - 1)
             -- print(off, child_size, child_num, t[i])
         end
     elseif elm_type == "data" then
         -- print("list data: data")
         for i = 1, num do
-            local off, child_size, child_num = _M.read_listp_list(p, header, i)
-            t[i] = _M.read_text_data(p + (1 + off) * 2, child_num)
+            local off, child_size, child_num = _M.read_listp_list(p32, header, i)
+            t[i] = _M.read_text_data(p32 + (1 + off) * 2, child_num)
         end
     else
         local size = list_size_map[size_type]
@@ -367,10 +380,10 @@ function _M.read_list_data(p, header, size_type, num, elm_type, ...)
 
         size = size * 8
 
-        local p = get_pointer_from_type(p, elm_type)
+        local p32 = get_pointer_from_type(p32, elm_type)
 
         for i = 1, num do
-            t[i] = p[i - 1]
+            t[i] = p32[i - 1]
         end
 
     end
@@ -472,8 +485,8 @@ function read_struct_pointer(p)
     return offset, data_word_count, pointer_count
 end
 
-function _M.read_struct_buf(buf, header)
-    local p = buf
+function _M.read_struct_buf(p32, header)
+    local p = p32
     if p[0] == 0 and p[1] == 0 then
         -- not set
         return

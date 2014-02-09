@@ -447,22 +447,22 @@ end
 function comp_serialize(res, name)
     insert(res, format([[
 
-    serialize = function(data, buf, size)
-        if not buf then
+    serialize = function(data, p8, size)
+        if not p8 then
             size = _M.%s.calc_size(data)
 
-            buf = get_str_buf(size)
+            p8 = get_str_buf(size)
         end
-        ffi_fill(buf, size)
-        local p = ffi_cast("int32_t *", buf)
+        ffi_fill(p8, size)
+        local p32 = ffi_cast("int32_t *", p8)
 
-        p[0] = 0                                    -- 1 segment
-        p[1] = (size - 8) / 8
+        p32[0] = 0                                    -- 1 segment
+        p32[1] = (size - 8) / 8
 
-        write_structp(buf + 8, _M.%s, 0)
-        _M.%s.flat_serialize(data, buf + 16)
+        write_structp(p32 + 2, _M.%s, 0)               -- skip header
+        _M.%s.flat_serialize(data, p32 + 4)            -- skip header & struct pointer
 
-        return ffi_string(buf, size)
+        return ffi_string(p8, size)
     end,
 ]], name, name, name))
 end
@@ -471,7 +471,8 @@ function comp_flat_serialize(res, struct, fields, size, name)
     dbgf("comp_flat_serialize")
     insert(res, format([[
 
-    flat_serialize = function(data, buf)
+    flat_serialize = function(data, p32)
+        local buf = p32
         local pos = %d
         local dscrm]], size))
 
@@ -494,7 +495,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         if data["%s"] and type(data["%s"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.%s.%s.flat_serialize(data["%s"], buf)
+            _M.%s.%s.flat_serialize(data["%s"], p32)
         end
 ]], field.name, field.name, name, field.name, field.name))
 
@@ -504,7 +505,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
         if data["%s"] and type(data["%s"]) == "string" then
             local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
-            write_val(buf, val, "%s", %d, %d)
+            write_val(p32, val, "%s", %d, %d)
         end]], field.name, field.name, field.name, field.default_value,
                     field.type_display_name, name, field.name, field.type_name,
                     field.size, field.slot.offset))
@@ -521,16 +522,16 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local data_off = get_data_off(_M.%s, %d, pos)
 
             -- write tag
-            capnp.write_composite_tag(buf + pos, _M.%s, num)
+            capnp.write_composite_tag(p32 + pos, _M.%s, num)
             pos = pos + 8 -- tag
 
             -- write data
             for i=1, num do
-                pos = pos + _M.%s.flat_serialize(data["%s"][i], buf + pos)
+                pos = pos + _M.%s.flat_serialize(data["%s"][i], p32 + pos/4)
             end
 
             -- write list pointer
-            write_listp_buf(buf, _M.%s, %d, 7, (pos - old_pos - 8) / 8, data_off)
+            write_listp_buf(p32, _M.%s, %d, 7, (pos - old_pos - 8) / 8, data_off)
         end]], field.name, field.name, field.name, name, off,
                     field.type_display_name, field.type_display_name, field.name,
                     name, off))
@@ -542,10 +543,10 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local data_off = get_data_off(_M.%s, %d, pos)
 
             local len = #data["%s"]
-            write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
+            write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
             for i=1, len do
-                write_val(buf + pos, data["%s"][i], "%s", %d, i - 1) -- 8 bits
+                write_val(p32 + pos, data["%s"][i], "%s", %d, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end]], field.name, field.name, name, off, field.name, name, off,
@@ -558,8 +559,8 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
         if data["%s"] and type(data["%s"]) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
-            write_structp_buf(buf, _M.%s, _M.%s, %d, data_off)
-            local size = _M.%s.flat_serialize(data["%s"], buf + pos)
+            write_structp_buf(p32, _M.%s, _M.%s, %d, data_off)
+            local size = _M.%s.flat_serialize(data["%s"], p32 + pos/ 4)
             pos = pos + size
         end]], field.name, field.name, name, off, name, field.type_display_name,
                     off, field.type_display_name, field.name))
@@ -573,9 +574,9 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local data_off = get_data_off(_M.%s, %d, pos)
 
             local len = #data["%s"] + 1
-            write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
+            write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(buf + pos, data["%s"])
+            ffi_copy(p32 + pos/4, data["%s"])
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2,
                     field.name))
@@ -589,9 +590,9 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local data_off = get_data_off(_M.%s, %d, pos)
 
             local len = #data["%s"]
-            write_listp_buf(buf, _M.%s, %d, %d, len, data_off)
+            write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(buf + pos, data["%s"])
+            ffi_copy(p32 + pos/4, data["%s"])
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2,
                     field.name))
@@ -605,7 +606,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         if data["%s"] and (type(data["%s"]) == "number"
                 or type(data["%s"]) == "boolean") then
 
-            write_val(buf, data["%s"], "%s", %d, %d, %s)
+            write_val(p32, data["%s"], "%s", %d, %d, %s)
         end]], field.name, field.name, field.name, field.name, field.type_name,
                     field.size, field.slot.offset, default))
             end
@@ -617,7 +618,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         insert(res, format([[
 
         if dscrm then
-            _M.%s.which(buf, %d, dscrm) --buf, discriminantOffset, discriminantValue
+            _M.%s.which(p32, %d, dscrm) --buf, discriminantOffset, discriminantValue
         end
 ]],  name, struct.discriminantOffset))
     end
