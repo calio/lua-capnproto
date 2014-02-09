@@ -28,7 +28,7 @@ function test_to_text()
         db0 = true, -- default 1
     }
 
-    assert_equal("(b0 = true)", util.to_text(val, T1))
+    assert_equal("(b0 = true, db0 = true)", util.to_text(val, T1))
 end
 
 function test_to_text1()
@@ -38,5 +38,5 @@ function test_to_text1()
         db0 = false, -- default 1
     }
 
-    assert_equal("(db0 = false)", util.to_text(val, T1))
+    assert_equal("(b0 = false, db0 = false)", util.to_text(val, T1))
 end
