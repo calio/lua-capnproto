@@ -198,14 +198,17 @@ function _M.read_struct_field(p32, field_type, size, off, default)
     end
 end
 
--- default: optional
-function _M.write_val(p32, val, field_type, size, off, default)
-    --local p = get_pointer_from_val(p32, size, val)
-    local p = get_pointer_from_type(p32, field_type)
+function _M.write_bit(p8, val, bit_off, default)
     if type(val) == "boolean" then
         val = val and 1 or 0
     end
+    if default then
+        val = bxor(val, default)
+    end
+    p8[0] = bor(p8[0], lshift(val, bit_off))
+end
 
+function _M.write_num(p, val, typ, default)
     if default then
         if field_type == "float32" then
             val = _M.fix_float32_default(val, default)
@@ -214,22 +217,42 @@ function _M.write_val(p32, val, field_type, size, off, default)
         else
             val = bxor(val, default)
         end
-        --val = bxor(val, default)
+    end
+    p[0] = val
+end
+
+-- default: optional
+function _M.write_struct_field(p32, val, field_type, size, off, default)
+    --local p = get_pointer_from_val(p32, size, val)
+    local p = get_pointer_from_type(p32, field_type)
+    if type(val) == "boolean" then
+        val = val and 1 or 0
     end
 
     if size >= 8 then
         local n, s = get_bit_offset(size * off, size)
-        p[n] = val
+        _M.write_num(p + n, val, field_type, default)
+        --p[n] = val
     else
         local n, s = get_bit_offset(size * off, 8)
-        p[n] = bor(p[n], lshift(val, s))
+        _M.write_bit(p + n, val, s, default)
+        --p[n] = bor(p[n], lshift(val, s))
     end
     --print(string.format("n %d, s %d, %d\n", n, s, val))
-
 end
 
 function _M.read_text_data(buf, num)
     return ffistr(buf, num) -- dataWordCount + offset + pointerSize + data_off
+end
+
+function _M.write_text_data(buf, text, is_binary)
+    local len = #text
+    copy(buf, text)
+    if is_binary then
+        return round8(len)
+    else
+        return round8(len + 1)
+    end
 end
 
 function _M.read_text(buf, header, T, offset, default)
@@ -346,6 +369,7 @@ function _M.read_listp(p32, header)
         error("corrupt data, expected list signiture 1 or far pointer 2, but have " .. sig)
     end
 end
+
 -- write list pointer to a pointed memory
 -- @p32         32 bit pointer
 -- @size_type   element size type
@@ -375,6 +399,76 @@ local list_size_map = {
     [6] = 8,
     -- 7 = ?,
 }
+
+local type_to_size_type = {
+    int8    = 2,
+    int16   = 3,
+    int32   = 4,
+    int64   = 5,
+    uint8   = 2,
+    uint16  = 3,
+    uint32  = 4,
+    uint64  = 5,
+    bool    = 1,
+    float32 = 4,
+    float64 = 5,
+    list    = 6,
+}
+
+function _M.write_list_data(p32, data, pos, elm_type, ...)
+    if not elm_type then
+        return
+    end
+    local len = #data
+    if elm_type == "list" then
+        local start = pos
+        for i = 1, len do
+            local data_off = (pos - i * 8) / 8 -- pos is in bytes
+            local num = #data[i]
+            local size_type = type_to_size_type[elm_type]
+            if not size_type then
+                error("unsupported elm_type: " .. elm_type)
+            end
+            _M.write_listp(p32 + (i - 1) * 2, size_type, num, data_off)
+            local sub_pos = pos
+            pos = pos + num * 8 -- allocate sub list pointer space
+            pos = pos + _M.write_list_data(p32 + sub_pos / 4, data[i], num * 8, select(1, ...))
+        end
+        return pos - start
+    elseif elm_type == "text" then
+        local start = pos
+        for i = 1, len do
+            local data_off = (pos - i * 8) / 8 -- pos is in bytes
+            local num = #data[i] + 1
+            _M.write_listp(p32 + (i - 1) * 2, 2, num, data_off)
+            pos = pos + _M.write_text_data(p32 + pos / 4, data[i], false)
+        end
+        return pos - start
+    elseif elm_type == "data" then
+        local start = pos
+        for i = 1, len do
+            local data_off = (pos - i * 8) / 8 -- pos is in bytes
+            local num = #data[i]
+            _M.write_listp(p32 + (i - 1) * 2, 2, num, data_off)
+            pos = pos + _M.write_text_data(p32 + pos / 4, data[i], true)
+        end
+        return pos - start
+    elseif elm_type == "bool" then
+        local p = get_pointer_from_type(p32, elm_type)
+        for i = 1, len do
+            local n, s = get_bit_offset(i - 1, 8)
+            _M.write_bit(p + n, data[i], s)
+        end
+        return 0
+    else
+        local p = get_pointer_from_type(p32, elm_type)
+        for i = 1, len do
+            -- No default value avaliable from AST, so no need to pass default value
+            _M.write_num(p + i - 1, data[i], elm_type)
+        end
+        return 0
+    end
+end
 
 -- read data part of a list
 -- @p           start of data buffer

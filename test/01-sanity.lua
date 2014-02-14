@@ -50,15 +50,14 @@ function test_write_plain_val()
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
-    -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, true, "bool", 1, 0)
-    capnp.write_val(seg.data, 8, "uint8", 8, 1)
-    capnp.write_val(seg.data, 65535, "uint16", 16, 1)
-    capnp.write_val(seg.data, 1048576, "uint32", 32, 1)
-    capnp.write_val(seg.data, 4294967296, "uint64", 64, 1)
-    capnp.write_val(seg.data, 3.14, "float32", 32, 4)
-    capnp.write_val(seg.data, 1.41421, "float32", 32, 5)
-    capnp.write_val(seg.data, 3.14159265358979, "float64", 64, 3)
+    capnp.write_struct_field(seg.data, true, "bool", 1, 0)
+    capnp.write_struct_field(seg.data, 8, "uint8", 8, 1)
+    capnp.write_struct_field(seg.data, 65535, "uint16", 16, 1)
+    capnp.write_struct_field(seg.data, 1048576, "uint32", 32, 1)
+    capnp.write_struct_field(seg.data, 4294967296, "uint64", 64, 1)
+    capnp.write_struct_field(seg.data, 3.14, "float32", 32, 4)
+    capnp.write_struct_field(seg.data, 1.41421, "float32", 32, 5)
+    capnp.write_struct_field(seg.data, 3.14159265358979, "float64", 64, 3)
 
     seg.pos = seg.pos + 32
     assert_hex("01 08 ff ff 00 00 10 00 00 00 00 00 01 00 00 00 c3 f5 48 40 d5 04 b5 3f 11 2d 44 54 fb 21 09 40", seg)
@@ -73,15 +72,14 @@ function test_write_plain_val_with_default()
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
-    -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, true, "bool", 1, 0, 1)
-    capnp.write_val(seg.data, 8, "uint8", 8, 1, 8)
-    capnp.write_val(seg.data, 65535, "uint16", 16, 1, 65535)
-    capnp.write_val(seg.data, 1048576, "uint32", 32, 1, 1048576)
-    capnp.write_val(seg.data, 4294967296, "uint64", 64, 1, 4294967296)
-    capnp.write_val(seg.data, 3.14, "float32", 32, 4, 3.14)
-    capnp.write_val(seg.data, 1.41421, "float32", 32, 5, 1.41421)
-    capnp.write_val(seg.data, 3.14159265358979, "float64", 64, 3, 3.14159265358979)
+    capnp.write_struct_field(seg.data, true, "bool", 1, 0, 1)
+    capnp.write_struct_field(seg.data, 8, "uint8", 8, 1, 8)
+    capnp.write_struct_field(seg.data, 65535, "uint16", 16, 1, 65535)
+    capnp.write_struct_field(seg.data, 1048576, "uint32", 32, 1, 1048576)
+    capnp.write_struct_field(seg.data, 4294967296, "uint64", 64, 1, 4294967296)
+    capnp.write_struct_field(seg.data, 3.14, "float32", 32, 4, 3.14)
+    capnp.write_struct_field(seg.data, 1.41421, "float32", 32, 5, 1.41421)
+    capnp.write_struct_field(seg.data, 3.14159265358979, "float64", 64, 3, 3.14159265358979)
 
     seg.pos = seg.pos + 32
     assert_hex("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
@@ -91,17 +89,7 @@ function test_write_plain_val1()
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
-    -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, -1, "int8", 8, 0)
-    --[[
-    capnp.write_val(seg.data, 8, 8, 1)
-    capnp.write_val(seg.data, 65535, 16, 1)
-    capnp.write_val(seg.data, 1048576, 32, 1)
-    capnp.write_val(seg.data, 4294967296, 64, 1)
-    capnp.write_val(seg.data, 3.14, 32, 4)
-    capnp.write_val(seg.data, 1.41421, 32, 5)
-    capnp.write_val(seg.data, 3.14159265358979, 64, 3)
-    ]]
+    capnp.write_struct_field(seg.data, -1, "int8", 8, 0)
 
     seg.pos = seg.pos + 32
     assert_hex("ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
@@ -111,15 +99,15 @@ function test_read_struct_field()
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
-    -- write_val(buf, val, size, off)
-    capnp.write_val(seg.data, true, "bool", 1, 0)
-    capnp.write_val(seg.data, 8, "uint8", 8, 1)
-    capnp.write_val(seg.data, 65535, "uint16", 16, 1)
-    capnp.write_val(seg.data, 1048576, "uint32", 32, 1)
-    capnp.write_val(seg.data, 4294967296, "uint64", 64, 1)
-    capnp.write_val(seg.data, 3.14, "float32", 32, 4)
-    capnp.write_val(seg.data, 1.41421, "float32", 32, 5)
-    capnp.write_val(seg.data, 3.14159265358979, "float64", 64, 3)
+    -- write_struct_field(buf, val, size, off)
+    capnp.write_struct_field(seg.data, true, "bool", 1, 0)
+    capnp.write_struct_field(seg.data, 8, "uint8", 8, 1)
+    capnp.write_struct_field(seg.data, 65535, "uint16", 16, 1)
+    capnp.write_struct_field(seg.data, 1048576, "uint32", 32, 1)
+    capnp.write_struct_field(seg.data, 4294967296, "uint64", 64, 1)
+    capnp.write_struct_field(seg.data, 3.14, "float32", 32, 4)
+    capnp.write_struct_field(seg.data, 1.41421, "float32", 32, 5)
+    capnp.write_struct_field(seg.data, 3.14159265358979, "float64", 64, 3)
 
     assert_equal(true,          capnp.read_struct_field(seg.data, "bool", 1, 0))
     assert_equal(8,             capnp.read_struct_field(seg.data, "int8", 8, 1))
@@ -241,4 +229,45 @@ function test_write_text()
     capnp.write_text(p32, "12345678", 1)
 
     assert_equal("05 00 00 00 4a 00 00 00 00 00 00 00 00 00 00 00 31 32 33 34 35 36 37 38 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 32))
+end
+
+function test_write_list_data_num()
+    local buf = ffi.new("char[?]", 8 * 2)
+    local p32 = ffi.cast("int32_t *", buf)
+
+    capnp.write_list_data(p32, { -1, -2, -3, -4, 0, 1, 2, 3 }, 0, "int8")
+    assert_equal("ff fe fd fc 00 01 02 03 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 16))
+end
+
+function test_write_list_data_bool()
+    local buf = ffi.new("char[?]", 8)
+    local p32 = ffi.cast("int32_t *", buf)
+
+    capnp.write_list_data(p32, { true, false, true }, 0, "bool")
+    assert_equal("05 00 00 00 00 00 00 00", util.hex_buf_str(buf, 8))
+end
+
+function test_write_list_data_data()
+    local buf = ffi.new("char[?]", 8 * 7)
+    local p32 = ffi.cast("int32_t *", buf)
+
+    capnp.write_list_data(p32, { "\1\2\3", "\4\5\6\7", "\9\10\11\12\13\14\15\16\17" }, 24, "data") -- writes 3 list pointer first, then list data
+    assert_equal("09 00 00 00 1a 00 00 00 09 00 00 00 22 00 00 00 09 00 00 00 4a 00 00 00 01 02 03 00 00 00 00 00 04 05 06 07 00 00 00 00 09 0a 0b 0c 0d 0e 0f 10 11 00 00 00 00 00 00 00", util.hex_buf_str(buf, 56))
+end
+
+function test_write_list_data_text()
+    local buf = ffi.new("char[?]", 8 * 7)
+    local p32 = ffi.cast("int32_t *", buf)
+
+    capnp.write_list_data(p32, { "ab", "def", "ijklmnop" }, 24, "text") -- writes 3 list pointer first, then list data
+    assert_equal("09 00 00 00 1a 00 00 00 09 00 00 00 22 00 00 00 09 00 00 00 4a 00 00 00 61 62 00 00 00 00 00 00 64 65 66 00 00 00 00 00 69 6a 6b 6c 6d 6e 6f 70 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 56))
+end
+
+function test_write_list_data_list()
+    local buf = ffi.new("char[?]", 8 * 9)
+    local p32 = ffi.cast("int32_t *", buf)
+
+    -- list of text
+    capnp.write_list_data(p32, { {"ab", "def"}, {"ijklmnop"} }, 16, "list", "text") -- writes 3 list pointer first, then list data
+    assert_equal("05 00 00 00 16 00 00 00 11 00 00 00 0e 00 00 00 05 00 00 00 1a 00 00 00 05 00 00 00 22 00 00 00 61 62 00 00 00 00 00 00 64 65 66 00 00 00 00 00 01 00 00 00 4a 00 00 00 69 6a 6b 6c 6d 6e 6f 70 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 72))
 end
