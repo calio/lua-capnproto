@@ -18,6 +18,7 @@ local write_structp     = capnp.write_structp
 local read_struct_buf   = capnp.read_struct_buf
 local read_listp_struct = capnp.read_listp_struct
 local read_list_data    = capnp.read_list_data
+local write_list_data   = capnp.write_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
@@ -114,8 +115,14 @@ _M.T1 = {
         -- list
         -- TODO fix this
         if data.lt0 then
+            local num = #data.lt0
             for i=1, num do
-                size = size + round8(#data.lt0[i] * 1) -- num * acutal size
+                size = size + 8
+                local num1 = #data.lt0[i]
+                for j=1, num1 do
+                    size = size + 8
+                    size = size + round8(#data.lt0[i][j] * 1) -- num * acutal size
+                end
             end
         end
         return size
@@ -274,7 +281,7 @@ _M.T1 = {
             write_listp_buf(p32, _M.T1, 6, 2, len, data_off)
 
             local off = pos
-            local dp32 = p32 + pos
+            local dp32 = p32 + pos / 4
             pos = pos + len * 8
 
             pos = pos + write_list_data(dp32, data["lt0"], len * 8,"list", "text")
@@ -423,7 +430,7 @@ _M.T1 = {
         s["end"] = read_struct_field(buf, "bool", 1, 51, 0)
         local off, size, num = read_listp_struct(buf, header, _M.T1, 6)
         if off and num then
-            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, num, "text") -- dataWordCount + offset + pointerSize + off
+            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, num, "list", "text") -- dataWordCount + offset + pointerSize + off
         else
             s["lt0"] = nil
         end

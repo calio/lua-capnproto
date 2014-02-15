@@ -390,7 +390,6 @@ function test_struct_list()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
@@ -532,4 +531,50 @@ function test_reserved_word()
     assert_equal(true, copy.db0) -- default = true
     assert_equal(true, copy["end"])
 end
+
+function test_list_of_text()
+    local data = {
+        lt0 = {
+            { "Bach", "Mozart" },
+            { "Beethoven" },
+            { "Tchaikovsky" },
+        }
+    }
+
+    local bin   = hw_capnp.T1.serialize(data)
+    util.write_file("dump", bin)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("enum5", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+    assert_equal(0, copy.ui0) -- ui0 is set by default
+    assert_nil(copy.ui1)
+    assert_nil(copy.uv0)
+    assert_equal(0, copy.g0.ui2)
+    assert_equal(0, copy.u0.ui3)
+    assert_nil(copy.u0.uv1)
+    assert_nil(copy.u0.ug0)
+    assert_nil(copy.ls0)
+    assert_equal(65535, copy.du0) -- default = 65535
+    assert_equal(true, copy.db0) -- default = true
+    assert_equal(false, copy["end"])
+    assert_not_nil(copy.lt0)
+    assert_equal(3, #copy.lt0)
+    assert_not_nil(copy.lt0[1])
+    assert_not_nil(copy.lt0[2])
+    assert_not_nil(copy.lt0[3])
+    assert_equal(data.lt0[1][1], copy.lt0[1][1])
+    assert_equal(data.lt0[1][2], copy.lt0[1][2])
+    assert_equal(data.lt0[2][1], copy.lt0[2][1])
+    assert_equal(data.lt0[3][1], copy.lt0[3][1])
+end
+
 return _G
