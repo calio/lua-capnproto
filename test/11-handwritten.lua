@@ -112,6 +112,7 @@ function test_basic_value4()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
+    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
@@ -122,7 +123,7 @@ function test_basic_value4()
     assert_equal("enum1", copy.e0)
     assert_equal("enum5", copy.e1)
     assert_not_nil(copy.s0)
-    -- assert_equal(3.1400001049042, copy.s0.f0)
+    assert_equalf(3.1400001049042, copy.s0.f0)
     assert_equal(3.1415926535, copy.s0.f1)
     assert_nil(copy.l0)
     assert_nil(copy.t0)
@@ -213,7 +214,6 @@ function test_basic_value6()
     assert_equal(5, #copy.t0)
     assert_equal("hello", copy.t0)
 end
-
 function test_union_value()
     local data = {
         ui1 = 32,

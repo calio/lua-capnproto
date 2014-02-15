@@ -208,7 +208,7 @@ function _M.write_bit(p8, val, bit_off, default)
     p8[0] = bor(p8[0], lshift(val, bit_off))
 end
 
-function _M.write_num(p, val, typ, default)
+function _M.write_num(p, val, field_type, default)
     if default then
         if field_type == "float32" then
             val = _M.fix_float32_default(val, default)

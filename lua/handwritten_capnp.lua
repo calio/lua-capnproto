@@ -5,7 +5,7 @@ local bit = require "bit"
 local util = require "util"
 
 local ceil              = math.ceil
-local write_val         = capnp.write_val
+local write_struct_field= capnp.write_struct_field
 local read_struct_field = capnp.read_struct_field
 local read_text         = capnp.read_text
 local write_text        = capnp.write_text
@@ -114,7 +114,9 @@ _M.T1 = {
         -- list
         -- TODO fix this
         if data.lt0 then
-            size = size + round8(#data.lt0 * 1) -- num * acutal size
+            for i=1, num do
+                size = size + round8(#data.lt0[i] * 1) -- num * acutal size
+            end
         end
         return size
     end,
@@ -130,32 +132,32 @@ _M.T1 = {
         if data["i0"] and (type(data["i0"]) == "number"
                 or type(data["i0"]) == "boolean") then
 
-            write_val(p32, data["i0"], "uint32", 32, 0, 0)
+            write_struct_field(p32, data["i0"], "uint32", 32, 0, 0)
         end
         if data["i1"] and (type(data["i1"]) == "number"
                 or type(data["i1"]) == "boolean") then
 
-            write_val(p32, data["i1"], "uint16", 16, 2, 0)
+            write_struct_field(p32, data["i1"], "uint16", 16, 2, 0)
         end
         if data["b0"] and (type(data["b0"]) == "number"
                 or type(data["b0"]) == "boolean") then
 
-            write_val(p32, data["b0"], "bool", 1, 48, 0)
+            write_struct_field(p32, data["b0"], "bool", 1, 48, 0)
         end
         if data["i2"] and (type(data["i2"]) == "number"
                 or type(data["i2"]) == "boolean") then
 
-            write_val(p32, data["i2"], "int8", 8, 7, 0)
+            write_struct_field(p32, data["i2"], "int8", 8, 7, 0)
         end
         if data["b1"] and (type(data["b1"]) == "number"
                 or type(data["b1"]) == "boolean") then
 
-            write_val(p32, data["b1"], "bool", 1, 49, 0)
+            write_struct_field(p32, data["b1"], "bool", 1, 49, 0)
         end
         if data["i3"] and (type(data["i3"]) == "number"
                 or type(data["i3"]) == "boolean") then
 
-            write_val(p32, data["i3"], "int32", 32, 2, 0)
+            write_struct_field(p32, data["i3"], "int32", 32, 2, 0)
         end
         if data["s0"] and type(data["s0"]) == "table" then
             local data_off = get_data_off(_M.T1, 0, pos)
@@ -165,7 +167,7 @@ _M.T1 = {
         end
         if data["e0"] and type(data["e0"]) == "string" then
             local val = get_enum_val(data["e0"], 0, _M.T1.EnumType1, "T1.e0")
-            write_val(p32, val, "uint16", 16, 6)
+            write_struct_field(p32, val, "uint16", 16, 6)
         end
         if data["l0"] and type(data["l0"]) == "table" then
             local data_off = get_data_off(_M.T1, 1, pos)
@@ -174,7 +176,7 @@ _M.T1 = {
             write_listp_buf(p32, _M.T1, 1, 2, len, data_off)
 
             for i=1, len do
-                write_val(p32 + pos, data["l0"][i], "int8", 8, i - 1) -- 8 bits
+                write_struct_field(p32 + pos, data["l0"][i], "int8", 8, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end
@@ -189,7 +191,7 @@ _M.T1 = {
         end
         if data["e1"] and type(data["e1"]) == "string" then
             local val = get_enum_val(data["e1"], 0, _M.EnumType2, "T1.e1")
-            write_val(p32, val, "uint16", 16, 7)
+            write_struct_field(p32, val, "uint16", 16, 7)
         end
         if data["d0"] and type(data["d0"]) == "string" then
             local data_off = get_data_off(_M.T1, 3, pos)
@@ -207,7 +209,7 @@ _M.T1 = {
         if data["ui0"] and (type(data["ui0"]) == "number"
                 or type(data["ui0"]) == "boolean") then
 
-            write_val(p32, data["ui0"], "int32", 32, 4, 0)
+            write_struct_field(p32, data["ui0"], "int32", 32, 4, 0)
         end
         if data["ui1"] then
             dscrm = 1
@@ -216,7 +218,7 @@ _M.T1 = {
         if data["ui1"] and (type(data["ui1"]) == "number"
                 or type(data["ui1"]) == "boolean") then
 
-            write_val(p32, data["ui1"], "int32", 32, 4, 0)
+            write_struct_field(p32, data["ui1"], "int32", 32, 4, 0)
         end
         if data["uv0"] then
             dscrm = 2
@@ -253,17 +255,17 @@ _M.T1 = {
         if data["du0"] and (type(data["du0"]) == "number"
                 or type(data["du0"]) == "boolean") then
 
-            write_val(p32, data["du0"], "uint32", 32, 9, 65535)
+            write_struct_field(p32, data["du0"], "uint32", 32, 9, 65535)
         end
         if data["db0"] and (type(data["db0"]) == "number"
                 or type(data["db0"]) == "boolean") then
 
-            write_val(p32, data["db0"], "bool", 1, 50, 1)
+            write_struct_field(p32, data["db0"], "bool", 1, 50, 1)
         end
         if data["end"] and (type(data["end"]) == "number"
                 or type(data["end"]) == "boolean") then
 
-            write_val(p32, data["end"], "bool", 1, 51, 0)
+            write_struct_field(p32, data["end"], "bool", 1, 51, 0)
         end
         if data["lt0"] and type(data["lt0"]) == "table" then
             local data_off = get_data_off(_M.T1, 6, pos)
@@ -274,13 +276,18 @@ _M.T1 = {
             local off = pos
             local dp32 = p32 + pos
             pos = pos + len * 8
+
+            pos = pos + write_list_data(dp32, data["lt0"], len * 8,"list", "text")
+            --[[
             for i=1, len do
-                local n = write_text(dp32 + (i - 1) * 2, data["lt0"][i], pos - (off + 8))
+                --local n = write_text(dp32 + (i - 1) * 2, data["lt0"][i], pos - (off + 8))
+                local n = write_list_data(dp32 + (i - 1) * 2
                 off = off + 8
                 pos = pos + n
-                --write_val(p32 + pos, data["lt0"][i], "text", 8, i - 1) -- 8 bits
+                --write_struct_field(p32 + pos, data["lt0"][i], "text", 8, i - 1) -- 8 bits
             end
             --pos = pos + round8(len * 1) -- 1 ** actual size
+            --]]
         end
         if dscrm then
             _M.T1.which(p32, 10, dscrm) --buf, discriminantOffset, discriminantValue
@@ -310,7 +317,7 @@ _M.T1 = {
     which = function(buf, offset, n)
         if n then
             -- set value
-            write_val(buf, n, "uint16", 16, offset)
+            write_struct_field(buf, n, "uint16", 16, offset)
         else
             -- get value
             return read_struct_field(buf, "uint16", 16, offset)
@@ -426,9 +433,9 @@ _M.T1 = {
         s["end"] = read_struct_field(buf, "bool", 1, 51, 0)
         local off, size, num = read_listp_struct(buf, header, _M.T1, 6)
         if off and num then
-            --s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, size, num, "text") -- dataWordCount + offset + pointerSize + off
+            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, size, num, "text") -- dataWordCount + offset + pointerSize + off
         else
-            --s["lt0"] = nil
+            s["lt0"] = nil
         end
         return s
     end,
@@ -492,12 +499,12 @@ _M.T1.T2 = {
         if data["f0"] and (type(data["f0"]) == "number"
                 or type(data["f0"]) == "boolean") then
 
-            write_val(p32, data["f0"], "float32", 32, 0, 0)
+            write_struct_field(p32, data["f0"], "float32", 32, 0, 0)
         end
         if data["f1"] and (type(data["f1"]) == "number"
                 or type(data["f1"]) == "boolean") then
 
-            write_val(p32, data["f1"], "float64", 64, 1, 0)
+            write_struct_field(p32, data["f1"], "float64", 64, 1, 0)
         end
         return pos
     end,
@@ -588,7 +595,7 @@ _M.T1.g0 = {
         if data["ui2"] and (type(data["ui2"]) == "number"
                 or type(data["ui2"]) == "boolean") then
 
-            write_val(p32, data["ui2"], "uint32", 32, 6, 0)
+            write_struct_field(p32, data["ui2"], "uint32", 32, 6, 0)
         end
     end,
 
@@ -622,7 +629,7 @@ _M.T1.u0 = {
         if data["ui3"] and (type(data["ui3"]) == "number"
                 or type(data["ui3"]) == "boolean") then
 
-            write_val(p32, data["ui3"], "uint16", 16, 11, 0)
+            write_struct_field(p32, data["ui3"], "uint16", 16, 11, 0)
         end
         if data["uv1"] then
             dscrm = 1
@@ -646,7 +653,7 @@ _M.T1.u0 = {
     which = function(buf, offset, n)
         if n then
             -- set value
-            write_val(buf, n, "uint16", 16, offset)
+            write_struct_field(buf, n, "uint16", 16, offset)
         else
             -- get value
             return read_struct_field(buf, "uint16", 16, offset)
@@ -704,7 +711,7 @@ _M.T1.u0.ug0 = {
         if data["ugu0"] and (type(data["ugu0"]) == "number"
                 or type(data["ugu0"]) == "boolean") then
 
-            write_val(p32, data["ugu0"], "uint32", 32, 8, 0)
+            write_struct_field(p32, data["ugu0"], "uint32", 32, 8, 0)
         end
         return pos
     end,

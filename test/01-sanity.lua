@@ -66,6 +66,7 @@ end
 function test_fix_float_default()
     assert_equal(0, capnp.fix_float32_default(3.14, 3.14))
     assert_equal(0, capnp.fix_float64_default(3.1415926, 3.1415926))
+    assert_equalf(3.141592, capnp.fix_float32_default(3.141592, 0))
 end
 
 function test_write_plain_val_with_default()
@@ -86,13 +87,16 @@ function test_write_plain_val_with_default()
 end
 
 function test_write_plain_val1()
+    print("write_plain_val1")
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
     capnp.write_struct_field(seg.data, -1, "int8", 8, 0)
+    capnp.write_struct_field(seg.data, 3.14159, "float32", 32, 1, 0)
 
     seg.pos = seg.pos + 32
-    assert_hex("ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
+    print("write_plain_val1 end")
+    assert_hex("ff 00 00 00 d0 0f 49 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
 
 function test_read_struct_field()
@@ -118,7 +122,7 @@ function test_read_struct_field()
     -- TODO make this work
     assert_equalf(3.14,          capnp.read_struct_field(seg.data, "float32", 32, 4))
     assert_equalf(1.41421,       capnp.read_struct_field(seg.data, "float32", 32, 5))
-    assert_equal(3.14159265358979, capnp.read_struct_field(seg.data, "float64", 64, 3))
+    assert_equalf(3.14159265358979, capnp.read_struct_field(seg.data, "float64", 64, 3))
 end
 
 function test_read_struct_field_with_default()
