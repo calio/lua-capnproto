@@ -162,7 +162,7 @@ _M.T1 = {
         if data["s0"] and type(data["s0"]) == "table" then
             local data_off = get_data_off(_M.T1, 0, pos)
             write_structp_buf(p32, _M.T1, _M.T1.T2, 0, data_off)
-            local size = _M.T1.T2.flat_serialize(data["s0"], p32 + pos/ 4)
+            local size = _M.T1.T2.flat_serialize(data["s0"], p32 + pos / 4)
             pos = pos + size
         end
         if data["e0"] and type(data["e0"]) == "string" then
@@ -186,7 +186,7 @@ _M.T1 = {
             local len = #data["t0"] + 1
             write_listp_buf(p32, _M.T1, 2, 2, len, data_off)
 
-            ffi_copy(p32 + pos/4, data["t0"])
+            ffi_copy(p32 + pos / 4, data["t0"])
             pos = pos + round8(len)
         end
         if data["e1"] and type(data["e1"]) == "string" then
@@ -199,7 +199,7 @@ _M.T1 = {
             local len = #data["d0"]
             write_listp_buf(p32, _M.T1, 3, 2, len, data_off)
 
-            ffi_copy(p32 + pos/4, data["d0"])
+            ffi_copy(p32 + pos / 4, data["d0"])
             pos = pos + round8(len)
         end
         if data["ui0"] then
@@ -246,7 +246,7 @@ _M.T1 = {
 
             -- write data
             for i=1, num do
-                pos = pos + _M.T1.T2.flat_serialize(data["ls0"][i], p32 + pos/4)
+                pos = pos + _M.T1.T2.flat_serialize(data["ls0"][i], p32 + pos / 4)
             end
 
             -- write list pointer
@@ -278,16 +278,6 @@ _M.T1 = {
             pos = pos + len * 8
 
             pos = pos + write_list_data(dp32, data["lt0"], len * 8,"list", "text")
-            --[[
-            for i=1, len do
-                --local n = write_text(dp32 + (i - 1) * 2, data["lt0"][i], pos - (off + 8))
-                local n = write_list_data(dp32 + (i - 1) * 2
-                off = off + 8
-                pos = pos + n
-                --write_struct_field(p32 + pos, data["lt0"][i], "text", 8, i - 1) -- 8 bits
-            end
-            --pos = pos + round8(len * 1) -- 1 ** actual size
-            --]]
         end
         if dscrm then
             _M.T1.which(p32, 10, dscrm) --buf, discriminantOffset, discriminantValue
@@ -597,6 +587,7 @@ _M.T1.g0 = {
 
             write_struct_field(p32, data["ui2"], "uint32", 32, 6, 0)
         end
+        return pos
     end,
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
@@ -699,6 +690,8 @@ _M.T1.u0.ug0 = {
     displayName = "proto/example.capnp:T1.u0.ug0",
     dataWordCount = 5,
     pointerCount = 7,
+    discriminantCount = 0,
+    discriminantOffset = 0,
     isGroup = true,
 
     fields = {

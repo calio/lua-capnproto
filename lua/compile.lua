@@ -64,7 +64,7 @@ local bit = require "bit"
 local util = require "util"
 
 local ceil              = math.ceil
-local write_val         = capnp.write_val
+local write_struct_field= capnp.write_struct_field
 local read_struct_field = capnp.read_struct_field
 local get_enum_val      = capnp.get_enum_val
 local get_enum_name     = capnp.get_enum_name
@@ -504,7 +504,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
 
         if data["%s"] and type(data["%s"]) == "string" then
             local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
-            write_val(p32, val, "uint16", %d, %d)
+            write_struct_field(p32, val, "uint16", %d, %d)
         end]], field.name, field.name, field.name, field.default_value,
                     field.type_display_name, name, field.name,
                     field.size, field.slot.offset))
@@ -521,12 +521,12 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local data_off = get_data_off(_M.%s, %d, pos)
 
             -- write tag
-            capnp.write_composite_tag(p32 + pos, _M.%s, num)
+            capnp.write_composite_tag(p32 + pos / 4, _M.%s, num)
             pos = pos + 8 -- tag
 
             -- write data
             for i=1, num do
-                pos = pos + _M.%s.flat_serialize(data["%s"][i], p32 + pos/4)
+                pos = pos + _M.%s.flat_serialize(data["%s"][i], p32 + pos / 4)
             end
 
             -- write list pointer
@@ -545,7 +545,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
             write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
             for i=1, len do
-                write_val(p32 + pos, data["%s"][i], "%s", %d, i - 1) -- 8 bits
+                write_struct_field(p32 + pos / 4, data["%s"][i], "%s", %d, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end]], field.name, field.name, name, off, field.name, name, off,
@@ -559,7 +559,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         if data["%s"] and type(data["%s"]) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
             write_structp_buf(p32, _M.%s, _M.%s, %d, data_off)
-            local size = _M.%s.flat_serialize(data["%s"], p32 + pos/ 4)
+            local size = _M.%s.flat_serialize(data["%s"], p32 + pos / 4)
             pos = pos + size
         end]], field.name, field.name, name, off, name, field.type_display_name,
                     off, field.type_display_name, field.name))
@@ -575,7 +575,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local len = #data["%s"] + 1
             write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(p32 + pos/4, data["%s"])
+            ffi_copy(p32 + pos / 4, data["%s"])
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2,
                     field.name))
@@ -591,7 +591,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
             local len = #data["%s"]
             write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(p32 + pos/4, data["%s"])
+            ffi_copy(p32 + pos / 4, data["%s"])
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2,
                     field.name))
@@ -605,7 +605,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         if data["%s"] and (type(data["%s"]) == "number"
                 or type(data["%s"]) == "boolean") then
 
-            write_val(p32, data["%s"], "%s", %d, %d, %s)
+            write_struct_field(p32, data["%s"], "%s", %d, %d, %s)
         end]], field.name, field.name, field.name, field.name, field.type_name,
                     field.size, field.slot.offset, default))
             end
@@ -703,7 +703,7 @@ function comp_which(res)
     which = function(buf, offset, n)
         if n then
             -- set value
-            write_val(buf, n, "uint16", 16, offset)
+            write_struct_field(buf, n, "uint16", 16, offset)
         else
             -- get value
             return read_struct_field(buf, "uint16", 16, offset)
