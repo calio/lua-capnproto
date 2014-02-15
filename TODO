@@ -1,12 +1,10 @@
-* default values
 * performance turing
 * multiple files input
-* deal with none-exist sub structs, lists or fields
-* union
+* deal with none-existing sub structs, lists or fields
 * far pointers
 * support object type
 * make capnpc-llua work
 * fix 0-item list
 * calculate new_tab arguments
 * 64 bit support for read_val and write_val
-* float number default value
+* AnyPointer support
