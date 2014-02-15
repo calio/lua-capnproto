@@ -112,7 +112,6 @@ function test_basic_value4()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
@@ -135,6 +134,7 @@ function test_basic_value4()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
+    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
@@ -146,10 +146,9 @@ function test_basic_value4()
     assert_equal("enum5", copy.e1)
     assert_nil(copy.s0)
     assert_equal(3, #copy.l0)
-    -- TODO
-    --assert_equal(1, copy.l0[1])
-    --assert_equal(-1, copy.l0[2])
-    --assert_equal(127, copy.l0[3])
+    assert_equal(1, copy.l0[1])
+    assert_equal(-1, copy.l0[2])
+    assert_equal(127, copy.l0[3])
     assert_nil(copy.t0)
 end
 
@@ -203,14 +202,12 @@ function test_basic_value6()
     assert_equal("enum3", copy.e0)
     assert_equal("enum7", copy.e1)
     assert_not_nil(copy.s0)
-    -- TODO
-    -- assert_equal(3.14, copy.s0.f0)
+    assert_equalf(3.14, copy.s0.f0)
     assert_equal(3.14159265358979, copy.s0.f1)
     assert_not_nil(copy.l0)
     assert_equal(2, #copy.l0)
-    -- TODO
-    --assert_equal(28, copy.l0[1])
-    --assert_equal(29, copy.l0[2])
+    assert_equal(28, copy.l0[1])
+    assert_equal(29, copy.l0[2])
     assert_equal(5, #copy.t0)
     assert_equal("hello", copy.t0)
 end

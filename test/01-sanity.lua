@@ -87,7 +87,6 @@ function test_write_plain_val_with_default()
 end
 
 function test_write_plain_val1()
-    print("write_plain_val1")
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
 
@@ -95,7 +94,6 @@ function test_write_plain_val1()
     capnp.write_struct_field(seg.data, 3.14159, "float32", 32, 1, 0)
 
     seg.pos = seg.pos + 32
-    print("write_plain_val1 end")
     assert_hex("ff 00 00 00 d0 0f 49 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
 
@@ -108,7 +106,7 @@ function test_read_struct_field()
     capnp.write_struct_field(seg.data, 8, "uint8", 8, 1)
     capnp.write_struct_field(seg.data, 65535, "uint16", 16, 1)
     capnp.write_struct_field(seg.data, 1048576, "uint32", 32, 1)
-    capnp.write_struct_field(seg.data, 4294967296, "uint64", 64, 1)
+    capnp.write_struct_field(seg.data, 4294967296ULL, "uint64", 64, 1)
     capnp.write_struct_field(seg.data, 3.14, "float32", 32, 4)
     capnp.write_struct_field(seg.data, 1.41421, "float32", 32, 5)
     capnp.write_struct_field(seg.data, 3.14159265358979, "float64", 64, 3)
@@ -117,9 +115,7 @@ function test_read_struct_field()
     assert_equal(8,             capnp.read_struct_field(seg.data, "int8", 8, 1))
     assert_equal(65535,         capnp.read_struct_field(seg.data, "uint16", 16, 1))
     assert_equal(1048576,       capnp.read_struct_field(seg.data, "int32", 32, 1))
-    -- TODO make this work
-    -- assert_equal('4294967296',    capnp.read_struct_field(seg.data, "uint64", 64, 1))
-    -- TODO make this work
+    assert_equal(4294967296ULL,    capnp.read_struct_field(seg.data, "uint64", 64, 1))
     assert_equalf(3.14,          capnp.read_struct_field(seg.data, "float32", 32, 4))
     assert_equalf(1.41421,       capnp.read_struct_field(seg.data, "float32", 32, 5))
     assert_equalf(3.14159265358979, capnp.read_struct_field(seg.data, "float64", 64, 3))
@@ -134,10 +130,8 @@ function test_read_struct_field_with_default()
     assert_equal(65535,         capnp.read_struct_field(seg.data, "uint16", 16, 1, 65535))
     assert_equal(1048576,       capnp.read_struct_field(seg.data, "int32", 32, 1, 1048576))
     assert_equal(3456789012,       capnp.read_struct_field(seg.data, "uint32", 32, 1, 3456789012))
-    -- TODO 64 bit number support
     assert_equal(-123456789012345LL,    capnp.read_struct_field(seg.data, "int64", 64, 1, -123456789012345LL))
     assert_equal(345678901234567890ULL,    capnp.read_struct_field(seg.data, "uint64", 64, 1, 345678901234567890ULL))
-    -- TODO make this work
     assert_equalf(3.14,          capnp.read_struct_field(seg.data, "float32", 32, 4, 3.14))
     assert_equalf(1.41421,       capnp.read_struct_field(seg.data, "float32", 32, 5, 1.41421))
     assert_equal(3.14159265358, capnp.read_struct_field(seg.data, "float64", 64, 3, 3.14159265358))

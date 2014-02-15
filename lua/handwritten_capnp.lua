@@ -176,7 +176,7 @@ _M.T1 = {
             write_listp_buf(p32, _M.T1, 1, 2, len, data_off)
 
             for i=1, len do
-                write_struct_field(p32 + pos, data["l0"][i], "int8", 8, i - 1) -- 8 bits
+                write_struct_field(p32 + pos / 4, data["l0"][i], "int8", 8, i - 1) -- 8 bits
             end
             pos = pos + round8(len * 1) -- 1 ** actual size
         end
