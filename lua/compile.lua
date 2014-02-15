@@ -329,7 +329,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
         if off and num then
-            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, header, size, num, "%s") -- dataWordCount + offset + pointerSize + off
+            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, header, num, "%s") -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end

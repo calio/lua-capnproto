@@ -343,7 +343,7 @@ _M.T1 = {
 
         local off, size, num = read_listp_struct(buf, header, _M.T1, 1)
         if off and num then
-            s["l0"] = read_list_data(buf + (5 + 1 + 1 + off) * 2, header, size, num, "int8") -- dataWordCount + offset + pointerSize + off
+            s["l0"] = read_list_data(buf + (5 + 1 + 1 + off) * 2, header, num, "int8") -- dataWordCount + offset + pointerSize + off
         else
             s["l0"] = nil
         end
@@ -423,7 +423,7 @@ _M.T1 = {
         s["end"] = read_struct_field(buf, "bool", 1, 51, 0)
         local off, size, num = read_listp_struct(buf, header, _M.T1, 6)
         if off and num then
-            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, size, num, "text") -- dataWordCount + offset + pointerSize + off
+            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, num, "text") -- dataWordCount + offset + pointerSize + off
         else
             s["lt0"] = nil
         end

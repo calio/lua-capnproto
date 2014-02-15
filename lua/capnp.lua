@@ -473,10 +473,9 @@ end
 -- read data part of a list
 -- @p           start of data buffer
 -- @header      stream header, see http://kentonv.github.io/capnproto/encoding.html#serialization_over_a_stream
--- @size_type   size of each list element, see http://kentonv.github.io/capnproto/encoding.html#list
 -- @num         number of elements in this list
 -- @elm_type    elememt type: "int32", "data", "list", etc.
-function _M.read_list_data(p32, header, size_type, num, elm_type, ...)
+function _M.read_list_data(p32, header, num, elm_type, ...)
     p32 = cast(puint32, p32)
     if not elm_type then
         return
@@ -489,7 +488,7 @@ function _M.read_list_data(p32, header, size_type, num, elm_type, ...)
         for i = 1, num do
             local off, child_size, child_num = _M.read_listp_list(p32, header, i)
             if off and num then
-                t[i] = _M.read_list_data(p32, header, child_size, child_num, select(1, ...))
+                t[i] = _M.read_list_data(p32 + (i + off) * 2, header, child_num, select(1, ...))
             end
         end
 
@@ -507,13 +506,14 @@ function _M.read_list_data(p32, header, size_type, num, elm_type, ...)
             t[i] = _M.read_text_data(p32 + (1 + off) * 2, child_num)
         end
     else
+        --[[
         local size = list_size_map[size_type]
         if not size then
             error("corrupt data, unknown size type: " .. size_type)
         end
 
         size = size * 8
-
+        ]]
         local p32 = get_pointer_from_type(p32, elm_type)
 
         for i = 1, num do
