@@ -241,7 +241,7 @@ _M.T1 = {
             local data_off = get_data_off(_M.T1, 4, pos)
 
             -- write tag
-            capnp.write_composite_tag(p32 + pos, _M.T1.T2, num)
+            capnp.write_composite_tag(p32 + pos / 4, _M.T1.T2, num)
             pos = pos + 8 -- tag
 
             -- write data

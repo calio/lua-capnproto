@@ -134,7 +134,6 @@ function test_basic_value4()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
@@ -391,6 +390,7 @@ function test_struct_list()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
+    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)
@@ -410,13 +410,11 @@ function test_struct_list()
     assert_equal(0, copy.u0.ui3)
     assert_nil(copy.u0.uv1)
     assert_nil(copy.u0.ug0)
-    -- TODO
-    --[[
+    assert_not_nil(copy.ls0[1])
     assert_equalf(data.ls0[1].f0, copy.ls0[1].f0)
     assert_equal(data.ls0[1].f1, copy.ls0[1].f1)
     assert_equalf(data.ls0[2].f0, copy.ls0[2].f0)
     assert_equal(data.ls0[2].f1, copy.ls0[2].f1)
-    ]]
 end
 
 function test_default_value()
