@@ -212,4 +212,21 @@ function _M.to_text(val, T)
     return concat(res)
 end
 
+local function get_type(typ)
+    if not typ then
+        return
+    end
+
+    for k, v in pairs(typ) do
+        return k, get_type(typ[k].elementType)
+    end
+end
+
+function _M.get_node_type(node)
+    if node and node.slot and node.slot["type"] then
+        return {get_type(node.slot["type"])}
+    end
+
+    return
+end
 return _M
