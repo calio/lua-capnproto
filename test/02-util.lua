@@ -88,3 +88,25 @@ function test_get_node_type1(node)
     assert_equal(1, #typ)
     assert_equal("anyPointer", typ[1])
 end
+
+function test_get_node_type2(node)
+    local node = { name = "ls0",
+        codeOrder = 17,
+        discriminantValue = 65535,
+        slot = {
+          offset = 4,
+          ["type"] = {
+            list = {
+              elementType = {
+                struct = {
+                  typeId = "17202330444354522981" }
+              }
+            }
+          }
+        }
+    }
+    local typ = util.get_node_type(node)
+    assert_equal(2, #typ)
+    assert_equal("list", typ[1])
+    assert_equal("struct", typ[2])
+end
