@@ -417,9 +417,8 @@ local type_to_size_type = {
 }
 
 -- @p32     write list data to this position
--- @_pos     not used 
 -- @return space consumed in bytes
-function _M.write_list_data(p32, data, _pos, elm_type, ...)
+function _M.write_list_data(p32, data, elm_type, ...)
     local pos = 0
     if not elm_type then
         return 0
@@ -435,7 +434,7 @@ function _M.write_list_data(p32, data, _pos, elm_type, ...)
                 error("unsupported elm_type: " .. elm_type)
             end
             _M.write_listp(p32 + (i - 1) * 2, size_type, child_num, data_off)
-            pos = pos + _M.write_list_data(p32 + pos / 4, data[i], 0, ...)
+            pos = pos + _M.write_list_data(p32 + pos / 4, data[i], ...)
         end
         return pos
     elseif elm_type == "text" then

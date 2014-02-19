@@ -233,7 +233,7 @@ function test_write_list_data_num()
     local buf = ffi.new("char[?]", 8 * 2)
     local p32 = ffi.cast("int32_t *", buf)
 
-    local n = capnp.write_list_data(p32, { -1, -2, -3, -4, 0, 1, 2, 3 }, 0, "int8")
+    local n = capnp.write_list_data(p32, { -1, -2, -3, -4, 0, 1, 2, 3 }, "int8")
     assert_equal("ff fe fd fc 00 01 02 03 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 16))
     assert_equal(8, n)
 end
@@ -242,7 +242,7 @@ function test_write_list_data_bool()
     local buf = ffi.new("char[?]", 8)
     local p32 = ffi.cast("int32_t *", buf)
 
-    local n = capnp.write_list_data(p32, { true, false, true }, 0, "bool")
+    local n = capnp.write_list_data(p32, { true, false, true }, "bool")
     assert_equal("05 00 00 00 00 00 00 00", util.hex_buf_str(buf, 8))
     assert_equal(8, n)
 end
@@ -252,7 +252,7 @@ function test_write_list_data_data()
     local buf = ffi.new("char[?]", 8 * 7)
     local p32 = ffi.cast("int32_t *", buf)
 
-    local n = capnp.write_list_data(p32, { "\1\2\3", "\4\5\6\7", "\9\10\11\12\13\14\15\16\17" }, 24, "data") -- writes 3 list pointer first, then list data
+    local n = capnp.write_list_data(p32, { "\1\2\3", "\4\5\6\7", "\9\10\11\12\13\14\15\16\17" }, "data") -- writes 3 list pointer first, then list data
     print("\nend testing\n")
     assert_equal("09 00 00 00 1a 00 00 00 09 00 00 00 22 00 00 00 09 00 00 00 4a 00 00 00 01 02 03 00 00 00 00 00 04 05 06 07 00 00 00 00 09 0a 0b 0c 0d 0e 0f 10 11 00 00 00 00 00 00 00", util.hex_buf_str(buf, 56))
     assert_equal(56, n)
@@ -262,7 +262,7 @@ function test_write_list_data_text()
     local buf = ffi.new("char[?]", 8 * 7)
     local p32 = ffi.cast("int32_t *", buf)
 
-    capnp.write_list_data(p32, { "ab", "def", "ijklmnop" }, 24, "text") -- writes 3 list pointer first, then list data
+    capnp.write_list_data(p32, { "ab", "def", "ijklmnop" }, "text") -- writes 3 list pointer first, then list data
     assert_equal("09 00 00 00 1a 00 00 00 09 00 00 00 22 00 00 00 09 00 00 00 4a 00 00 00 61 62 00 00 00 00 00 00 64 65 66 00 00 00 00 00 69 6a 6b 6c 6d 6e 6f 70 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 56))
 end
 
@@ -271,7 +271,7 @@ function test_write_list_data_list()
     local p32 = ffi.cast("int32_t *", buf)
 
     -- list of text
-    capnp.write_list_data(p32, { {"ab", "def"}, {"ijklmnop"} }, 16, "list", "text") -- writes 3 list pointer first, then list data
+    capnp.write_list_data(p32, { {"ab", "def"}, {"ijklmnop"} }, "list", "text") -- writes 3 list pointer first, then list data
     assert_equal("05 00 00 00 16 00 00 00 11 00 00 00 0e 00 00 00 05 00 00 00 1a 00 00 00 05 00 00 00 22 00 00 00 61 62 00 00 00 00 00 00 64 65 66 00 00 00 00 00 01 00 00 00 4a 00 00 00 69 6a 6b 6c 6d 6e 6f 70 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 72))
 end
 
@@ -281,7 +281,7 @@ function test_read_list_data()
 
     local data = { {"ab", "def"}, {"ijklmnop"} }
     -- list of text
-    capnp.write_list_data(p32, data, 16, "list", "text") -- writes 3 list pointer first, then list data
+    capnp.write_list_data(p32, data, "list", "text") -- writes 3 list pointer first, then list data
     local copy = capnp.read_list_data(p32, {}, 2, "list", "text")
 
     assert_not_nil(copy)
