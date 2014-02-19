@@ -470,7 +470,24 @@ function comp_serialize(res, name)
 ]], name, name, name))
 end
 
-function comp_flat_serialize(res, struct, fields, size, name)
+local function process_list_type(list_type, nodes)
+    -- first one is not element type, so remove it
+    table.remove(list_type, 1)
+    if list_type[#list_type - 1] == "struct" then
+        local id = list_type[#list_type]
+        local struct_name = get_name(nodes[id].displayName)
+        for i=1, #list_type - 1 do
+            list_type[i] = '"' .. list_type[i] .. '"'
+        end
+        list_type[#list_type] = "_M." .. struct_name
+    else
+        for i, v in ipairs(list_type) do
+            list_type[i] = '"' .. v .. '"'
+        end
+    end
+end
+
+function comp_flat_serialize(res, nodes, struct, fields, size, name)
     dbgf("comp_flat_serialize")
     insert(res, format([[
 
@@ -515,6 +532,28 @@ function comp_flat_serialize(res, struct, fields, size, name)
         elseif field.type_name == "list" then
             dbgf("field %s: list", field.name)
             local off = field.slot.offset
+            local list_type = util.get_field_type(field)
+            process_list_type(list_type, nodes)
+
+            local types = concat(list_type, ", ")
+
+            insert(res, format([[
+
+        if data["%s"] and type(data["%s"]) == "table" then
+            local data_off = get_data_off(_M.%s, %d, pos)
+
+            local len = #data["%s"]
+            write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
+
+            local off = pos
+            local dp32 = p32 + pos / 4
+            pos = pos + len * 8
+
+            pos = pos + write_list_data(dp32, data["%s"], len * 8, %s)
+        end]], field.name, field.name, name, off, field.name, name, off,
+                    field.size, field.name, types))
+--[=[
+            local off = field.slot.offset
             if field.element_type == "struct" then
                 dbgf("list of struct", field.name)
                 insert(res, format([[
@@ -554,6 +593,7 @@ function comp_flat_serialize(res, struct, fields, size, name)
         end]], field.name, field.name, name, off, field.name, name, off,
                     field.size, field.name, field.element_type, list_size_map[field.size] * 8))
             end
+            ]=]
         elseif field.type_name == "struct" then
             dbgf("field %s: struct", field.name)
             local off = field.slot.offset
@@ -833,7 +873,7 @@ function comp_struct(res, nodes, node, struct, name)
                 comp_calc_size(res, struct.fields, struct.size,
                         struct.type_name, nodes)
             end
-            comp_flat_serialize(res, struct, struct.fields, struct.size,
+            comp_flat_serialize(res, nodes, struct, struct.fields, struct.size,
                     struct.type_name)
             if not struct.isGroup then
                 comp_serialize(res, struct.type_name)

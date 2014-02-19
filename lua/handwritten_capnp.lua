@@ -573,6 +573,8 @@ _M.T1.g0 = {
     displayName = "proto/example.capnp:T1.g0",
     dataWordCount = 5,
     pointerCount = 7,
+    discriminantCount = 0,
+    discriminantOffset = 0,
     isGroup = true,
 
     fields = {

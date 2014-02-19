@@ -8,3 +8,4 @@
 * calculate new_tab arguments
 * 64 bit support for read_val and write_val
 * AnyPointer support
+* support writing/reading struct when writing/reading list data
