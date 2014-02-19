@@ -9,6 +9,7 @@ local format = string.format
 
 
 local T1 = handwritten.T1
+local T2 = handwritten.T1.T2
 
 if _VERSION >= 'Lua 5.2' then
     _ENV = lunit.module('simple','seeall')
@@ -248,12 +249,10 @@ function test_write_list_data_bool()
 end
 
 function test_write_list_data_data()
-    print("\nstart testing\n")
     local buf = ffi.new("char[?]", 8 * 7)
     local p32 = ffi.cast("int32_t *", buf)
 
     local n = capnp.write_list_data(p32, { "\1\2\3", "\4\5\6\7", "\9\10\11\12\13\14\15\16\17" }, "data") -- writes 3 list pointer first, then list data
-    print("\nend testing\n")
     assert_equal("09 00 00 00 1a 00 00 00 09 00 00 00 22 00 00 00 09 00 00 00 4a 00 00 00 01 02 03 00 00 00 00 00 04 05 06 07 00 00 00 00 09 0a 0b 0c 0d 0e 0f 10 11 00 00 00 00 00 00 00", util.hex_buf_str(buf, 56))
     assert_equal(56, n)
 end
@@ -275,6 +274,13 @@ function test_write_list_data_list()
     assert_equal("05 00 00 00 16 00 00 00 11 00 00 00 0e 00 00 00 05 00 00 00 1a 00 00 00 05 00 00 00 22 00 00 00 61 62 00 00 00 00 00 00 64 65 66 00 00 00 00 00 01 00 00 00 4a 00 00 00 69 6a 6b 6c 6d 6e 6f 70 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, 72))
 end
 
+function test_write_list_data_struct()
+    local buf = ffi.new("char[?]", 8 * 5)
+    local p32 = ffi.cast("int32_t *", buf)
+    capnp.write_list_data(p32, { { f0 = 1.1, f1 = 1.1111 }, {f0 = 1.2, f1 = 1.2222 } }, "struct", T2) -- writes 3 list pointer first, then list data
+    assert_equal("08 00 00 00 02 00 00 00 cd cc 8c 3f 00 00 00 00 9e 5e 29 cb 10 c7 f1 3f 9a 99 99 3f 00 00 00 00 3c bd 52 96 21 8e f3 3f", util.hex_buf_str(buf, 40))
+end
+
 function test_read_list_data()
     local buf = ffi.new("char[?]", 8 * 9)
     local p32 = ffi.cast("int32_t *", buf)
@@ -291,4 +297,19 @@ function test_read_list_data()
     assert_equal(data[1][1], copy[1][1])
     assert_equal(data[1][2], copy[1][2])
     assert_equal(copy[2][1], copy[2][1])
+end
+
+function test_read_list_data_struct()
+    local buf = ffi.new("char[?]", 8 * 5)
+    local p32 = ffi.cast("int32_t *", buf)
+    local data = { { f0 = 1.1, f1 = 1.1111 }, {f0 = 1.2, f1 = 1.2222 } }
+    capnp.write_list_data(p32, data, "struct", T2) -- writes 3 list pointer first, then list data
+    -- num is total words in the list not including tag
+    local copy = capnp.read_list_data(p32, {}, 4, "struct", T2)
+    assert_not_nil(copy)
+    assert_equal(2, #copy)
+    assert_equalf(data[1].f0, copy[1].f0)
+    assert_equalf(data[1].f1, copy[1].f1)
+    assert_equalf(data[2].f0, copy[2].f0)
+    assert_equalf(data[2].f1, copy[2].f1)
 end

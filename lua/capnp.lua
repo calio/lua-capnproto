@@ -522,10 +522,16 @@ function _M.read_list_data(p32, header, num, elm_type, ...)
             end
         end
     elseif elm_type == "struct" then
-        local num, dt, pt = _M.read_composite_tag(p32)
+        -- the number of struct elements in a list stores in tag value
+        -- and num (from list pointer, normally would be element count) is total
+        -- number of words in the list (not including the tag word)
+        local real_num, dt, pt = _M.read_composite_tag(p32)
         local T = ...
-        for i = 1, num do
-            T.parse_struct_data(p32 + i * 2, dt, pt, header, t[i])
+        local struct_size = (dt + pt) * 8
+        for i = 1, real_num do
+            -- TODO reuse table
+            t[i] = new_tab(0, 8)
+            T.parse_struct_data(p32 + 2 + (i - 1) * struct_size / 4, dt, pt, header, assert(t[i]))
         end
     else
         --[[
