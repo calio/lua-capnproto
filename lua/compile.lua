@@ -549,6 +549,11 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             dbgf("field %s: list", field.name)
             local off = field.slot.offset
             local list_type = util.get_field_type(field)
+            -- nested list
+            if #list_type > 1 then
+                -- pointer
+                field.size = 6
+            end
             process_list_type(list_type, nodes)
 
             local types = concat(list_type, ", ")

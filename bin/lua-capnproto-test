@@ -47,7 +47,7 @@ if action == "decode" then
 elseif action == "encode" then
     local input = get_input(test_case)
     local r = test[typ].serialize(input)
-    --util.write_file("encode_" .. test_case, r)
+    util.write_file("encode_" .. test_case, r)
     io.stdout:write(r)
     if test_case ~= "simpleTest" and test_case ~= "textListTypeTest"  then
         os.exit(127)
