@@ -261,7 +261,24 @@ function comp_field(res, nodes, field)
     end
 end
 
-function comp_parse_struct_data(res, struct, fields, size, name)
+local function process_list_type(list_type, nodes)
+    -- first one is not element type, so remove it
+    table.remove(list_type, 1)
+    if list_type[#list_type - 1] == "struct" then
+        local id = list_type[#list_type]
+        local struct_name = get_name(nodes[id].displayName)
+        for i=1, #list_type - 1 do
+            list_type[i] = '"' .. list_type[i] .. '"'
+        end
+        list_type[#list_type] = "_M." .. struct_name
+    else
+        for i, v in ipairs(list_type) do
+            list_type[i] = '"' .. v .. '"'
+        end
+    end
+end
+
+function comp_parse_struct_data(res, nodes, struct, fields, size, name)
     insert(res, format([[
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
@@ -303,6 +320,22 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 
         elseif field.type_name == "list" then
             local off = field.slot.offset
+            local list_type = util.get_field_type(field)
+            process_list_type(list_type, nodes)
+
+            local types = concat(list_type, ", ")
+
+            insert(res, format([[
+
+        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
+        if off and num then
+            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, header, num, %s) -- dataWordCount + offset + pointerSize + off
+        else
+            s["%s"] = nil
+        end
+]], name, off, field.name, struct.dataWordCount, off, types,
+                    field.name))
+--[=[
             if field.element_type == "struct" then
                 insert(res, format([[
 
@@ -339,7 +372,7 @@ function comp_parse_struct_data(res, struct, fields, size, name)
 ]], name, off, field.name, struct.dataWordCount, off, field.element_type,
                     field.name))
             end
-
+]=]
         elseif field.type_name == "struct" then
             local off = field.slot.offset
 
@@ -468,23 +501,6 @@ function comp_serialize(res, name)
         return ffi_string(p8, size)
     end,
 ]], name, name, name))
-end
-
-local function process_list_type(list_type, nodes)
-    -- first one is not element type, so remove it
-    table.remove(list_type, 1)
-    if list_type[#list_type - 1] == "struct" then
-        local id = list_type[#list_type]
-        local struct_name = get_name(nodes[id].displayName)
-        for i=1, #list_type - 1 do
-            list_type[i] = '"' .. list_type[i] .. '"'
-        end
-        list_type[#list_type] = "_M." .. struct_name
-    else
-        for i, v in ipairs(list_type) do
-            list_type[i] = '"' .. v .. '"'
-        end
-    end
 end
 
 function comp_flat_serialize(res, nodes, struct, fields, size, name)
@@ -881,7 +897,7 @@ function comp_struct(res, nodes, node, struct, name)
             if struct.discriminantCount and struct.discriminantCount > 0 then
                 comp_which(res)
             end
-            comp_parse_struct_data(res, struct, struct.fields, struct.size,
+            comp_parse_struct_data(res, nodes, struct, struct.fields, struct.size,
                     struct.type_name)
             if not struct.isGroup then
                 comp_parse(res, struct.type_name)

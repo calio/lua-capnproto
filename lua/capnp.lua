@@ -521,6 +521,12 @@ function _M.read_list_data(p32, header, num, elm_type, ...)
                 t[i] = _M.read_text_data(p32 + (1 + off) * 2, child_num)
             end
         end
+    elseif elm_type == "struct" then
+        local num, dt, pt = _M.read_composite_tag(p32)
+        local T = ...
+        for i = 1, num do
+            T.parse_struct_data(p32 + i * 2, dt, pt, header, t[i])
+        end
     else
         --[[
         local size = list_size_map[size_type]
