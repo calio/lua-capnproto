@@ -191,6 +191,7 @@ function test_basic_value6()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
+    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(32, copy.i0)
     assert_equal(16, copy.i1)
@@ -540,7 +541,6 @@ function test_list_of_text()
     }
 
     local bin   = hw_capnp.T1.serialize(data)
-    util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
     assert_equal(0, copy.i1)

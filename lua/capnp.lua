@@ -416,70 +416,70 @@ local type_to_size_type = {
     struct  = 7, -- composite
 }
 
--- @pos  available space offset from p32
+-- @p32     write list data to this position
+-- @_pos     not used 
 -- @return space consumed in bytes
-function _M.write_list_data(p32, data, pos, elm_type, ...)
+function _M.write_list_data(p32, data, _pos, elm_type, ...)
+    local pos = 0
     if not elm_type then
-        return
+        return 0
     end
     local len = #data
     if elm_type == "list" then
-        local start = pos
+        pos = pos + len * 8
         for i = 1, len do
             local data_off = (pos - i * 8) / 8 -- pos is in bytes
-            local num = #data[i]
+            local child_num = #data[i]
             local size_type = type_to_size_type[elm_type]
             if not size_type then
                 error("unsupported elm_type: " .. elm_type)
             end
-            _M.write_listp(p32 + (i - 1) * 2, size_type, num, data_off)
-            local sub_pos = pos
-            pos = pos + num * 8 -- allocate sub list pointer space
-            pos = pos + _M.write_list_data(p32 + sub_pos / 4, data[i], num * 8, ...)
+            _M.write_listp(p32 + (i - 1) * 2, size_type, child_num, data_off)
+            pos = pos + _M.write_list_data(p32 + pos / 4, data[i], 0, ...)
         end
-        return pos - start
+        return pos
     elseif elm_type == "text" then
-        local start = pos
+        pos = pos + 8 * len
         for i = 1, len do
             local data_off = (pos - i * 8) / 8 -- pos is in bytes
-            local num = #data[i] + 1
-            _M.write_listp(p32 + (i - 1) * 2, 2, num, data_off)
+            local str_len = #data[i] + 1
+            _M.write_listp(p32 + (i - 1) * 2, 2, str_len, data_off)
             pos = pos + _M.write_text_data(p32 + pos / 4, data[i], false)
         end
-        return pos - start
+        return pos
     elseif elm_type == "data" then
-        local start = pos
+        pos = pos + 8 * len
         for i = 1, len do
             local data_off = (pos - i * 8) / 8 -- pos is in bytes
-            local num = #data[i]
-            _M.write_listp(p32 + (i - 1) * 2, 2, num, data_off)
+            local data_len = #data[i]
+            _M.write_listp(p32 + (i - 1) * 2, 2, data_len, data_off)
             pos = pos + _M.write_text_data(p32 + pos / 4, data[i], true)
         end
-        return pos - start
+        return pos
     elseif elm_type == "bool" then
         local p = get_pointer_from_type(p32, elm_type)
         for i = 1, len do
             local n, s = get_bit_offset(i - 1, 8)
             _M.write_bit(p + n, data[i], s)
         end
-        return 0
+        return round8(len / 8)
     elseif elm_type == "struct" then
         local T = ...
 
-        local start = pos
         _M.write_composite_tag(p32 + pos / 4, T, len)
         pos = pos + 8
         for i = 1, len do
             pos = pos + T.flat_serialize(data[i], p32 + pos / 4)
         end
-        return pos - start
+        return pos
     else
         local p = get_pointer_from_type(p32, elm_type)
         for i = 1, len do
             -- No default value avaliable from AST, so no need to pass default value
             _M.write_num(p + i - 1, data[i], elm_type)
         end
-        return 0
+        local size = assert(list_size_map[type_to_size_type[elm_type]])
+        return round8(size * len)
     end
 end
 
