@@ -643,47 +643,40 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
         return
     end
 
-    insertl(res, level, format([[if data.%s then
-]], name))
+    insertl(res, level, format("if data.%s then\n", name))
 
-    -- struct tag
-    if elm_type == "struct" then
-        insertl(res, level + 1, format([[size = size + 8
-]], name))
-    end
+    if elm_type ~= "struct" and elm_type ~= "list" and elm_type ~= "data"
+            and elm_type ~= "text" then
 
-    local new_name = name .. "[i" .. level .. "]"
-    -- calc body size
-    insertl(res, level + 1, format([[local num%d = #data.%s
-]], level, name))
-    insertl(res, level + 1, format([[for %s=1, num%d do
-]], "i" .. level, level))
-
-
-    if elm_type == "list" then
-        insertl(res, level + 2, format([[size = size + 8
-]], name))
-        _M.comp_calc_list_size(res, field, nodes, new_name, level + 2, ...)
-    elseif elm_type == "text" then
-        insertl(res, level + 2, format([[size = size + 8
-]], name))
-        insertl(res, level + 2, format([[size = size + round8(#data.%s * 1 + 1) -- num * acutal size
-]], new_name))
-    elseif elm_type == "data" then
-        insertl(res, level + 2, format([[size = size + 8
-]], name))
-        insertl(res, level + 2, format([[size = size + round8(#data.%s * 1) -- num * acutal size
-]], new_name))
-    elseif elm_type == "struct" then
-        local id = ...
-        local struct_name = get_name(nodes[id].displayName)
-        insertl(res, level + 2, format([[size = size + _M.%s.calc_size_struct(data.%s)
-]], struct_name, new_name))
+        insertl(res, level + 1, format("size = size + round8(#data.%s * %d) -- num * acutal size\n", name, list_size_map[field.size]))
     else
-        insertl(res, level + 2, format([[size = size + round8(#data.%s * %d) -- num * acutal size
-]], new_name, size_map[elm_type] / 8))
+        -- struct tag
+        if elm_type == "struct" then
+            insertl(res, level + 1, format("size = size + 8\n", name))
+        end
+
+        local new_name = name .. "[i" .. level .. "]"
+        -- calc body size
+        insertl(res, level + 1, format("local num%d = #data.%s\n", level, name))
+        insertl(res, level + 1, format("for %s=1, num%d do\n", "i" .. level, level))
+
+
+        if elm_type == "list" then
+            insertl(res, level + 2, format("size = size + 8\n", name))
+            _M.comp_calc_list_size(res, field, nodes, new_name, level + 2, ...)
+        elseif elm_type == "text" then
+            insertl(res, level + 2, format("size = size + 8\n", name))
+            insertl(res, level + 2, format("size = size + round8(#data.%s * 1 + 1) -- num * acutal size\n", new_name))
+        elseif elm_type == "data" then
+            insertl(res, level + 2, format("size = size + 8\n", name))
+            insertl(res, level + 2, format("size = size + round8(#data.%s * 1) -- num * acutal size\n", new_name))
+        elseif elm_type == "struct" then
+            local id = ...
+            local struct_name = get_name(nodes[id].displayName)
+            insertl(res, level + 2, format("size = size + _M.%s.calc_size_struct(data.%s)\n", struct_name, new_name))
+        end
+        insertl(res, level + 1, "end\n")
     end
-    insertl(res, level + 1, "end\n")
     insertl(res, level, "end\n")
 end
 
