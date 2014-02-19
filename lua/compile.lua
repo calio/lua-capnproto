@@ -631,8 +631,63 @@ function comp_flat_serialize(res, struct, fields, size, name)
     end,]])
 end
 
+function insertl(res, level, data)
+    for i=1, level * 4 do
+        insert(res, " ")
+    end
+    insert(res, data)
+end
 
-function comp_calc_size(res, fields, size, name)
+function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
+    if not elm_type then
+        return
+    end
+
+    insertl(res, level, format([[if data.%s then
+]], name))
+
+    -- struct tag
+    if elm_type == "struct" then
+        insertl(res, level + 1, format([[size = size + 8
+]], name))
+    end
+
+    local new_name = name .. "[i" .. level .. "]"
+    -- calc body size
+    insertl(res, level + 1, format([[local num%d = #data.%s
+]], level, name))
+    insertl(res, level + 1, format([[for %s=1, num%d do
+]], "i" .. level, level))
+
+
+    if elm_type == "list" then
+        insertl(res, level + 2, format([[size = size + 8
+]], name))
+        _M.comp_calc_list_size(res, field, nodes, new_name, level + 2, select(1, ...))
+    elseif elm_type == "text" then
+        insertl(res, level + 2, format([[size = size + 8
+]], name))
+        insertl(res, level + 2, format([[size = size + round8(#data.%s * 1 + 1) -- num * acutal size
+]], new_name))
+    elseif elm_type == "data" then
+        insertl(res, level + 2, format([[size = size + 8
+]], name))
+        insertl(res, level + 2, format([[size = size + round8(#data.%s * 1) -- num * acutal size
+]], new_name))
+    elseif elm_type == "struct" then
+        local id = ...
+        local struct_name = get_name(nodes[id].displayName)
+        insertl(res, level + 2, format([[size = size + _M.%s.calc_size_struct(data.%s)
+]], struct_name, new_name))
+    else
+        insertl(res, level + 2, format([[size = size + round8(#data.%s * %d) -- num * acutal size
+]], new_name, size_map[elm_type] / 8))
+    end
+    insertl(res, level + 1, "end\n")
+    insertl(res, level, "end\n")
+end
+
+function comp_calc_size(res, fields, size, name, nodes)
     dbgf("comp_calc_size")
     insert(res, format([[
     calc_size_struct = function(data)
@@ -641,6 +696,13 @@ function comp_calc_size(res, fields, size, name)
     for i, field in ipairs(fields) do
         dbgf("field %s is %s", field.name, field.type_name)
         if field.type_name == "list" then
+            local list_type = util.get_field_type(field)
+
+            insert(res, "\n")
+            -- list_type[1] must be "list" and should be skipped because is
+            -- is not element type
+            _M.comp_calc_list_size(res, field, nodes, field.name, 2, select(2, unpack(list_type)))
+--[=[
             if field.element_type == "struct" then
                 -- composite
                 insert(res, format([[
@@ -662,6 +724,7 @@ function comp_calc_size(res, fields, size, name)
             size = size + round8(#data.%s * %d) -- num * acutal size
         end]], field.name, field.name, list_size_map[field.size]))
             end
+        ]=]
         elseif field.type_name == "struct" then
             insert(res, format([[
 
@@ -774,7 +837,8 @@ function comp_struct(res, nodes, node, struct, name)
         if struct.fields then
             comp_fields(res, nodes, node, struct)
             if not struct.isGroup then
-                comp_calc_size(res, struct.fields, struct.size, struct.type_name)
+                comp_calc_size(res, struct.fields, struct.size,
+                        struct.type_name, nodes)
             end
             comp_flat_serialize(res, struct, struct.fields, struct.size,
                     struct.type_name)

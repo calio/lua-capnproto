@@ -107,22 +107,16 @@ _M.T1 = {
         -- composite list
         if data.ls0 then
             size = size + 8
-            local num = #data.ls0
-            for i=1, num do
-                size = size + _M.T1.T2.calc_size_struct(data.ls0[i])
+            local num2 = #data.ls0
+            for i2=1, num2 do
+                size = size + _M.T1.T2.calc_size_struct(data.ls0[i2])
             end
         end
-        -- list
-        -- TODO fix this
         if data.lt0 then
-            local num = #data.lt0
-            for i=1, num do
+            local num2 = #data.lt0
+            for i2=1, num2 do
                 size = size + 8
-                local num1 = #data.lt0[i]
-                for j=1, num1 do
-                    size = size + 8
-                    size = size + round8(#data.lt0[i][j] * 1) -- num * acutal size
-                end
+                size = size + round8(#data.lt0[i2] * 1 + 1) -- num * acutal size
             end
         end
         return size

@@ -218,13 +218,16 @@ local function get_type(typ)
     end
 
     for k, v in pairs(typ) do
+        if k == "struct" then
+            return k, typ[k].typeId
+        end
         return k, get_type(typ[k].elementType)
     end
 end
 
-function _M.get_node_type(node)
-    if node and node.slot and node.slot["type"] then
-        return {get_type(node.slot["type"])}
+function _M.get_field_type(field)
+    if field and field.slot and field.slot["type"] then
+        return { get_type(field.slot["type"]) }
     end
 
     return
