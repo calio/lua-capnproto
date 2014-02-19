@@ -432,7 +432,7 @@ function _M.write_list_data(p32, data, pos, elm_type, ...)
             _M.write_listp(p32 + (i - 1) * 2, size_type, num, data_off)
             local sub_pos = pos
             pos = pos + num * 8 -- allocate sub list pointer space
-            pos = pos + _M.write_list_data(p32 + sub_pos / 4, data[i], num * 8, select(1, ...))
+            pos = pos + _M.write_list_data(p32 + sub_pos / 4, data[i], num * 8, ...)
         end
         return pos - start
     elseif elm_type == "text" then
@@ -488,7 +488,7 @@ function _M.read_list_data(p32, header, num, elm_type, ...)
         for i = 1, num do
             local off, child_size, child_num = _M.read_listp_list(p32, header, i)
             if off and child_num then
-                t[i] = _M.read_list_data(p32 + (i + off) * 2, header, child_num, select(1, ...))
+                t[i] = _M.read_list_data(p32 + (i + off) * 2, header, child_num, ...)
             end
         end
 

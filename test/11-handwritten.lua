@@ -535,9 +535,7 @@ end
 function test_list_of_text()
     local data = {
         lt0 = {
-            { "Bach", "Mozart" },
-            { "Beethoven" },
-            { "Tchaikovsky" },
+            "Bach", "Mozart", "Beethoven", "Tchaikovsky",
         }
     }
 
@@ -567,14 +565,15 @@ function test_list_of_text()
     assert_equal(true, copy.db0) -- default = true
     assert_equal(false, copy["end"])
     assert_not_nil(copy.lt0)
-    assert_equal(3, #copy.lt0)
+    assert_equal(4, #copy.lt0)
     assert_not_nil(copy.lt0[1])
     assert_not_nil(copy.lt0[2])
     assert_not_nil(copy.lt0[3])
-    assert_equal(data.lt0[1][1], copy.lt0[1][1])
-    assert_equal(data.lt0[1][2], copy.lt0[1][2])
-    assert_equal(data.lt0[2][1], copy.lt0[2][1])
-    assert_equal(data.lt0[3][1], copy.lt0[3][1])
+    assert_not_nil(copy.lt0[4])
+    assert_equal(data.lt0[1], copy.lt0[1])
+    assert_equal(data.lt0[2], copy.lt0[2])
+    assert_equal(data.lt0[3], copy.lt0[3])
+    assert_equal(data.lt0[4], copy.lt0[4])
 end
 
 return _G

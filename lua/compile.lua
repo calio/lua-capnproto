@@ -663,7 +663,7 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     if elm_type == "list" then
         insertl(res, level + 2, format([[size = size + 8
 ]], name))
-        _M.comp_calc_list_size(res, field, nodes, new_name, level + 2, select(1, ...))
+        _M.comp_calc_list_size(res, field, nodes, new_name, level + 2, ...)
     elseif elm_type == "text" then
         insertl(res, level + 2, format([[size = size + 8
 ]], name))

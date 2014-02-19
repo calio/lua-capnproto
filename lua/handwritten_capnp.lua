@@ -278,7 +278,7 @@ _M.T1 = {
             local dp32 = p32 + pos / 4
             pos = pos + len * 8
 
-            pos = pos + write_list_data(dp32, data["lt0"], len * 8,"list", "text")
+            pos = pos + write_list_data(dp32, data["lt0"], len * 8, "text")
         end
         if dscrm then
             _M.T1.which(p32, 10, dscrm) --buf, discriminantOffset, discriminantValue
@@ -424,7 +424,7 @@ _M.T1 = {
         s["end"] = read_struct_field(buf, "bool", 1, 51, 0)
         local off, size, num = read_listp_struct(buf, header, _M.T1, 6)
         if off and num then
-            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, num, "list", "text") -- dataWordCount + offset + pointerSize + off
+            s["lt0"] = read_list_data(buf + (5 + 6 + 1 + off) * 2, header, num, "text") -- dataWordCount + offset + pointerSize + off
         else
             s["lt0"] = nil
         end
