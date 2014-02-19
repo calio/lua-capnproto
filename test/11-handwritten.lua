@@ -3,7 +3,7 @@ local lunit = require "lunitx"
 local capnp = require "capnp"
 local util = require "util"
 
-local hw_capnp = require "handwritten_capnp"
+hw_capnp = require "handwritten_capnp"
 --local format = string.format
 
 local tdiff = util.table_diff

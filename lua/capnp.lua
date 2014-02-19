@@ -472,6 +472,7 @@ function _M.write_list_data(p32, data, pos, elm_type, ...)
         for i = 1, len do
             pos = pos + T.flat_serialize(data[i], p32 + pos / 4)
         end
+        return pos - start
     else
         local p = get_pointer_from_type(p32, elm_type)
         for i = 1, len do
