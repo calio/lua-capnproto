@@ -26,7 +26,7 @@ build = {
       bin = {
          ['capnpc-lua'] = "bin/capnpc-lua",
          ['capnpc-echo'] = "bin/capnpc-echo",
-         ['schema.capnp'] = "proto/schema.capnp",
+         ['schema.capnp'] = "bin/schema.capnp",
       }
    }
 }
