@@ -1,11 +1,7 @@
 * performance turing
 * multiple files input
-* deal with none-existing sub structs, lists or fields
-* far pointers
-* support object type
 * make capnpc-llua work
 * fix 0-item list
 * calculate new_tab arguments
-* 64 bit support for read_val and write_val
 * AnyPointer support
-* support writing/reading struct when writing/reading list data
+* uInt8DefaultValueTest decoding test case
