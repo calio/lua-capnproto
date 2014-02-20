@@ -272,7 +272,7 @@ _M.T1 = {
             local data_off = get_data_off(_M.T1, 6, pos)
 
             local len = #data["lt0"]
-            write_listp_buf(p32, _M.T1, 6, 2, len, data_off)
+            write_listp_buf(p32, _M.T1, 6, 6, len, data_off)
 
             local off = pos
             local dp32 = p32 + pos / 4
