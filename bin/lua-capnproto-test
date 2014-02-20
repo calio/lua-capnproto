@@ -33,7 +33,16 @@ function get_input(test_case)
         proto = util.read_file(proto_file)
     end
     local start, stop, _1 = string.find(proto, "const ".. test_case .. " :%w+ = ([^\n]*);")
-    local lua_str = util.parse_capnp_txt(_1)
+    local str = _1
+    for s in string.gmatch(str, "%.[0-9a-zA-Z_]+") do
+        local const = string.sub(s, 2)
+        local pattern = "const ".. const .. " :%w+ = ([^\n]*);"
+        local start, stop, _2 = string.find(proto, pattern)
+        str = string.gsub(str, s, _2)
+        --print(start, stop, const, _2, str)
+    end
+    local lua_str = util.parse_capnp_txt(str)
+    --util.write_file(lua_str)
     return assert(loadstring(lua_str)())
 end
 
@@ -49,7 +58,9 @@ elseif action == "encode" then
     local r = test[typ].serialize(input)
     util.write_file("encode_" .. test_case, r)
     io.stdout:write(r)
-    if test_case ~= "simpleTest" and test_case ~= "textListTypeTest"  then
+    --[[
+    if test_case == "constTest" then
         os.exit(127)
     end
+    ]]
 end
