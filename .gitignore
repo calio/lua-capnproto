@@ -13,10 +13,7 @@
 *.a
 
 # Vim files
-*.swp
-*.swo
-*.swn
-*.swm
+*.sw*
 *~
 
 # Project temp files
