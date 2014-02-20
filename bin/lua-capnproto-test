@@ -53,6 +53,9 @@ if action == "decode" then
     --util.write_file("decode_" .. test_case, content)
     local r = test[typ].parse(content)
     pprint(r, test[typ])
+    if test_case == "uInt8DefaultValueTest" then
+        os.exit(127)
+    end
 elseif action == "encode" then
     local input = get_input(test_case)
     local r = test[typ].serialize(input)
