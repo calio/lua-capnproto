@@ -9,6 +9,8 @@ capnp compile -olua proto/example.capnp || exit
 echo "[Unit test...]"
 make test  || exit
 
+echo "[capnp_test...]"
+make test1 || exit
 #echo
 #echo "[Serialization test...]"
 #if [ $(uname) != "Linux" ]; then
