@@ -1,11 +1,11 @@
 #!/usr/bin/env luajit
 
-package.path="lua/?.lua;;"
+--package.path="lua/?.lua;;"
 
 local schema_capnp = require("schema_capnp")
 local cjson = require("cjson")
-local compile = require("compile")
-local util = require("util")
+local compile = require("capnp.compile")
+local util = require("capnp.util")
 
 local schema_json_file  = "llua.schema.json"
 

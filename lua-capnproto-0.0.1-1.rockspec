@@ -19,8 +19,9 @@ build = {
    -- We'll start here.
    type = "builtin",
    modules = {
-      capnp = "lua/capnp.lua",
-      compile = "lua/compile.lua",
+      capnp = "capnp.lua",
+      ['capnp.compile'] = "capnp/compile.lua",
+      ['capnp.util'] = "capnp/util.lua",
    },
    install = {
       bin = {

@@ -1,6 +1,6 @@
 local cjson = require("cjson")
 local encode = cjson.encode
-local util = require "util"
+local util = require "capnp.util"
 
 local insert = table.insert
 local concat = table.concat
@@ -61,7 +61,7 @@ function comp_header(res, nodes)
 local ffi = require "ffi"
 local capnp = require "capnp"
 local bit = require "bit"
-local util = require "util"
+local util = require "capnp.util"
 
 local ceil              = math.ceil
 local write_struct_field= capnp.write_struct_field

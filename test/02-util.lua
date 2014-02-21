@@ -1,4 +1,4 @@
-local util = require "util"
+local util = require "capnp.util"
 local lunit = require "lunitx"
 local hw_capnp = require "handwritten_capnp"
 

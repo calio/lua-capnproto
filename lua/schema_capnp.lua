@@ -2,7 +2,7 @@
 local ffi = require "ffi"
 local capnp = require "capnp"
 local bit = require "bit"
-local util = require "util"
+local util = require "capnp.util"
 
 local ceil              = math.ceil
 local write_val         = capnp.write_val

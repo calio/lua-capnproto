@@ -2,7 +2,7 @@
 
 local test = require("test_capnp")
 local cjson = require("cjson")
-local util = require("util")
+local util = require("capnp.util")
 
 local insert = table.insert
 local concat = table.concat

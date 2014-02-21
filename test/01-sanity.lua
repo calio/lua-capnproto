@@ -1,7 +1,7 @@
 local ffi = require "ffi"
 local lunit = require "lunitx"
 local capnp = require "capnp"
-local util = require "util"
+local util = require "capnp.util"
 local handwritten = require "handwritten_capnp"
 
 

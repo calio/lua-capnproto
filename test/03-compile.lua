@@ -1,6 +1,6 @@
-local util = require "util"
+local util = require "capnp.util"
 local lunit = require "lunitx"
-local compile = require "compile"
+local compile = require "capnp.compile"
 
 if _VERSION >= 'Lua 5.2' then
     _ENV = lunit.module('simple','seeall')
