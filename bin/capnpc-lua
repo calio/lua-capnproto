@@ -59,12 +59,12 @@ for i=2, #arg do
 end
 
 local lua_schema = util.parse_capnp_decode_txt(f)
-util.write_file(schema_lua_file, lua_schema)
+--util.write_file(schema_lua_file, lua_schema)
 
 local schema = assert(assert(loadstring(lua_schema))())
 
 schema.__compiler = "lua-capnp(decoded by capnp tool)"
-util.write_file(schema_json_file, cjson.encode(schema))
+--util.write_file(schema_json_file, cjson.encode(schema))
 
 local outfile = util.get_output_name(schema) .. ".lua"
 compile.init(config)
@@ -74,11 +74,12 @@ local file = assert(io.open(outfile, "w"))
 file:write(res)
 file:close()
 
-
+--[[
 local outfile = "data_generator.lua"
 local res = compile.compile_data_generator(schema)
 
 local file = assert(io.open(outfile, "w"))
 file:write(res)
 file:close()
+]]
 EOT
