@@ -9,7 +9,7 @@ This project is still under early development and is not production-ready.
 
 Installation
 ============
-To install lua-capnproto, you need to install Cap'n Proto <http://kentonv.github.io/capnproto/install.html> and luarocks <http://luarocks.org/en/Download> first.
+To install lua-capnproto, you need to install Cap'n Proto <http://kentonv.github.io/capnproto/install.html>, Luajit <http://luajit.org/install.html> and luarocks <http://luarocks.org/en/Download> first.
 
 Then you can install lua-capnproto using the fallowing commands:
 
