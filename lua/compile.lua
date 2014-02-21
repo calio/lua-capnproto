@@ -301,7 +301,6 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
 ]],field.discriminantValue))
         end
         if field.group then
-            -- TODO group struffs
             insert(res, format([[
 
         if not s["%s"] then
