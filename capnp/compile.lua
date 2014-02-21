@@ -550,8 +550,13 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             local list_type = util.get_field_type(field)
             -- nested list
             if #list_type > 1 then
-                -- pointer
-                field.size = 6
+                -- composite
+                if list_type[#list_type -1] == "struct" then
+                    field.size = 7
+                else
+                    -- pointer
+                    field.size = 6
+                end
             end
             process_list_type(list_type, nodes)
 
