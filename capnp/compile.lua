@@ -77,6 +77,7 @@ local write_structp     = capnp.write_structp
 local read_struct_buf   = capnp.read_struct_buf
 local read_listp_struct = capnp.read_listp_struct
 local read_list_data    = capnp.read_list_data
+local write_list        = capnp.write_list
 local write_list_data   = capnp.write_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
@@ -263,7 +264,7 @@ end
 
 local function process_list_type(list_type, nodes)
     -- first one is not element type, so remove it
-    table.remove(list_type, 1)
+    --table.remove(list_type, 1)
     if list_type[#list_type - 1] == "struct" then
         local id = list_type[#list_type]
         local struct_name = get_name(nodes[id].displayName)
@@ -320,6 +321,7 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         elseif field.type_name == "list" then
             local off = field.slot.offset
             local list_type = util.get_field_type(field)
+            table.remove(list_type, 1)
             process_list_type(list_type, nodes)
 
             local types = concat(list_type, ", ")
@@ -566,6 +568,13 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
 
         if data["%s"] and type(data["%s"]) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
+            pos = pos + write_list(p32 + _M.%s.dataWordCount * 2 + %d * 2, data["%s"], (data_off + 1) * 8, %s)
+        end]], field.name, field.name, name, off, name, off, field.name, types))
+            --[=[
+            insert(res, format([[
+
+        if data["%s"] and type(data["%s"]) == "table" then
+            local data_off = get_data_off(_M.%s, %d, pos)
 
             local len = #data["%s"]
             write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
@@ -576,6 +585,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             pos = pos + write_list_data(dp32, data["%s"], 0, %s)
         end]], field.name, field.name, name, off, field.name, name, off,
                     field.size, field.name, types))
+                    ]=]
 --[=[
             local off = field.slot.offset
             if field.element_type == "struct" then
