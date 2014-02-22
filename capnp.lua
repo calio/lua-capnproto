@@ -270,11 +270,12 @@ end
 -- @p32
 -- @text
 -- @data_off            words between the end of list pointer and the first byte of text data
-function _M.write_text(p32, text, data_off)
+function _M.write_text(p32, text, data_off, is_binary)
     local len = #text + 1
     _M.write_listp(p32, 2, len, data_off)
-    copy(p32 + data_off*2 + 2, text)
-    return round8(len)
+    return _M.write_text_data(p32 + data_off * 2 + 2, text, is_binary)
+    --copy(p32 + data_off*2 + 2, text)
+    --return round8(len)
 end
 
 function _M.get_data_off(T, offset, pos)
@@ -413,13 +414,15 @@ local type_to_size_type = {
     float32 = 4,
     float64 = 5,
     list    = 6,
+    text    = 6,
+    data    = 6,
     struct  = 7, -- composite
 }
 
 -- @p32     write list data to this position
 -- @return space consumed in bytes
-function _M.write_list_data(p32, data, elm_type, ...)
-    local pos = 0
+function _M.write_list_data(p32, data, pos, elm_type, ...)
+    local start = pos
     if not elm_type then
         return 0
     end
@@ -427,6 +430,8 @@ function _M.write_list_data(p32, data, elm_type, ...)
     if elm_type == "list" then
         pos = pos + len * 8
         for i = 1, len do
+            pos = pos + _M.write_list(p32 + (i - 1) * 2, data[i], pos - 8 * (i - 1), elm_type, ...)
+            --[[
             local data_off = (pos - i * 8) / 8 -- pos is in bytes
             local child_num = #data[i]
             local size_type = type_to_size_type[elm_type]
@@ -435,17 +440,21 @@ function _M.write_list_data(p32, data, elm_type, ...)
             end
             _M.write_listp(p32 + (i - 1) * 2, size_type, child_num, data_off)
             pos = pos + _M.write_list_data(p32 + pos / 4, data[i], ...)
+            ]]
         end
-        return pos
     elseif elm_type == "text" then
         pos = pos + 8 * len
         for i = 1, len do
+
+            local data_off = (pos - i * 8) / 8 -- pos is in bytes
+            pos = pos + _M.write_text(p32 + (i - 1) * 2, data[i], data_off, false)
+--[[
             local data_off = (pos - i * 8) / 8 -- pos is in bytes
             local str_len = #data[i] + 1
             _M.write_listp(p32 + (i - 1) * 2, 2, str_len, data_off)
             pos = pos + _M.write_text_data(p32 + pos / 4, data[i], false)
+            ]]
         end
-        return pos
     elseif elm_type == "data" then
         pos = pos + 8 * len
         for i = 1, len do
@@ -454,14 +463,6 @@ function _M.write_list_data(p32, data, elm_type, ...)
             _M.write_listp(p32 + (i - 1) * 2, 2, data_len, data_off)
             pos = pos + _M.write_text_data(p32 + pos / 4, data[i], true)
         end
-        return pos
-    elseif elm_type == "bool" then
-        local p = get_pointer_from_type(p32, elm_type)
-        for i = 1, len do
-            local n, s = get_bit_offset(i - 1, 8)
-            _M.write_bit(p + n, data[i], s)
-        end
-        return round8(len / 8)
     elseif elm_type == "struct" then
         local T = ...
 
@@ -470,7 +471,13 @@ function _M.write_list_data(p32, data, elm_type, ...)
         for i = 1, len do
             pos = pos + T.flat_serialize(data[i], p32 + pos / 4)
         end
-        return pos
+    elseif elm_type == "bool" then
+        local p = get_pointer_from_type(p32, elm_type)
+        for i = 1, len do
+            local n, s = get_bit_offset(i - 1, 8)
+            _M.write_bit(p + n, data[i], s)
+        end
+        return round8(len / 8)
     else
         local p = get_pointer_from_type(p32, elm_type)
         for i = 1, len do
@@ -480,8 +487,36 @@ function _M.write_list_data(p32, data, elm_type, ...)
         local size = assert(list_size_map[type_to_size_type[elm_type]])
         return round8(size * len)
     end
+    return pos - start
 end
 
+function _M.write_list(p32, data, pos, typ, ...)
+    local size = 0
+    local data_off = (pos - 8) / 8 --get_data_off(parentT, offset, pos)
+
+    local elm_type, T  = ...
+    local size_type = type_to_size_type[elm_type]
+    if not size_type then
+        error("unknown eml_type: " .. elm_type)
+    end
+
+    local num = #data
+
+    local dp32 = p32 + pos / 4
+    --size = size + len * 8
+
+    size = size + _M.write_list_data(dp32, data, 0, ...)
+
+    if elm_type == "struct" then
+        -- When size_type = 7, section (D) of the list pointer – which normally
+        -- would store this element count – instead stores the total number of
+        -- words in the list (not counting the tag word).
+        num = (T.dataWordCount + T.pointerCount) * num
+    end
+    --write_listp_buf(p32, parentT, offset, size_type, len, data_off)
+    _M.write_listp(p32, size_type, num, data_off)
+    return size
+end
 -- read data part of a list
 -- @p           start of data buffer
 -- @header      stream header, see http://kentonv.github.io/capnproto/encoding.html#serialization_over_a_stream

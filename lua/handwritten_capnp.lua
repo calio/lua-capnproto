@@ -278,7 +278,7 @@ _M.T1 = {
             local dp32 = p32 + pos / 4
             pos = pos + len * 8
 
-            pos = pos + write_list_data(dp32, data["lt0"], "text")
+            pos = pos + write_list_data(dp32, data["lt0"], 0, "text")
         end
         if dscrm then
             _M.T1.which(p32, 10, dscrm) --buf, discriminantOffset, discriminantValue

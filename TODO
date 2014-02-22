@@ -6,3 +6,4 @@
 * AnyPointer support
 * uInt8DefaultValueTest decoding test case
 * packing/unpacking
+* compatibility with old formats

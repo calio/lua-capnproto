@@ -573,7 +573,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             local off = pos
             local dp32 = p32 + pos / 4
 
-            pos = pos + write_list_data(dp32, data["%s"], %s)
+            pos = pos + write_list_data(dp32, data["%s"], 0, %s)
         end]], field.name, field.name, name, off, field.name, name, off,
                     field.size, field.name, types))
 --[=[
