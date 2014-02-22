@@ -11,21 +11,21 @@ make test  || exit
 
 echo "[capnp_test...]"
 make test1 || exit
-#echo
-#echo "[Serialization test...]"
-#if [ $(uname) != "Linux" ]; then
-#    make all || exit
-#else
-#    CXX=g++-4.7 make all || exit
-#
-#fi
-#cpp/main > a.data || exit
-#luajit test.lua c.data || exit
-#echo
-#echo "capnp c++ result:"
-#xxd -g 1 a.data || exit
-#echo "capnp lua result:"
-#xxd -g 1 c.data || exit
-#diff a.data c.data
+echo
+echo "[Serialization test...]"
+if [ $(uname) != "Linux" ]; then
+    make all || exit
+else
+    CXX=g++-4.7 make all || exit
+
+fi
+cpp/main > a.data || exit
+luajit test.lua c.data || exit
+echo
+echo "capnp c++ result:"
+xxd -g 1 a.data || exit
+echo "capnp lua result:"
+xxd -g 1 c.data || exit
+diff a.data c.data
 
 echo "[Done]"

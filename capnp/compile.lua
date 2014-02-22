@@ -152,6 +152,7 @@ size_map = {
     enum    = 16,
     object  = 8, -- FIXME object is a pointer ?
     anyPointer = 8, -- FIXME object is a pointer ?
+    group   = 0, -- TODO
 }
 
 function get_size(type_name)
@@ -208,31 +209,37 @@ end
 
 function _set_field_type(field, slot, nodes)
     local type_name
-    for k, v in pairs(slot["type"]) do
-        type_name   = k
-        if type_name == "struct" then
-            field.type_display_name = get_name(nodes[v.typeId].displayName)
-        elseif type_name == "enum" then
-            field.enum_id = v.typeId
-            field.type_display_name = get_name(nodes[v.typeId].displayName)
-        elseif type_name == "list" then
-            local list_type
-            for k, v in pairs(field.slot["type"].list.elementType) do
-                list_type = k
-                if list_type == "struct" then
-                    field.type_display_name = get_name(nodes[v.typeId].displayName)
+    if field.group then
+        print('group', field.name)
+        field.type_name = "group"
+        field.type_display_name = get_name(nodes[field.group.typeId].displayName)
+    else
+        for k, v in pairs(slot["type"]) do
+            type_name   = k
+            if type_name == "struct" then
+                field.type_display_name = get_name(nodes[v.typeId].displayName)
+            elseif type_name == "enum" then
+                field.enum_id = v.typeId
+                field.type_display_name = get_name(nodes[v.typeId].displayName)
+            elseif type_name == "list" then
+                local list_type
+                for k, v in pairs(field.slot["type"].list.elementType) do
+                    list_type = k
+                    if list_type == "struct" then
+                        field.type_display_name = get_name(nodes[v.typeId].displayName)
+                    end
+                    break
                 end
-                break
+                field.element_type = list_type
+            else
+                -- default     = v
             end
-            field.element_type = list_type
-        else
-            -- default     = v
+
+            field.type_name = type_name
+            --field.default   = default
+
+            break
         end
-
-        field.type_name = type_name
-        --field.default   = default
-
-        break
     end
     dbgf("field %s.type_name = %s", field.name, field.type_name)
     assert(field.type_name)
@@ -242,7 +249,8 @@ function comp_field(res, nodes, field)
     dbg("comp_field")
     local slot = field.slot
     if not slot then
-        return
+        slot = {}
+        field.slot = slot
     end
     if not slot.offset then
         slot.offset = 0
@@ -508,8 +516,8 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
     dbgf("comp_flat_serialize")
     insert(res, format([[
 
-    flat_serialize = function(data, p32)
-        local pos = %d
+    flat_serialize = function(data, p32, pos)
+        pos = pos and pos or %d
         local dscrm]], size))
 
     for i, field in ipairs(fields) do
@@ -531,7 +539,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if data["%s"] and type(data["%s"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.%s.%s.flat_serialize(data["%s"], p32)
+            _M.%s.%s.flat_serialize(data["%s"], p32, pos)
         end
 ]], field.name, field.name, name, field.name, field.name))
 
@@ -754,8 +762,11 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     insertl(res, level, "end\n")
 end
 
-function comp_calc_size(res, fields, size, name, nodes)
+function comp_calc_size(res, fields, size, name, nodes, is_group)
     dbgf("comp_calc_size")
+    if is_group then
+        size = 0
+    end
     insert(res, format([[
     calc_size_struct = function(data)
         local size = %d]], size))
@@ -792,7 +803,7 @@ function comp_calc_size(res, fields, size, name, nodes)
         end]], field.name, field.name, list_size_map[field.size]))
             end
         ]=]
-        elseif field.type_name == "struct" then
+        elseif field.type_name == "struct" or field.type_name == "group" then
             insert(res, format([[
 
         -- struct
@@ -903,10 +914,11 @@ function comp_struct(res, nodes, node, struct, name)
 
         if struct.fields then
             comp_fields(res, nodes, node, struct)
-            if not struct.isGroup then
-                comp_calc_size(res, struct.fields, struct.size,
-                        struct.type_name, nodes)
-            end
+            --if not struct.isGroup then
+
+            --end
+            comp_calc_size(res, struct.fields, struct.size,
+                    struct.type_name, nodes, struct.isGroup)
             comp_flat_serialize(res, nodes, struct, struct.fields, struct.size,
                     struct.type_name)
             if not struct.isGroup then
