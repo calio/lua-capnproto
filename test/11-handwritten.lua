@@ -26,6 +26,7 @@ function test_basic_value()
         i0 = 32,
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(data.i0, copy.i0)
@@ -46,6 +47,7 @@ function test_basic_value1()
         b0 = true,
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -66,6 +68,7 @@ function test_basic_value2()
         i2 = -8,
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -86,6 +89,7 @@ function test_basic_value3()
         s0 = {},
     }
 
+    assert_equal(128, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -111,6 +115,7 @@ function test_basic_value4()
         },
     }
 
+    assert_equal(128, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -133,6 +138,7 @@ function test_basic_value4()
         l0 = { 1, -1, 127 }
     }
 
+    assert_equal(120, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -156,6 +162,7 @@ function test_basic_value5()
         t0 = "1234567890~!#$%^&*()-=_+[]{};':|,.<>/?"
     }
 
+    assert_equal(152, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -190,6 +197,7 @@ function test_basic_value6()
         e1 = "enum7",
     }
 
+    assert_equal(112 + 16 + 8 + 8, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
@@ -216,6 +224,7 @@ function test_union_value()
         ui1 = 32,
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -239,6 +248,7 @@ function test_union_value()
         uv0 = "Void",
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -264,6 +274,7 @@ function test_union_value()
         },
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -290,6 +301,7 @@ function test_union_group()
         },
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -320,6 +332,7 @@ function test_union_group1()
         },
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -352,6 +365,7 @@ function test_union_group2()
         },
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -390,6 +404,7 @@ function test_struct_list()
         },
     }
 
+    assert_equal(112 + 8 + 16 * 2, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -421,6 +436,7 @@ function test_default_value()
     local data = {
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -450,6 +466,7 @@ function test_default_value1()
         du0 = 630,
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -478,6 +495,7 @@ function test_default_value2()
         db0 = true
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -507,6 +525,7 @@ function test_reserved_word()
         ["end"] = true
     }
 
+    assert_equal(112, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
@@ -540,6 +559,7 @@ function test_list_of_text()
         }
     }
 
+    assert_equal(112 + 4 * 8 + 8 + 8 + 16 + 16, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal(0, copy.i0)
