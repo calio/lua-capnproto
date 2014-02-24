@@ -19,7 +19,6 @@ local data = {
                 school = "MIT",
             },
         },
-        --[[
         {
             id = "456",
             name = "Bob",
@@ -38,7 +37,6 @@ local data = {
                 unemployed = "void",
             },
         },
-        ]]
     }
 }
 

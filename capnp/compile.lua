@@ -210,7 +210,6 @@ end
 function _set_field_type(field, slot, nodes)
     local type_name
     if field.group then
-        print('group', field.name)
         field.type_name = "group"
         field.type_display_name = get_name(nodes[field.group.typeId].displayName)
     else
