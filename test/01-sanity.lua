@@ -333,8 +333,6 @@ function test_write_list()
     }
 
     local n = capnp.write_list(p32, data, 8, "list", "list", "struct", T2) -- writes 3 list pointer first, then list data
-    util.write_file("tdump", util.hex_buf_str(buf, size))
-
 
     assert_equal(size, n + 8) -- write_list return size doesn't count list pointer size
     assert_equal("01 00 00 00 16 00 00 00 05 00 00 00 37 00 00 00 1d 00 00 00 1f 00 00 00 08 00 00 00 02 00 01 00 cd cc 8c 3f 00 00 00 00 9e 5e 29 cb 10 c7 f1 3f 00 00 00 00 00 00 00 00 9a 99 99 3f 00 00 00 00 3c bd 52 96 21 8e f3 3f 00 00 00 00 00 00 00 00 04 00 00 00 02 00 01 00 66 66 a6 3f 00 00 00 00 da 1b 7c 61 32 55 f5 3f 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, size))
@@ -346,7 +344,7 @@ function test_read_list_data()
 
     local data = { {"ab", "def"}, {"ijklmnop"} }
     -- list of text
-    capnp.write_list_data(p32, data, 0, "list", "text") -- writes 3 list pointer first, then list data
+    capnp.write_list_data(p32, data, 0, "list", "text")
     local copy = capnp.read_list_data(p32, {}, 2, "list", "text")
 
     assert_not_nil(copy)
@@ -358,14 +356,13 @@ function test_read_list_data()
     assert_equal(copy[2][1], copy[2][1])
 end
 
---[==[
--- TODO
 function test_read_list_data_struct()
-    local buf = ffi.new("char[?]", 8 * 5)
+    local size = (1 + 3 * 2) * 8
+    local buf = ffi.new("char[?]", size)
     local p32 = ffi.cast("int32_t *", buf)
     local data = { { f0 = 1.1, f1 = 1.1111 }, {f0 = 1.2, f1 = 1.2222 } }
-    capnp.write_list_data(p32, data, 0, "struct", T2) -- writes 3 list pointer first, then list data
-    -- num is total words in the list not including tag
+
+    capnp.write_list_data(p32, data, 0, "struct", T2)
     local copy = capnp.read_list_data(p32, {}, 4, "struct", T2)
     assert_not_nil(copy)
     assert_equal(2, #copy)
@@ -374,4 +371,4 @@ function test_read_list_data_struct()
     assert_equalf(data[2].f0, copy[2].f0)
     assert_equalf(data[2].f1, copy[2].f1)
 end
-]==]
+--]]
