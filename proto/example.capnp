@@ -49,7 +49,7 @@ struct T1 {
             ugv0 @18 :Void;
             ugu0 @19 :UInt32;
         }
-        ut0 @26 :Data;
+        ut0 @26 :Text;
     }
 
     ls0 @20 :List(T2);

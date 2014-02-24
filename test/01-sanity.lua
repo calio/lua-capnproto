@@ -316,7 +316,6 @@ function test_write_list()
     assert_equal("01 00 00 00 37 00 00 00 08 00 00 00 02 00 01 00 cd cc 8c 3f 00 00 00 00 9e 5e 29 cb 10 c7 f1 3f 0d 00 00 00 22 00 00 00 9a 99 99 3f 00 00 00 00 3c bd 52 96 21 8e f3 3f 05 00 00 00 42 00 00 00 01 02 03 04 00 00 00 00 05 06 07 08 09 0a 0b 0c", util.hex_buf_str(buf, size))
 end
 
---[-[
 function test_write_list()
     local size = 8 * (1 + 1 * 2 + 1 * 2 + 3 * 3) -- listp + listp * 2 + tag * 2 + struct_size * 3
     local buf = ffi.new("char[?]", size)
@@ -337,7 +336,7 @@ function test_write_list()
     assert_equal(size, n + 8) -- write_list return size doesn't count list pointer size
     assert_equal("01 00 00 00 16 00 00 00 05 00 00 00 37 00 00 00 1d 00 00 00 1f 00 00 00 08 00 00 00 02 00 01 00 cd cc 8c 3f 00 00 00 00 9e 5e 29 cb 10 c7 f1 3f 00 00 00 00 00 00 00 00 9a 99 99 3f 00 00 00 00 3c bd 52 96 21 8e f3 3f 00 00 00 00 00 00 00 00 04 00 00 00 02 00 01 00 66 66 a6 3f 00 00 00 00 da 1b 7c 61 32 55 f5 3f 00 00 00 00 00 00 00 00", util.hex_buf_str(buf, size))
 end
---]]
+
 function test_read_list_data()
     local buf = ffi.new("char[?]", 8 * 9)
     local p32 = ffi.cast("int32_t *", buf)
@@ -371,4 +370,3 @@ function test_read_list_data_struct()
     assert_equalf(data[2].f0, copy[2].f0)
     assert_equalf(data[2].f1, copy[2].f1)
 end
---]]
