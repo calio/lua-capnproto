@@ -7,6 +7,18 @@ Lua-capnproto is a pure lua implementation of capnproto based on luajit.
 
 This project is still under early development and is not production-ready.
 
+Synopsis
+========
+Suppose you have a Cap'n Proto file called example.capnp. You can compile this file like this:
+
+    capnp compile -olua example.capnp
+
+The default output file is `example_capnp.lua`
+
+    local example_capnp = require "example_capnp"
+
+Check out example/AddressBook.capnp and example/main.lua for more details.
+
 Installation
 ============
 To install lua-capnproto, you need to install Cap'n Proto <http://kentonv.github.io/capnproto/install.html>, Luajit <http://luajit.org/install.html> and luarocks <http://luarocks.org/en/Download> first.
