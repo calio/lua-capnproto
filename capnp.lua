@@ -238,7 +238,6 @@ function _M.write_struct_field(p32, val, field_type, size, off, default)
         _M.write_bit(p + n, val, s, default)
         --p[n] = bor(p[n], lshift(val, s))
     end
-    --print(string.format("n %d, s %d, %d\n", n, s, val))
 end
 
 function _M.read_text_data(buf, num)
@@ -247,7 +246,7 @@ end
 
 function _M.write_text_data(buf, text, is_binary)
     local len = #text
-    copy(buf, text)
+    copy(buf, text, len)
     if is_binary then
         return round8(len)
     else
@@ -271,7 +270,10 @@ end
 -- @text
 -- @data_off            words between the end of list pointer and the first byte of text data
 function _M.write_text(p32, text, data_off, is_binary)
-    local len = #text + 1
+    local len = #text
+    if not is_binary then
+        len = len + 1
+    end
     _M.write_listp(p32, 2, len, data_off)
     return _M.write_text_data(p32 + data_off * 2 + 2, text, is_binary)
     --copy(p32 + data_off*2 + 2, text)
@@ -421,6 +423,7 @@ local type_to_size_type = {
 
 -- @p32     write list data to this position
 -- @return space consumed in bytes
+-- space is allocated by itself
 function _M.write_list_data(p32, data, pos, elm_type, ...)
     local start = pos
     if not elm_type then
@@ -468,8 +471,20 @@ function _M.write_list_data(p32, data, pos, elm_type, ...)
 
         _M.write_composite_tag(p32 + pos / 4, T, len)
         pos = pos + 8
+        local offset = pos
+
+        --local sp32 = p32 + pos / 4
+        local struct_size = (T.dataWordCount + T.pointerCount) * 8
+        pos = pos + struct_size * len
         for i = 1, len do
-            pos = pos + T.flat_serialize(data[i], p32 + pos / 4)
+             sp32 = p32 + offset / 4
+             local new_pos = pos - offset-- - offset
+
+             local ssize = T.flat_serialize(data[i], sp32, new_pos)
+
+             pos = pos + ssize - struct_size
+             --pos = pos + T.flat_serialize(data[i], sp32, pos - offset)
+             offset = offset + struct_size
         end
     elseif elm_type == "bool" then
         local p = get_pointer_from_type(p32, elm_type)
@@ -490,6 +505,9 @@ function _M.write_list_data(p32, data, pos, elm_type, ...)
     return pos - start
 end
 
+-- @p32
+-- @pos     free space offset from p32
+-- space for list pointer is allocated from outside
 function _M.write_list(p32, data, pos, typ, ...)
     local size = 0
     local data_off = (pos - 8) / 8 --get_data_off(parentT, offset, pos)
@@ -504,8 +522,7 @@ function _M.write_list(p32, data, pos, typ, ...)
 
     local dp32 = p32 + pos / 4
     --size = size + len * 8
-
-    size = size + _M.write_list_data(dp32, data, 0, ...)
+    size = _M.write_list_data(dp32, data, 0, ...)
 
     if elm_type == "struct" then
         -- When size_type = 7, section (D) of the list pointer – which normally
@@ -514,7 +531,9 @@ function _M.write_list(p32, data, pos, typ, ...)
         num = (T.dataWordCount + T.pointerCount) * num
     end
     --write_listp_buf(p32, parentT, offset, size_type, len, data_off)
+    --print("write listp", "size", size_type, "num", num, "off", data_off, "pos", pos)
     _M.write_listp(p32, size_type, num, data_off)
+    --print("write list done")
     return size
 end
 -- read data part of a list

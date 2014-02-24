@@ -7,6 +7,7 @@ struct T1 {
     struct T2 {
         f0 @0 :Float32;
         f1 @1 :Float64;
+        sd0 @2 :Data;
     }
 
     i0 @0 :UInt32;
@@ -48,6 +49,7 @@ struct T1 {
             ugv0 @18 :Void;
             ugu0 @19 :UInt32;
         }
+        ut0 @26 :Data;
     }
 
     ls0 @20 :List(T2);

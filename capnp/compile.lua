@@ -518,6 +518,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
 
     flat_serialize = function(data, p32, pos)
         pos = pos and pos or %d
+        local start = pos
         local dscrm]], size))
 
     for i, field in ipairs(fields) do
@@ -676,7 +677,8 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             local len = #data["%s"]
             write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(p32 + pos / 4, data["%s"])
+            -- prevent copying trailing '\0'
+            ffi_copy(p32 + pos / 4, data["%s"], len)
             pos = pos + round8(len)
         end]], field.name, field.name, name, off, field.name, name, off, 2,
                     field.name))
@@ -707,10 +709,10 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
 ]],  name, struct.discriminantOffset))
     end
 
-    insert(res, [[
+    insert(res, format([[
 
-        return pos
-    end,]])
+        return pos - start + %d
+    end,]], size))
 end
 
 function insertl(res, level, data)
