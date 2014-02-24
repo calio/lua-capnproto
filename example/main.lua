@@ -1,4 +1,4 @@
-local example_capnp = require "example_capnp"
+local addressBook = require "AddressBook_capnp"
 local capnp = require "capnp"
 local cjson = require "cjson"
 local util = require "capnp.util"
@@ -40,9 +40,7 @@ local data = {
     }
 }
 
-local bin = example_capnp.AddressBook.serialize(data)
-util.write_file("dump", bin)
-local decoded = example_capnp.AddressBook.parse(bin)
+local bin = addressBook.AddressBook.serialize(data)
+local decoded = addressBook.AddressBook.parse(bin)
 
 print(cjson.encode(decoded))
-print("Done")
