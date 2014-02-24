@@ -14,6 +14,7 @@ description = {
 }
 dependencies = {
    "lua ~> 5.1",     -- in fact, this should be "luajit >= 2.0.0"
+   "lua-cjson >= 1.0.4"
 }
 build = {
    -- We'll start here.
