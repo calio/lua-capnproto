@@ -540,9 +540,9 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if data["%s"] and type(data["%s"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.%s.%s.flat_serialize(data["%s"], p32, pos)
+            pos = pos + _M.%s.%s.flat_serialize(data["%s"], p32, pos) - %d
         end
-]], field.name, field.name, name, field.name, field.name))
+]], field.name, field.name, name, field.name, field.name, size)) -- group size is the same as the struct, so we can use "size" to represent group size
 
         elseif field.type_name == "enum" then
             dbgf("field %s: enum", field.name)

@@ -18,6 +18,7 @@ local write_structp     = capnp.write_structp
 local read_struct_buf   = capnp.read_struct_buf
 local read_listp_struct = capnp.read_listp_struct
 local read_list_data    = capnp.read_list_data
+local write_list        = capnp.write_list
 local write_list_data   = capnp.write_list_data
 local ffi_new           = ffi.new
 local ffi_string        = ffi.string
@@ -137,6 +138,7 @@ _M.T1 = {
 
     flat_serialize = function(data, p32, pos)
         pos = pos and pos or 104
+        local start = pos
         local dscrm
         if data["i0"] and (type(data["i0"]) == "number"
                 or type(data["i0"]) == "boolean") then
@@ -180,14 +182,7 @@ _M.T1 = {
         end
         if data["l0"] and type(data["l0"]) == "table" then
             local data_off = get_data_off(_M.T1, 1, pos)
-
-            local len = #data["l0"]
-            write_listp_buf(p32, _M.T1, 1, 2, len, data_off)
-
-            for i=1, len do
-                write_struct_field(p32 + pos / 4, data["l0"][i], "int8", 8, i - 1) -- 8 bits
-            end
-            pos = pos + round8(len * 1) -- 1 ** actual size
+            pos = pos + write_list(p32 + _M.T1.dataWordCount * 2 + 1 * 2, data["l0"], (data_off + 1) * 8, "list", "int8")
         end
         if data["t0"] and type(data["t0"]) == "string" then
             local data_off = get_data_off(_M.T1, 2, pos)
@@ -208,7 +203,8 @@ _M.T1 = {
             local len = #data["d0"]
             write_listp_buf(p32, _M.T1, 3, 2, len, data_off)
 
-            ffi_copy(p32 + pos / 4, data["d0"])
+            -- prevent copying trailing '\0'
+            ffi_copy(p32 + pos / 4, data["d0"], len)
             pos = pos + round8(len)
         end
         if data["ui0"] then
@@ -236,30 +232,19 @@ _M.T1 = {
         if data["g0"] and type(data["g0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.T1.g0.flat_serialize(data["g0"], p32, pos)
+            pos = pos + _M.T1.g0.flat_serialize(data["g0"], p32, pos) - 104
         end
 
         if data["u0"] and type(data["u0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.T1.u0.flat_serialize(data["u0"], p32, pos)
+            pos = pos + _M.T1.u0.flat_serialize(data["u0"], p32, pos) - 104
         end
 
         if data["ls0"] and type(data["ls0"]) == "table" then
             local num, size, old_pos = #data["ls0"], 0, pos
             local data_off = get_data_off(_M.T1, 4, pos)
-
-            -- write tag
-            capnp.write_composite_tag(p32 + pos / 4, _M.T1.T2, num)
-            pos = pos + 8 -- tag
-
-            -- write data
-            for i=1, num do
-                pos = pos + _M.T1.T2.flat_serialize(data["ls0"][i], p32 + pos / 4)
-            end
-
-            -- write list pointer
-            write_listp_buf(p32, _M.T1, 4, 7, (pos - old_pos - 8) / 8, data_off)
+            pos = pos + write_list(p32 + _M.T1.dataWordCount * 2 + 4 * 2, data["ls0"], (data_off + 1) * 8, "list", "struct", _M.T1.T2)
         end
         if data["du0"] and (type(data["du0"]) == "number"
                 or type(data["du0"]) == "boolean") then
@@ -278,21 +263,13 @@ _M.T1 = {
         end
         if data["lt0"] and type(data["lt0"]) == "table" then
             local data_off = get_data_off(_M.T1, 6, pos)
-
-            local len = #data["lt0"]
-            write_listp_buf(p32, _M.T1, 6, 6, len, data_off)
-
-            local off = pos
-            local dp32 = p32 + pos / 4
-            pos = pos + len * 8
-
-            pos = pos + write_list_data(dp32, data["lt0"], 0, "text")
+            pos = pos + write_list(p32 + _M.T1.dataWordCount * 2 + 6 * 2, data["lt0"], (data_off + 1) * 8, "list", "text")
         end
         if dscrm then
             _M.T1.which(p32, 10, dscrm) --buf, discriminantOffset, discriminantValue
         end
 
-        return pos
+        return pos - start + 104
     end,
 
     serialize = function(data, p8, size)
@@ -409,21 +386,9 @@ _M.T1 = {
                 header, s["u0"])
 
         -- composite list
-        local off, size, words = read_listp_struct(buf, header, _M.T1, 4)
-        if off and words then
-            local start = (5 + 4 + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
-            local num, dt, pt = capnp.read_composite_tag(buf + start)
-            start = start + 2 -- 2 * 32bit
-            if not s["ls0"] then
-                s["ls0"] = new_tab(num, 0)
-            end
-            for i=1, num do
-                if not s["ls0"][i] then
-                    s["ls0"][i] = new_tab(0, 2)
-                end
-                _M.T1.T2.parse_struct_data(buf + start, dt, pt, header, s["ls0"][i])
-                start = start + (dt + pt) * 2
-            end
+        local off, size, num = read_listp_struct(buf, header, _M.T1, 4)
+        if off and num then
+            s["ls0"] = read_list_data(buf + (5 + 4 + 1 + off) * 2, header, num, "struct", _M.T1.T2) -- dataWordCount + offset + pointerSize + off
         else
             s["ls0"] = nil
         end
@@ -481,6 +446,7 @@ _M.T1.T2 = {
     fields = {
         { name = "f0", default = 0, ["type"] = "float32" },
         { name = "f1", default = 0, ["type"] = "float64" },
+        { name = "sd0", default = "", ["type"] = "data" },
     },
     calc_size_struct = function(data)
         local size = 24
@@ -516,10 +482,11 @@ _M.T1.T2 = {
             local len = #data["sd0"]
             write_listp_buf(p32, _M.T1.T2, 0, 2, len, data_off)
 
+            -- prevent copying trailing '\0'
             ffi_copy(p32 + pos / 4, data["sd0"], len)
             pos = pos + round8(len)
         end
-        return pos - start
+        return pos - start + 24
     end,
     serialize = function(data, p8, size)
         if not p8 then
@@ -620,13 +587,14 @@ _M.T1.g0 = {
     end,
     flat_serialize = function(data, p32, pos)
         pos = pos and pos or 104
+        local start = pos
         local dscrm
         if data["ui2"] and (type(data["ui2"]) == "number"
                 or type(data["ui2"]) == "boolean") then
 
             write_struct_field(p32, data["ui2"], "uint32", 32, 6, 0)
         end
-        return pos
+        return pos - start + 104
     end,
 
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
@@ -669,6 +637,7 @@ _M.T1.u0 = {
     end,
     flat_serialize = function(data, p32, pos)
         pos = pos and pos or 104
+        local start = pos
         local dscrm
         if data["ui3"] then
             dscrm = 0
@@ -690,7 +659,7 @@ _M.T1.u0 = {
         if data["ug0"] and type(data["ug0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            _M.T1.u0.ug0.flat_serialize(data["ug0"], p32, pos)
+            pos = pos + _M.T1.u0.ug0.flat_serialize(data["ug0"], p32, pos) - 104
         end
 
         if data["ut0"] then
@@ -703,16 +672,15 @@ _M.T1.u0 = {
             local len = #data["ut0"]
             write_listp_buf(p32, _M.T1.u0, 7, 2, len, data_off)
 
-            ffi_copy(p32 + pos / 4, data["ut0"])
+            -- prevent copying trailing '\0'
+            ffi_copy(p32 + pos / 4, data["ut0"], len)
             pos = pos + round8(len)
         end
         if dscrm then
             _M.T1.u0.which(p32, 14, dscrm) --buf, discriminantOffset, discriminantValue
         end
-        if dscrm then
-            _M.T1.u0.which(p32, 14, dscrm) --buf, discriminantOffset, discriminantValue
-        end
-        return pos
+
+        return pos - start + 104
     end,
     which = function(buf, offset, n)
         if n then
@@ -794,13 +762,14 @@ _M.T1.u0.ug0 = {
     end,
     flat_serialize = function(data, p32, pos)
         pos = pos and pos or 104
+        local start = pos
         local dscrm
         if data["ugu0"] and (type(data["ugu0"]) == "number"
                 or type(data["ugu0"]) == "boolean") then
 
             write_struct_field(p32, data["ugu0"], "uint32", 32, 8, 0)
         end
-        return pos
+        return pos - start + 104
     end,
     parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
         local s = tab
