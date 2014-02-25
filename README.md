@@ -3,7 +3,7 @@ lua-capnproto
 
 [Cap’n Proto](http://kentonv.github.io/capnproto/index.html) is an insanely fast data interchange format and capability-based RPC system.
 
-Lua-capnproto is a pure lua implementation of capnproto based on luajit.
+Lua-capnproto is a pure lua implementation of capnproto based on `luajit`.
 
 This project is still under early development and is not production-ready.
 
@@ -17,7 +17,7 @@ The default output file is `example_capnp.lua`
 
     local example_capnp = require "example_capnp"
 
-Check out example/AddressBook.capnp and example/main.lua for more details.
+Check out example/AddressBook.capnp and example/main.lua for how to use generated lua file.
 
 Installation
 ============

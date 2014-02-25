@@ -61,12 +61,12 @@ function bench(name, func)
         res = func()
     end
 
-    print(name, " Elapsed: ", os.clock() - t1)
+    print(name, " Elapsed: ", (os.clock() - t1) .. "s")
 end
 
 bench("cjson", run2)
 bench("capnp", run3)
-bench("capnp-noalloc", run4)
+--bench("capnp-noalloc", run4)
 bench("capnp decode", run1)
 
-print(cjson.encode(res))
+--print(cjson.encode(res))

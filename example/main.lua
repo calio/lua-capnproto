@@ -34,7 +34,7 @@ local data = {
                 },
             },
             employment = {
-                unemployed = "void",
+                unemployed = "Void",
             },
         },
     }
