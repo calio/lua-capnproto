@@ -44,7 +44,7 @@ for k, v in pairs(compile.naming_funcs) do
 end
 
 -- TODO fix this
-arg[2] = "--naming=camel"
+--arg[2] = "--naming=camel"
 
 for i=2, #arg do
     if string.sub(arg[i], 1, 9) == "--naming=" then

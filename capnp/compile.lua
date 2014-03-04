@@ -61,7 +61,7 @@ function comp_header(res, nodes)
 local ffi = require "ffi"
 local capnp = require "capnp"
 local bit = require "bit"
-local util = require "capnp.util"
+--local util = require "capnp.util"
 
 local ceil              = math.ceil
 local write_struct_field= capnp.write_struct_field

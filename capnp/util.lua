@@ -1,10 +1,13 @@
 local ffi = require "ffi"
+local bit = require "bit"
 local lower = string.lower
 local upper = string.upper
 local gsub = string.gsub
 local format = string.format
 local concat = table.concat
 local insert = table.insert
+
+local tohex = bit.tohex
 
 local _M = {}
 
@@ -114,7 +117,7 @@ function _M.hex_buf_str(buf, len)
     local str = ffi.string(buf, len)
     local t = {}
     for i = 1, len do
-        table.insert(t, bit.tohex(string.byte(str, i), 2))
+        table.insert(t, tohex(string.byte(str, i), 2))
     end
     return table.concat(t, " ")
 end
@@ -138,7 +141,7 @@ function _M.new_buf(hex, ct)
     return ffi.cast(ct, buf)
 end
 
-function equal(a, b)
+local function equal(a, b)
     if type(a) == "boolean" then
         a = a and 1 or 0
     end
@@ -148,7 +151,7 @@ function equal(a, b)
     return a == b
 end
 
-function to_text_core(val, T, res)
+local function to_text_core(val, T, res)
     local typ = type(val)
     if typ == "table" then
         if #val > 0 then
