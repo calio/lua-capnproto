@@ -99,6 +99,18 @@ function test_write_plain_val1()
     assert_hex("ff 00 00 00 d0 0f 49 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
 
+-- 64 bit number not in ULL/UL form
+function test_write_plain_int64()
+    local seg = { len = 32, pos = 0 }
+    seg.data = ffi.new("char[?]", 32) -- 32 bytes
+
+    capnp.write_struct_field(seg.data, 1393891543746000128, "int64", 64, 0, 0)
+    --capnp.write_struct_field(seg.data, 3.14159, "float32", 32, 1, 0)
+
+    seg.pos = seg.pos + 32
+    assert_hex("00 b5 66 50 f9 18 58 13 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
+end
+
 function test_read_struct_field()
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes

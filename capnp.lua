@@ -213,7 +213,9 @@ function _M.write_num(p, val, field_type, default)
         elseif field_type == "float64" then
             val = _M.fix_float64_default(val, default)
         else
-            val = bxor(val, default)
+            if default ~= 0 then
+                val = bxor(val, default)
+            end
         end
     end
     p[0] = val
