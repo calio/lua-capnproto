@@ -57,7 +57,7 @@ function get_schema_text(file)
 end
 
 function comp_header(res, nodes)
-    insert(res, [[
+    insert(res, format([[
 local ffi = require "ffi"
 local capnp = require "capnp"
 local bit = require "bit"
@@ -123,9 +123,9 @@ local function get_str_buf(size)
     return str_buf
 end
 
-local _M = new_tab(2, 8)
+local _M = new_tab(0, %d)
 
-]])
+]], #nodes))
 end
 
 function get_name(display_name)
