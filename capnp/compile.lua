@@ -1,6 +1,8 @@
 -----------------------------------------------------------------
 -- lua-capnproto compiler
+-- @copyright 2013-2014 Jiale Zhi (vipcalio@gmail.com)
 -----------------------------------------------------------------
+
 local cjson = require("cjson")
 local encode = cjson.encode
 local util = require "capnp.util"
@@ -136,7 +138,7 @@ function get_name(display_name)
     return string.sub(display_name, n + 1)
 end
 
--- see http://kentonv.github.io/_Mroto/encoding.html#lists
+--- @see http://kentonv.github.io/_Mroto/encoding.html#lists
 local list_size_map = {
     [0] = 0,
     [1] = 0.125,
@@ -202,16 +204,12 @@ function _set_field_default(nodes, field, slot)
             elseif field.type_name == "void" then
                 field.print_default_value = "\"Void\""
                 field.default_value = field.print_default_value
---                elseif sub(field.type_name, 1, 4) == "uint" then
---                    field.print_default_value = v .. "ULL"
             elseif field.type_name == "enum" then
                 local enum = assert(nodes[slot["type"].enum.typeId].enum)
-                -- print(cjson.encode(enum.enumerants[v + 1 ]))
                 field.print_default_value = '"' .. enum.enumerants[v + 1].name
                         .. '"'
 
                 field.default_value = v
---                print(field.name, v, field.print_default_value)
             else
                 field.print_default_value = v
                 field.default_value = field.print_default_value
@@ -227,7 +225,8 @@ function _set_field_type(field, slot, nodes)
     local type_name
     if field.group then
         field.type_name = "group"
-        field.type_display_name = get_name(nodes[field.group.typeId].displayName)
+        field.type_display_name = get_name(
+                nodes[field.group.typeId].displayName)
     else
         for k, v in pairs(slot["type"]) do
             type_name   = k
@@ -241,7 +240,8 @@ function _set_field_type(field, slot, nodes)
                 for k, v in pairs(field.slot["type"].list.elementType) do
                     list_type = k
                     if list_type == "struct" then
-                        field.type_display_name = get_name(nodes[v.typeId].displayName)
+                        field.type_display_name = get_name(
+                                nodes[v.typeId].displayName)
                     end
                     break
                 end
@@ -305,7 +305,9 @@ end
 function comp_parse_struct_data(res, nodes, struct, fields, size, name)
     insert(res, format([[
 
-    parse_struct_data = function(p32, data_word_count, pointer_count, header, tab)
+    parse_struct_data = function(p32, data_word_count, pointer_count, header,
+            tab)
+
         local s = tab
 ]], size))
 
@@ -331,8 +333,8 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         if not s["%s"] then
             s["%s"] = new_tab(0, 4)
         end
-        _M.%s["%s"].parse_struct_data(p32, _M.%s.dataWordCount, _M.%s.pointerCount,
-                header, s["%s"])
+        _M.%s["%s"].parse_struct_data(p32, _M.%s.dataWordCount,
+                _M.%s.pointerCount, header, s["%s"])
 ]], field.name, field.name, name, field.name, name, name, field.name))
 
         elseif field.type_name == "enum" then
@@ -357,7 +359,9 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         -- list
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            s["%s"] = read_list_data(p32 + (%d + %d + 1 + off) * 2, header, num, %s) -- dataWordCount + offset + pointerSize + off
+            -- dataWordCount + offset + pointerSize + off
+            s["%s"] = read_list_data(p32 + (%d + %d + 1 + off) * 2, header,
+                    num, %s)
         else
             s["%s"] = nil
         end
@@ -389,7 +393,8 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         -- text
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2) -- dataWordCount + offset + pointerSize + off
+            -- dataWordCount + offset + pointerSize + off
+            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2)
             s["%s"] = ffi_string(p8, num - 1)
         else
             s["%s"] = nil
@@ -403,7 +408,8 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         -- data
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2) -- dataWordCount + offset + pointerSize + off
+            -- dataWordCount + offset + pointerSize + off
+            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2)
             s["%s"] = ffi_string(p8, num)
         else
             s["%s"] = nil
@@ -468,7 +474,8 @@ function comp_parse(res, name)
         end
         local off, dw, pw = read_struct_buf(p32, header)
         if off and dw and pw then
-            return _M.%s.parse_struct_data(p32 + 2 + off * 2, dw, pw, header, tab)
+            return _M.%s.parse_struct_data(p32 + 2 + off * 2, dw, pw,
+                    header, tab)
         else
             return nil
         end
@@ -488,11 +495,15 @@ function comp_serialize(res, name)
         ffi_fill(p8, size)
         local p32 = ffi_cast(puint32, p8)
 
-        p32[0] = 0                              -- 1 segment
+        -- Because needed size has been calculated, only 1 segment is needed
+        p32[0] = 0
         p32[1] = (size - 8) / 8
 
-        write_structp(p32 + 2, _M.%s, 0)        -- skip header
-        _M.%s.flat_serialize(data, p32 + 4)     -- skip header & struct pointer
+        -- skip header
+        write_structp(p32 + 2, _M.%s, 0)
+
+        -- skip header & struct pointer
+        _M.%s.flat_serialize(data, p32 + 4)
 
         return ffi_string(p8, size)
     end,
@@ -522,6 +533,8 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         end
         if field.group then
             dbgf("field %s: group", field.name)
+            -- group size is the same as the struct, so we can use "size" to
+            -- represent group size
             insert(res, format([[
 
         if data["%s"] and type(data["%s"]) == "table" then
@@ -529,7 +542,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             -- structs
             pos = pos + _M.%s.%s.flat_serialize(data["%s"], p32, pos) - %d
         end
-]], field.name, field.name, name, field.name, field.name, size)) -- group size is the same as the struct, so we can use "size" to represent group size
+]], field.name, field.name, name, field.name, field.name, size))
 
         elseif field.type_name == "enum" then
             dbgf("field %s: enum", field.name)
@@ -564,7 +577,8 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
 
         if data["%s"] and type(data["%s"]) == "table" then
             local data_off = get_data_off(_M.%s, %d, pos)
-            pos = pos + write_list(p32 + _M.%s.dataWordCount * 2 + %d * 2, data["%s"], (data_off + 1) * 8, %s)
+            pos = pos + write_list(p32 + _M.%s.dataWordCount * 2 + %d * 2,
+                    data["%s"], (data_off + 1) * 8, %s)
         end]], field.name, field.name, name, off, name, off, field.name, types))
 
         elseif field.type_name == "struct" then
@@ -634,7 +648,8 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         insert(res, format([[
 
         if dscrm then
-            _M.%s.which(p32, %d, dscrm) --buf, discriminantOffset, discriminantValue
+            --buf, discriminantOffset, discriminantValue
+            _M.%s.which(p32, %d, dscrm)
         end
 ]],  name, struct.discriminantOffset))
     end
@@ -644,6 +659,12 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         return pos - start + %d
     end,
 ]], size))
+end
+
+function insertlt(res, level, data_table)
+    for i, v in ipairs(data_table) do
+        insertl(res, level, v)
+    end
 end
 
 function insertl(res, level, data)
@@ -663,7 +684,11 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     if elm_type ~= "struct" and elm_type ~= "list" and elm_type ~= "data"
             and elm_type ~= "text" then
 
-        insertl(res, level + 1, format("size = size + round8(#data[\"%s\"] * %d) -- num * acutal size\n", name, list_size_map[field.size]))
+        insertlt(res, level + 1, {
+            "-- num * acutal size\n",
+            format("size = size + round8(#data[\"%s\"] * %d) ",
+                name, list_size_map[field.size])
+            })
     else
         -- struct tag
         if elm_type == "struct" then
@@ -672,23 +697,32 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
 
         local new_name = "[\"" .. name .. "\"]" .. "[i" .. level .. "]"
         -- calc body size
-        insertl(res, level + 1, format("local num%d = #data[\"%s\"]\n", level, name))
-        insertl(res, level + 1, format("for %s=1, num%d do\n", "i" .. level, level))
-
+        insertl(res, level + 1, format("local num%d = #data[\"%s\"]\n",
+                level, name))
+        insertl(res, level + 1, format("for %s=1, num%d do\n",
+                "i" .. level, level))
 
         if elm_type == "list" then
             insertl(res, level + 2, format("size = size + 8\n", name))
             _M.comp_calc_list_size(res, field, nodes, new_name, level + 2, ...)
         elseif elm_type == "text" then
             insertl(res, level + 2, format("size = size + 8\n", name))
-            insertl(res, level + 2, format("size = size + round8(#data%s * 1 + 1) -- num * acutal size\n", new_name))
+            insertlt(res, level + 2, {
+                " -- num * acutal size\n",
+                format("size = size + round8(#data%s * 1 + 1)", new_name)
+            })
         elseif elm_type == "data" then
             insertl(res, level + 2, format("size = size + 8\n", name))
-            insertl(res, level + 2, format("size = size + round8(#data%s * 1) -- num * acutal size\n", new_name))
+            insertlt(res, level + 2, {
+                " -- num * acutal size\n",
+                format("size = size + round8(#data%s * 1)", new_name)
+            })
         elseif elm_type == "struct" then
             local id = ...
             local struct_name = get_name(nodes[id].displayName)
-            insertl(res, level + 2, format("size = size + _M.%s.calc_size_struct(data%s)\n", struct_name, new_name))
+            insertl(res, level + 2, format(
+                    "size = size + _M.%s.calc_size_struct(data%s)\n",
+                    struct_name, new_name))
         end
         insertl(res, level + 1, "end\n")
     end
@@ -714,7 +748,8 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
             -- list_type[1] must be "list" and should be skipped because is
             -- is not element type
             insert(res, "        -- list\n")
-            _M.comp_calc_list_size(res, field, nodes, field.name, 2, select(2, unpack(list_type)))
+            _M.comp_calc_list_size(res, field, nodes, field.name, 2,
+                    select(2, unpack(list_type)))
         elseif field.type_name == "struct" or field.type_name == "group" then
             insert(res, format([[
 
@@ -727,7 +762,8 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
 
         -- text
         if data["%s"] then
-            size = size + round8(#data["%s"] + 1) -- size 1, including trailing NULL
+            -- size 1, including trailing NULL
+            size = size + round8(#data["%s"] + 1)
         end]], field.name, field.name))
 
         elseif field.type_name == "data" then
@@ -840,8 +876,8 @@ function comp_struct(res, nodes, node, struct, name)
             if struct.discriminantCount and struct.discriminantCount > 0 then
                 comp_which(res)
             end
-            comp_parse_struct_data(res, nodes, struct, struct.fields, struct.size,
-                    struct.type_name)
+            comp_parse_struct_data(res, nodes, struct, struct.fields,
+                    struct.size, struct.type_name)
             if not struct.isGroup then
                 comp_parse(res, struct.type_name)
             end
@@ -1055,13 +1091,8 @@ function gen_%s()
         elseif field.type_name == "enum" then
         elseif field.type_name == "list" then
             local list_type = field.element_type
-            --[[
-            for k, v in pairs(field.slot["type"].list.elementType) do
-                list_type = k
-                break
-            end
-            ]]
-            insert(res, format('    %s["%s"] = rand.%s(rand.uint8(), rand.%s)\n', name,
+            insert(res, format([[
+    %s["%s"] = rand.%s(rand.uint8(), rand.%s)]], name,
                     field.name, field.type_name, list_type))
 
         else
