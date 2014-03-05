@@ -289,14 +289,14 @@ end
 function comp_parse_struct_data(res, nodes, struct, fields, size, name)
     insert(res, format([[
 
-    parse_struct_data = function(buf, data_word_count, pointer_count, header, tab)
+    parse_struct_data = function(p32, data_word_count, pointer_count, header, tab)
         local s = tab
 ]], size))
 
     if struct.discriminantCount and struct.discriminantCount > 0 then
         insert(res, format([[
 
-        local dscrm = _M.%s.which(buf, %d) --buf, dscrmriminantOffset, dscrmriminantValue
+        local dscrm = _M.%s.which(p32, %d) --buf, dscrmriminantOffset, dscrmriminantValue
 
 ]], name, struct.discriminantOffset))
     end
@@ -314,13 +314,13 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         if not s["%s"] then
             s["%s"] = new_tab(0, 4)
         end
-        _M.%s["%s"].parse_struct_data(buf, _M.%s.dataWordCount, _M.%s.pointerCount,
+        _M.%s["%s"].parse_struct_data(p32, _M.%s.dataWordCount, _M.%s.pointerCount,
                 header, s["%s"])
 ]], field.name, field.name, name, field.name, name, name, field.name))
         elseif field.type_name == "enum" then
             insert(res, format([[
 
-        local val = read_struct_field(buf, "uint16", %d, %d)
+        local val = read_struct_field(p32, "uint16", %d, %d)
         s["%s"] = get_enum_name(val, %d, _M.%sStr)]], field.size,
                 field.slot.offset, field.name, field.default_value,
                 field.type_display_name))
@@ -335,58 +335,21 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
 
             insert(res, format([[
 
-        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, header, num, %s) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = read_list_data(p32 + (%d + %d + 1 + off) * 2, header, num, %s) -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end
 ]], name, off, field.name, struct.dataWordCount, off, types,
                     field.name))
---[=[
-            if field.element_type == "struct" then
-                insert(res, format([[
 
-        -- composite list
-        local off, size, words = read_listp_struct(buf, header, _M.%s, %d)
-        if off and words then
-            local start = (%d + %d + 1 + off) * 2-- dataWordCount + offset + pointerSize + off
-            local num, dt, pt = capnp.read_composite_tag(buf + start)
-            start = start + 2 -- 2 * 32bit
-            if not s["%s"] then
-                s["%s"] = new_tab(num, 0)
-            end
-            for i=1, num do
-                if not s["%s"][i] then
-                    s["%s"][i] = new_tab(0, 2)
-                end
-                _M.%s.parse_struct_data(buf + start, dt, pt, header, s["%s"][i])
-                start = start + (dt + pt) * 2
-            end
-        else
-            s["%s"] = nil
-        end]], name, off, struct.dataWordCount, off, field.name, field.name,
-                    field.name, field.name, field.type_display_name, field.name,
-                    field.name))
-            else
-                insert(res, format([[
-
-        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
-        if off and num then
-            s["%s"] = read_list_data(buf + (%d + %d + 1 + off) * 2, header, num, "%s") -- dataWordCount + offset + pointerSize + off
-        else
-            s["%s"] = nil
-        end
-]], name, off, field.name, struct.dataWordCount, off, field.element_type,
-                    field.name))
-            end
-]=]
         elseif field.type_name == "struct" then
             local off = field.slot.offset
 
             insert(res, format([[
 
-        local p = buf + (%d + %d) * 2 -- buf, dataWordCount, offset
+        local p = p32 + (%d + %d) * 2 -- p32, dataWordCount, offset
         local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
             if not s["%s"] then
@@ -404,9 +367,9 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = ffi_string(p32 + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end
@@ -416,9 +379,9 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
-        local off, size, num = read_listp_struct(buf, header, _M.%s, %d)
+        local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            s["%s"] = ffi.string(buf + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = ffi_string(p32 + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end
@@ -434,7 +397,7 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
             local default = field.default_value and field.default_value or "nil"
             insert(res, format([[
 
-        s["%s"] = read_struct_field(buf, "%s", %d, %d, %s)]], field.name,
+        s["%s"] = read_struct_field(p32, "%s", %d, %d, %s)]], field.name,
                     field.type_name, field.size, field.slot.offset, default))
 
         end
@@ -463,24 +426,24 @@ function comp_parse(res, name)
         end
 
         local header = new_tab(0, 4)
-        local p = ffi_cast("uint32_t *", bin)
-        header.base = p
+        local p32 = ffi_cast("uint32_t *", bin)
+        header.base = p32
 
-        local nsegs = p[0] + 1
+        local nsegs = p32[0] + 1
         header.seg_sizes = {}
         for i=1, nsegs do
-            header.seg_sizes[i] = p[i]
+            header.seg_sizes[i] = p32[i]
         end
         local pos = round8(4 + nsegs * 4)
         header.header_size = pos / 8
-        p = p + pos / 4
+        p32 = p32 + pos / 4
 
         if not tab then
             tab = new_tab(0, 8)
         end
-        local off, dw, pw = read_struct_buf(p, header)
+        local off, dw, pw = read_struct_buf(p32, header)
         if off and dw and pw then
-            return _M.%s.parse_struct_data(p + 2 + off * 2, dw, pw, header, tab)
+            return _M.%s.parse_struct_data(p32 + 2 + off * 2, dw, pw, header, tab)
         else
             return nil
         end
