@@ -686,7 +686,7 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
 
         insertlt(res, level + 1, {
             "-- num * acutal size\n",
-            format("size = size + round8(#data[\"%s\"] * %d) ",
+            format("size = size + round8(#data[\"%s\"] * %d)\n",
                 name, list_size_map[field.size])
             })
     else
@@ -709,13 +709,13 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
             insertl(res, level + 2, format("size = size + 8\n", name))
             insertlt(res, level + 2, {
                 " -- num * acutal size\n",
-                format("size = size + round8(#data%s * 1 + 1)", new_name)
+                format("size = size + round8(#data%s * 1 + 1)\n", new_name)
             })
         elseif elm_type == "data" then
             insertl(res, level + 2, format("size = size + 8\n", name))
             insertlt(res, level + 2, {
                 " -- num * acutal size\n",
-                format("size = size + round8(#data%s * 1)", new_name)
+                format("size = size + round8(#data%s * 1)\n", new_name)
             })
         elseif elm_type == "struct" then
             local id = ...
