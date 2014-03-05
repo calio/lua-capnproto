@@ -442,7 +442,7 @@ function comp_parse(res, name)
         end
 
         local header = new_tab(0, 4)
-        local p32 = ffi_cast("uint32_t *", bin)
+        local p32 = ffi_cast(puint32, bin)
         header.base = p32
 
         local nsegs = p32[0] + 1
@@ -477,7 +477,7 @@ function comp_serialize(res, name)
             p8 = get_str_buf(size)
         end
         ffi_fill(p8, size)
-        local p32 = ffi_cast("int32_t *", p8)
+        local p32 = ffi_cast(puint32, p8)
 
         p32[0] = 0                                    -- 1 segment
         p32[1] = (size - 8) / 8
