@@ -27,6 +27,7 @@ function dbg(...)
     end
     print(...)
 end
+
 function dbgf(...)
     if not debug then
         return
@@ -57,11 +58,9 @@ end
 
 function comp_header(res, nodes)
     insert(res, [[
--- require "luacov"
 local ffi = require "ffi"
 local capnp = require "capnp"
 local bit = require "bit"
---local util = require "capnp.util"
 
 local ceil              = math.ceil
 local write_struct_field= capnp.write_struct_field
@@ -648,21 +647,21 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
         return
     end
 
-    insertl(res, level, format("if data.%s then\n", name))
+    insertl(res, level, format("if data[\"%s\"] then\n", name))
 
     if elm_type ~= "struct" and elm_type ~= "list" and elm_type ~= "data"
             and elm_type ~= "text" then
 
-        insertl(res, level + 1, format("size = size + round8(#data.%s * %d) -- num * acutal size\n", name, list_size_map[field.size]))
+        insertl(res, level + 1, format("size = size + round8(#data[\"%s\"] * %d) -- num * acutal size\n", name, list_size_map[field.size]))
     else
         -- struct tag
         if elm_type == "struct" then
             insertl(res, level + 1, format("size = size + 8\n", name))
         end
 
-        local new_name = name .. "[i" .. level .. "]"
+        local new_name = "[\"" .. name .. "\"]" .. "[i" .. level .. "]"
         -- calc body size
-        insertl(res, level + 1, format("local num%d = #data.%s\n", level, name))
+        insertl(res, level + 1, format("local num%d = #data[\"%s\"]\n", level, name))
         insertl(res, level + 1, format("for %s=1, num%d do\n", "i" .. level, level))
 
 
@@ -671,14 +670,14 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
             _M.comp_calc_list_size(res, field, nodes, new_name, level + 2, ...)
         elseif elm_type == "text" then
             insertl(res, level + 2, format("size = size + 8\n", name))
-            insertl(res, level + 2, format("size = size + round8(#data.%s * 1 + 1) -- num * acutal size\n", new_name))
+            insertl(res, level + 2, format("size = size + round8(#data%s * 1 + 1) -- num * acutal size\n", new_name))
         elseif elm_type == "data" then
             insertl(res, level + 2, format("size = size + 8\n", name))
-            insertl(res, level + 2, format("size = size + round8(#data.%s * 1) -- num * acutal size\n", new_name))
+            insertl(res, level + 2, format("size = size + round8(#data%s * 1) -- num * acutal size\n", new_name))
         elseif elm_type == "struct" then
             local id = ...
             local struct_name = get_name(nodes[id].displayName)
-            insertl(res, level + 2, format("size = size + _M.%s.calc_size_struct(data.%s)\n", struct_name, new_name))
+            insertl(res, level + 2, format("size = size + _M.%s.calc_size_struct(data%s)\n", struct_name, new_name))
         end
         insertl(res, level + 1, "end\n")
     end
@@ -707,23 +706,23 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
             insert(res, format([[
 
         -- struct
-        if data.%s then
-            size = size + _M.%s.calc_size_struct(data.%s)
+        if data["%s"] then
+            size = size + _M.%s.calc_size_struct(data["%s"])
         end]], field.name, field.type_display_name, field.name))
         elseif field.type_name == "text" then
             insert(res, format([[
 
         -- text
-        if data.%s then
-            size = size + round8(#data.%s + 1) -- size 1, including trailing NULL
+        if data["%s"] then
+            size = size + round8(#data["%s"] + 1) -- size 1, including trailing NULL
         end]], field.name, field.name))
 
         elseif field.type_name == "data" then
             insert(res, format([[
 
         -- data
-        if data.%s then
-            size = size + round8(#data.%s)
+        if data["%s"] then
+            size = size + round8(#data["%s"])
         end]], field.name, field.name))
 
         end
