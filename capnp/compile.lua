@@ -84,7 +84,21 @@ local ffi_string        = ffi.string
 local ffi_cast          = ffi.cast
 local ffi_copy          = ffi.copy
 local ffi_fill          = ffi.fill
+local ffi_typeof        = ffi.typeof
 local band, bor, bxor = bit.band, bit.bor, bit.bxor
+
+local pint8    = ffi_typeof("int8_t *")
+local pint16   = ffi_typeof("int16_t *")
+local pint32   = ffi_typeof("int32_t *")
+local pint64   = ffi_typeof("int64_t *")
+local puint8   = ffi_typeof("uint8_t *")
+local puint16  = ffi_typeof("uint16_t *")
+local puint32  = ffi_typeof("uint32_t *")
+local puint64  = ffi_typeof("uint64_t *")
+local pbool    = ffi_typeof("uint8_t *")
+local pfloat32 = ffi_typeof("float *")
+local pfloat64 = ffi_typeof("double *")
+
 
 local ok, new_tab = pcall(require, "table.new")
 
@@ -369,11 +383,12 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
 
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            s["%s"] = ffi_string(p32 + (%d + %d + 1 + off) * 2, num - 1) -- dataWordCount + offset + pointerSize + off
+            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2)
+            s["%s"] = ffi_string(p8, num - 1) -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end
-]], name, off, field.name, struct.dataWordCount, off, field.name))
+]], name, off, struct.dataWordCount, off, field.name, field.name))
 
         elseif field.type_name == "data" then
             local off = field.slot.offset
@@ -381,11 +396,12 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
 
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            s["%s"] = ffi_string(p32 + (%d + %d + 1 + off) * 2, num) -- dataWordCount + offset + pointerSize + off
+            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2)
+            s["%s"] = ffi_string(p8, num) -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end
-]], name, off, field.name, struct.dataWordCount, off, field.name))
+]], name, off, struct.dataWordCount, off, field.name, field.name))
 
         elseif field.type_name == "anyPointer" then
             -- TODO support anyPointer
