@@ -1,3 +1,6 @@
+-----------------------------------------------------------------
+-- lua-capnproto compiler
+-----------------------------------------------------------------
 local cjson = require("cjson")
 local encode = cjson.encode
 local util = require "capnp.util"
@@ -309,33 +312,36 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
     if struct.discriminantCount and struct.discriminantCount > 0 then
         insert(res, format([[
 
-        local dscrm = _M.%s.which(p32, %d) --buf, dscrmriminantOffset, dscrmriminantValue
-
-]], name, struct.discriminantOffset))
+        local dscrm = _M.%s.which(p32, %d)]], name, struct.discriminantOffset))
     end
 
     for i, field in ipairs(fields) do
         if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
             insert(res, format([[
 
+        -- union
         if dscrm == %d then
 ]],field.discriminantValue))
+
         end
         if field.group then
             insert(res, format([[
 
+        -- group
         if not s["%s"] then
             s["%s"] = new_tab(0, 4)
         end
         _M.%s["%s"].parse_struct_data(p32, _M.%s.dataWordCount, _M.%s.pointerCount,
                 header, s["%s"])
 ]], field.name, field.name, name, field.name, name, name, field.name))
+
         elseif field.type_name == "enum" then
             insert(res, format([[
 
+        -- enum
         local val = read_struct_field(p32, "uint16", %d, %d)
-        s["%s"] = get_enum_name(val, %d, _M.%sStr)]], field.size,
-                field.slot.offset, field.name, field.default_value,
+        s["%s"] = get_enum_name(val, %d, _M.%sStr)
+]], field.size, field.slot.offset, field.name, field.default_value,
                 field.type_display_name))
 
         elseif field.type_name == "list" then
@@ -348,20 +354,21 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
 
             insert(res, format([[
 
+        -- list
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
             s["%s"] = read_list_data(p32 + (%d + %d + 1 + off) * 2, header, num, %s) -- dataWordCount + offset + pointerSize + off
         else
             s["%s"] = nil
         end
-]], name, off, field.name, struct.dataWordCount, off, types,
-                    field.name))
+]], name, off, field.name, struct.dataWordCount, off, types, field.name))
 
         elseif field.type_name == "struct" then
             local off = field.slot.offset
 
             insert(res, format([[
 
+        -- struct
         local p = p32 + (%d + %d) * 2 -- p32, dataWordCount, offset
         local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
@@ -372,7 +379,6 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         else
             s["%s"] = nil
         end
-
 ]], struct.dataWordCount, off, field.name, field.name, field.type_display_name,
             field.name, field.name))
 
@@ -380,10 +386,11 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
+        -- text
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2)
-            s["%s"] = ffi_string(p8, num - 1) -- dataWordCount + offset + pointerSize + off
+            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = ffi_string(p8, num - 1)
         else
             s["%s"] = nil
         end
@@ -393,10 +400,11 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
             local off = field.slot.offset
             insert(res, format([[
 
+        -- data
         local off, size, num = read_listp_struct(p32, header, _M.%s, %d)
         if off and num then
-            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2)
-            s["%s"] = ffi_string(p8, num) -- dataWordCount + offset + pointerSize + off
+            local p8 = ffi_cast(pint8, p32 + (%d + %d + 1 + off) * 2) -- dataWordCount + offset + pointerSize + off
+            s["%s"] = ffi_string(p8, num)
         else
             s["%s"] = nil
         end
@@ -412,10 +420,11 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
             local default = field.default_value and field.default_value or "nil"
             insert(res, format([[
 
-        s["%s"] = read_struct_field(p32, "%s", %d, %d, %s)]], field.name,
-                    field.type_name, field.size, field.slot.offset, default))
+        s["%s"] = read_struct_field(p32, "%s", %d, %d, %s)
+]], field.name, field.type_name, field.size, field.slot.offset, default))
 
         end
+
         if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
             insert(res, format([[
 
@@ -429,7 +438,8 @@ function comp_parse_struct_data(res, nodes, struct, fields, size, name)
     insert(res, [[
 
         return s
-    end,]])
+    end,
+]])
 end
 
 function comp_parse(res, name)
@@ -478,11 +488,11 @@ function comp_serialize(res, name)
         ffi_fill(p8, size)
         local p32 = ffi_cast(puint32, p8)
 
-        p32[0] = 0                                    -- 1 segment
+        p32[0] = 0                              -- 1 segment
         p32[1] = (size - 8) / 8
 
-        write_structp(p32 + 2, _M.%s, 0)               -- skip header
-        _M.%s.flat_serialize(data, p32 + 4)            -- skip header & struct pointer
+        write_structp(p32 + 2, _M.%s, 0)        -- skip header
+        _M.%s.flat_serialize(data, p32 + 4)     -- skip header & struct pointer
 
         return ffi_string(p8, size)
     end,
@@ -494,7 +504,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
     insert(res, format([[
 
     flat_serialize = function(data, p32, pos)
-        pos = pos and pos or %d
+        pos = pos and pos or %d -- struct size in bytes
         local start = pos
         local dscrm]], size))
 
@@ -632,7 +642,8 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
     insert(res, format([[
 
         return pos - start + %d
-    end,]], size))
+    end,
+]], size))
 end
 
 function insertl(res, level, data)
@@ -681,7 +692,7 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
         end
         insertl(res, level + 1, "end\n")
     end
-    insertl(res, level, "end\n")
+    insertl(res, level, "end")
 end
 
 function comp_calc_size(res, fields, size, name, nodes, is_group)
@@ -690,6 +701,7 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
         size = 0
     end
     insert(res, format([[
+
     calc_size_struct = function(data)
         local size = %d]], size))
 
@@ -701,6 +713,7 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
             insert(res, "\n")
             -- list_type[1] must be "list" and should be skipped because is
             -- is not element type
+            insert(res, "        -- list\n")
             _M.comp_calc_list_size(res, field, nodes, field.name, 2, select(2, unpack(list_type)))
         elseif field.type_name == "struct" or field.type_name == "group" then
             insert(res, format([[
@@ -737,7 +750,8 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
     calc_size = function(data)
         local size = 16 -- header + root struct pointer
         return size + _M.%s.calc_size_struct(data)
-    end,]], name))
+    end,
+]], name))
 end
 
 function comp_which(res)
@@ -841,6 +855,7 @@ function comp_enum(res, nodes, enum, name, naming_func)
 
     -- string to enum
     insert(res, format([[
+
 _M.%s = {
 ]], name))
 
@@ -869,6 +884,7 @@ _M.%s = {
 
     -- enum to string
     insert(res, format([[
+
 _M.%sStr = {
 ]], name))
 
@@ -935,11 +951,12 @@ function comp_node(res, nodes, node, name)
     if s then
 
     insert(res, format([[
+
 _M.%s = {
 ]], name))
         s.type_name = node.type_name
         insert(res, format([[
-    id = %s,
+    id = "%s",
     displayName = "%s",
 ]], node.id, node.displayName))
         comp_struct(res, nodes, node, s, name)
