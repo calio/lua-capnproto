@@ -557,64 +557,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             local data_off = get_data_off(_M.%s, %d, pos)
             pos = pos + write_list(p32 + _M.%s.dataWordCount * 2 + %d * 2, data["%s"], (data_off + 1) * 8, %s)
         end]], field.name, field.name, name, off, name, off, field.name, types))
-            --[=[
-            insert(res, format([[
 
-        if data["%s"] and type(data["%s"]) == "table" then
-            local data_off = get_data_off(_M.%s, %d, pos)
-
-            local len = #data["%s"]
-            write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
-
-            local off = pos
-            local dp32 = p32 + pos / 4
-
-            pos = pos + write_list_data(dp32, data["%s"], 0, %s)
-        end]], field.name, field.name, name, off, field.name, name, off,
-                    field.size, field.name, types))
-                    ]=]
---[=[
-            local off = field.slot.offset
-            if field.element_type == "struct" then
-                dbgf("list of struct", field.name)
-                insert(res, format([[
-
-        if data["%s"] and type(data["%s"]) == "table" then
-            local num, size, old_pos = #data["%s"], 0, pos
-            local data_off = get_data_off(_M.%s, %d, pos)
-
-            -- write tag
-            capnp.write_composite_tag(p32 + pos / 4, _M.%s, num)
-            pos = pos + 8 -- tag
-
-            -- write data
-            for i=1, num do
-                pos = pos + _M.%s.flat_serialize(data["%s"][i], p32 + pos / 4)
-            end
-
-            -- write list pointer
-            write_listp_buf(p32, _M.%s, %d, 7, (pos - old_pos - 8) / 8, data_off)
-        end]], field.name, field.name, field.name, name, off,
-                    field.type_display_name, field.type_display_name, field.name,
-                    name, off))
-            else
-                dbg("list of other type", field.name, field.element_type)
-                insert(res, format([[
-
-        if data["%s"] and type(data["%s"]) == "table" then
-            local data_off = get_data_off(_M.%s, %d, pos)
-
-            local len = #data["%s"]
-            write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
-
-            for i=1, len do
-                write_struct_field(p32 + pos / 4, data["%s"][i], "%s", %d, i - 1) -- 8 bits
-            end
-            pos = pos + round8(len * 1) -- 1 ** actual size
-        end]], field.name, field.name, name, off, field.name, name, off,
-                    field.size, field.name, field.element_type, list_size_map[field.size] * 8))
-            end
-            ]=]
         elseif field.type_name == "struct" then
             dbgf("field %s: struct", field.name)
             local off = field.slot.offset
@@ -760,29 +703,6 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
             -- list_type[1] must be "list" and should be skipped because is
             -- is not element type
             _M.comp_calc_list_size(res, field, nodes, field.name, 2, select(2, unpack(list_type)))
---[=[
-            if field.element_type == "struct" then
-                -- composite
-                insert(res, format([[
-
-        -- composite list
-        if data.%s then
-            size = size + 8
-            local num = #data.%s
-            for i=1, num do
-                size = size + _M.%s.calc_size_struct(data.%s[i])
-            end
-        end]], field.name, field.name, field.type_display_name, field.name))
-            else
-
-                insert(res, format([[
-
-        -- list
-        if data.%s then
-            size = size + round8(#data.%s * %d) -- num * acutal size
-        end]], field.name, field.name, list_size_map[field.size]))
-            end
-        ]=]
         elseif field.type_name == "struct" or field.type_name == "group" then
             insert(res, format([[
 
