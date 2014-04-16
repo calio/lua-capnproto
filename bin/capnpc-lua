@@ -7,10 +7,8 @@
 BASE=$(dirname $(perl -e "use Cwd \"abs_path\"; print abs_path(\"$0\")"))
 #export LUA_PATH="$BASE/lua/?.lua;$BASE/proto/?.lua;$LUA_PATH;;"
 
-cat - > /tmp/schema.bin
-capnp decode $BASE/schema.capnp CodeGeneratorRequest > /tmp/schema.txt < /tmp/schema.bin
 #luajit $BASE/compile_run.lua /tmp/schema.txt $@
-luajit - /tmp/schema.txt $@ <<EOT
+luajit - <(cat - | capnp decode $BASE/schema.capnp CodeGeneratorRequest) $@ <<EOT
 local compile = require ("capnp.compile")
 local util = require ("capnp.util")
 local cjson = require ("cjson")
