@@ -5,7 +5,7 @@ PWD:=$(shell pwd)
 #CXX:=g++-4.7
 
 export PATH:=bin:$(PATH)
-export LUA_PATH:=$(PWD)/lua/?.lua;$(PWD)/proto/?.lua;$(PWD)/$(CAPNP_TEST)/?.lua;$(LUA_PATH);;
+export LUA_PATH:=$(PWD)/?.lua;$(PWD)/lua/?.lua;$(PWD)/proto/?.lua;$(PWD)/$(CAPNP_TEST)/?.lua;$(LUA_PATH);;
 
 compiled: proto/example.capnp proto/enums.capnp
 	capnp compile -oc++ $+
