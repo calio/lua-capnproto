@@ -219,6 +219,12 @@ function _set_field_default(nodes, field, slot)
         dbgf("[%s] %s.print_default_value=%s", field.type_name, field.name,
                 field.print_default_value)
     end
+    if not field.default_value then
+        field.default_value = "Nil"
+    end
+    if not field.print_default_value then
+        field.print_default_value = "Nil"
+    end
 end
 
 function _set_field_type(field, slot, nodes)

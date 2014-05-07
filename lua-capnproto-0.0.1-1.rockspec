@@ -13,7 +13,7 @@ description = {
    license = "BSD",
 }
 dependencies = {
-   "lua ~> 5.1",     -- in fact, this should be "luajit >= 2.0.0"
+   "lua ~> 5.1",     -- in fact, this should be "luajit >= 2.1.0"
    "lua-cjson >= 1.0.4",
    "lunitx >= 0.7",
 }
