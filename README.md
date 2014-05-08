@@ -62,4 +62,5 @@ To run tests:
 
 Limitations
 ===========
-Currently, lua-capnproto only works with LuaJIT v2.1. This is because lua-capnproto needs 64 bit integer support and 64bit number bit operations, but only LuaJIT v2.1 provides a decent way to do all these. I'm working on LuaJIT 2.0/ Lua 5.1 / Lua 5.2 support, hopefully you can use lua-capnproto with your favorite lua soon.
+* Currently, lua-capnproto only works with LuaJIT v2.1. This is because lua-capnproto needs 64 bit integer support and 64bit number bit operations, but only LuaJIT v2.1 provides a decent way to do all these. I'm working on LuaJIT 2.0/ Lua 5.1 / Lua 5.2 support, hopefully you can use lua-capnproto with your favorite lua soon.
+* Cap'n Proto RPC is not implemented yet
