@@ -596,4 +596,9 @@ function test_list_of_text()
     assert_equal(data.lt0[4], copy.lt0[4])
 end
 
+function test_const()
+    assert_equal(3.14159, hw_capnp.pi)
+    assert_equal("Hello", hw_capnp.T1.bar)
+end
+
 return _G
