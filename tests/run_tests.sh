@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for file in $(ls test/*.lua)
+for file in $(ls tests/*.lua)
 do
     echo
     echo "Running $file..."

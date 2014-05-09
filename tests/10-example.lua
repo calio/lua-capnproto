@@ -1,4 +1,3 @@
-package.path = package.path .. ";test/?.lua;;"
 local handwritten = require "11-handwritten"
 
 

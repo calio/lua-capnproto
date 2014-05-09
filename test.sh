@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export PATH=$(pwd)/bin:$PATH
-export LUA_PATH="?.lua;lua/?.lua;proto/?.lua;$LUA_PATH;;"
+export LUA_PATH="?.lua;lua/?.lua;proto/?.lua;tests/?.lua;$LUA_PATH;;"
 
 echo "[Compile example.capnp]"
 capnp compile -olua proto/example.capnp || exit
