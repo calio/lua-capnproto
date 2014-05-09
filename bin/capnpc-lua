@@ -1,13 +1,50 @@
 #!/bin/bash
-#if [ $(uname) != "Linux" ]; then
-#    echo "Only linux is supported currently"
-#    exit 1
-#fi
+
+VERSION=0.0.2-dev
+
+usage() {
+    cat <<EOF
+Usage: capnpc-lua [<option>...]
+
+This is a Cap'n Proto compiler plugin which compiles the schema into lua
+files. This is meant to be run using the Cap'n Proto compiler, e.g.:
+    capnp compile -olua foo.capnp
+
+Options:
+    --verbose
+        Write schema file: test.schema.lua and lua.schema.json; useful for debugging.
+    --version
+        Print version information and exit.
+    --help
+        Display this help text and exit.
+EOF
+exit
+}
+
+version() {
+    echo "Cap'n Proto lua plugin version $VERSION"
+    exit
+}
+
+VERBOSE="false"
+while : ; do
+    case $1 in
+        --version)
+            version ;;
+        --help)
+            usage ;;
+        --verbose)
+            #[ -n "${VERBOSE}" ] && usage
+            VERBOSE="true"
+            shift ;;
+        *)
+            break ;;
+    esac
+done
 
 BASE=$(dirname $(perl -e "use Cwd \"abs_path\"; print abs_path(\"$0\")"))
 #export LUA_PATH="$BASE/lua/?.lua;$BASE/proto/?.lua;$LUA_PATH;;"
 
-#luajit $BASE/compile_run.lua /tmp/schema.txt $@
 luajit - <(cat - | capnp decode $BASE/schema.capnp CodeGeneratorRequest) $@ <<EOT
 local compile = require ("capnp.compile")
 local util = require ("capnp.util")
@@ -17,7 +54,7 @@ local format = string.format
 local insert = table.insert
 local concat = table.concat
 
-local debug = true
+local debug = ${VERBOSE}
 
 local schema_lua_file   = "test.schema.lua"
 local schema_json_file  = "lua.schema.json"
