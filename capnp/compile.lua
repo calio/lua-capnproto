@@ -1032,7 +1032,12 @@ _M.%s = {
         dbgf("compile const: %s", name)
         local const = node.const
         local const_type = _get_type(const["type"])
-        if const_type == "text" or const_type == "data" then
+
+        if const_type == "text" or const_type == "data" or const_type == "void"
+           or const_type == "list" or const_type == "struct"
+           or const_type == "enum" or const_type == "group"
+           or const_type == "anyPointer"
+        then
             insert(res, format([[
 
 _M.%s = "%s"
