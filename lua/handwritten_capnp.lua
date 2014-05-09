@@ -64,6 +64,8 @@ end
 local _M = new_tab(0, 11)
 
 
+_M.pi = 3.14159
+
 _M.T1 = {
     id = "13624321058757364083",
     displayName = "proto/example.capnp:T1",

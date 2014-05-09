@@ -62,6 +62,7 @@ function get_schema_text(file)
 end
 
 function comp_header(res, nodes)
+    dbg("compile_headers")
     insert(res, format([[
 local ffi = require "ffi"
 local capnp = require "capnp"
@@ -225,6 +226,15 @@ function _set_field_default(nodes, field, slot)
     if not field.print_default_value then
         field.print_default_value = "Nil"
     end
+end
+
+function _get_type(type_field)
+    local type_name
+    for k, v in pairs(type_field) do
+        type_name = k
+        break
+    end
+    return type_name
 end
 
 function _set_field_type(field, slot, nodes)
@@ -667,12 +677,14 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
 ]], size))
 end
 
+-- insert a list with indent level
 function insertlt(res, level, data_table)
     for i, v in ipairs(data_table) do
         insertl(res, level, v)
     end
 end
 
+-- insert with indent level
 function insertl(res, level, data)
     for i=1, level * 4 do
         insert(res, " ")
@@ -976,6 +988,7 @@ function process_annotations(annos, nodes, res)
 end
 
 function comp_node(res, nodes, node, name)
+    dbgf("comp_node: %s", name)
     if not node then
         print("Ignoring node: ", name)
         return
@@ -1015,6 +1028,24 @@ _M.%s = {
         comp_enum(res, nodes, e, name, anno_res.naming_func)
     end
 
+    if node.const then
+        dbgf("compile const: %s", name)
+        local const = node.const
+        local const_type = _get_type(const["type"])
+        if const_type == "text" or const_type == "data" then
+            insert(res, format([[
+
+_M.%s = "%s"
+]], name, const.value[const_type]))
+        else
+            insert(res, format([[
+
+_M.%s = %s
+]], name, const.value[const_type]))
+
+        end
+    end
+
     if node.nestedNodes then
         for i, child in ipairs(node.nestedNodes) do
             comp_node(res, nodes, nodes[child.id], name .. "." .. child.name)
@@ -1023,6 +1054,7 @@ _M.%s = {
 end
 
 function comp_body(res, schema)
+    dbg("comp_body")
     local nodes = schema.nodes
     for i, v in ipairs(nodes) do
         nodes[v.id] = v
@@ -1048,6 +1080,7 @@ function comp_body(res, schema)
 end
 
 function comp_import(res, nodes, import)
+    dbg("comp_import")
     local id = import.id
 
     local import_node = nodes[id]
@@ -1057,6 +1090,7 @@ function comp_import(res, nodes, import)
 end
 
 function comp_file(res, nodes, file)
+    dbg("comp_file")
     local id = file.id
 
     local file_node = nodes[id]
