@@ -29,6 +29,7 @@ struct T1 {
         enum1 @0;
         enum2 @1;
         enum3 @2;
+        enum4 @3 $Lua.literal("wEirdENum4");
     }
 
     # unnamed union

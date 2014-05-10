@@ -902,9 +902,9 @@ function comp_struct(res, nodes, node, struct, name)
         end
 end
 
-function comp_enum(res, nodes, enum, name, naming_func)
-    if not naming_func then
-        naming_func = config.default_enum_naming_func
+function comp_enum(res, nodes, enum, name, enum_naming_func)
+    if not enum_naming_func then
+        enum_naming_func = config.default_enum_naming_func
     end
 
     -- string to enum
@@ -914,25 +914,40 @@ _M.%s = {
 ]], name))
 
     for i, v in ipairs(enum.enumerants) do
+        -- inherent parant naming function
+        v.naming_func = enum_naming_func
+
         if not v.codeOrder then
             v.codeOrder = 0
         end
 
-        local func
         if v.annotations then
             local anno_res = {}
+            dbgf("%s annotations: %s", name, cjson.encode(v.annotations))
+            process_annotations(v.annotations, nodes)
 
-            process_annotations(v.annotations, nodes, anno_res)
-            if anno_res.naming_func then
-                func = anno_res.naming_func
-            else
-                func = naming_func
+            for i, anno in ipairs(v.annotations) do
+                if anno.name == "naming" then
+                    v.naming_func = get_naming_func(anno.value)
+                    dbgf("Naming function: %s", anno.value)
+                    if not v.naming_func then
+                        error("Unknown naming annotation: " .. anno.value)
+                    end
+                elseif anno.name == "literal" then
+                    dbgf("enumerant literal: %s", anno.value)
+                    v.literal = anno.value
+                end
             end
-        else
-            func = naming_func
         end
-        insert(res, format("    [\"%s\"] = %s,\n",
-                func(v.name), v.codeOrder))
+
+        -- literal has higher priority
+        if v.literal then
+            insert(res, format("    [\"%s\"] = %s,\n",
+                v.literal, v.codeOrder))
+        else
+            insert(res, format("    [\"%s\"] = %s,\n",
+                v.naming_func(v.name), v.codeOrder))
+        end
     end
     insert(res, "\n}\n")
 
@@ -946,8 +961,13 @@ _M.%sStr = {
         if not v.codeOrder then
             v.codeOrder = 0
         end
-        insert(res, format("    [%s] = \"%s\",\n",
-                 v.codeOrder, naming_func(v.name)))
+        if v.literal then
+            insert(res, format("    [%s] = \"%s\",\n",
+                     v.codeOrder, v.literal))
+        else
+            insert(res, format("    [%s] = \"%s\",\n",
+                     v.codeOrder, v.naming_func(v.name)))
+        end
     end
     insert(res, "\n}\n")
 end
@@ -959,32 +979,22 @@ _M.naming_funcs = {
     camel            = util.camel_naming,
 }
 
-
-function is_naming_anno(anno, nodes)
-    local id = anno.id
-    local anno_node = nodes[id]
-    if get_name(anno_node.displayName) == "naming" then
-        return true
-    end
-
-    return false
-end
-
-function get_naming_func(anno)
-    return _M.naming_funcs[anno.value.text]
-end
-
-function process_annotations(annos, nodes, res)
+function process_annotations(annos, nodes)
     for i, anno in ipairs(annos) do
-        if (is_naming_anno(anno, nodes)) then
-            local func = get_naming_func(anno)
-            if func then
-                res.naming_func = func
-            end
+        local id = anno.id
+        anno.name = get_name(nodes[id].displayName)
+        anno.value_saved = anno.value
+        for k, v in pairs(anno.value_saved) do
+            anno["type"] = k
+            anno["value"] = v
+            break
         end
+        anno.value_saved = nil
     end
+end
 
-    return res
+function get_naming_func(name)
+    return _M.naming_funcs[name]
 end
 
 function comp_node(res, nodes, node, name)
@@ -1022,10 +1032,19 @@ _M.%s = {
     if e then
         local anno_res = {}
         if node.annotations then
-            process_annotations(node.annotations, nodes, anno_res)
+            process_annotations(node.annotations, nodes)
         end
 
-        comp_enum(res, nodes, e, name, anno_res.naming_func)
+        local naming_func
+        if node.annotations then
+            for i, anno in ipairs(node.annotations) do
+                if anno.name == "naming" then
+                    naming_func = get_naming_func(anno.value)
+                end
+                break
+            end
+        end
+        comp_enum(res, nodes, e, name, naming_func)
     end
 
     if node.const then
