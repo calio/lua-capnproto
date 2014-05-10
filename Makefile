@@ -28,6 +28,7 @@ cpp/main: cpp/main.o cpp/example_capnp.o cpp/enums_capnp.o
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
 
 test:
+	capnp compile -olua proto/example.capnp
 	tests/run_tests.sh
 
 test1:

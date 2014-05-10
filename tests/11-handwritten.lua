@@ -598,7 +598,7 @@ end
 
 function test_const()
     assert_equal(3.14159, hw_capnp.pi)
-    assert_equal("Hello", hw_capnp.T1.bar)
+    assert_equal("Hello", hw_capnp.T1.welcomeText)
 end
 
 function test_enum_literal()
