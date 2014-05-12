@@ -30,6 +30,7 @@ struct T1 {
         enum2 @1;
         enum3 @2;
         enum4 @3 $Lua.literal("wEirdENum4");
+        upperDash @4 $Lua.naming("upper_dash");
     }
 
     # unnamed union

@@ -604,8 +604,12 @@ end
 function test_enum_literal()
     assert_equal(0, hw_capnp.T1.EnumType1["enum1"])
     assert_equal("enum1", hw_capnp.T1.EnumType1Str[0])
+
     assert_equal(3, hw_capnp.T1.EnumType1["wEirdENum4"])
     assert_equal("wEirdENum4", hw_capnp.T1.EnumType1Str[3])
+
+    assert_equal(4, hw_capnp.T1.EnumType1["UPPER-DASH"])
+    assert_equal("UPPER-DASH", hw_capnp.T1.EnumType1Str[4])
 end
 
 return _G

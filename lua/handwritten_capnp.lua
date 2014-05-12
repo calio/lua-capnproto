@@ -614,12 +614,14 @@ _M.T1.EnumType1 = {
     ["enum2"] = 1,
     ["enum3"] = 2,
     ["wEirdENum4"] = 3,
+    ["UPPER-DASH"] = 4,
 }
 _M.T1.EnumType1Str = {
     [0] = "enum1",
     [1] = "enum2",
     [2] = "enum3",
     [3] = "wEirdENum4",
+    [4] = "UPPER-DASH",
 }
 
 _M.T1.g0 = {
