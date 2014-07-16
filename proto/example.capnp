@@ -72,7 +72,7 @@ struct T1 {
 #            b2 @19 :Bool;
 #        }
 #    }
-    const bar :Text = "Hello";
+    const welcomeText :Text = "Hello";
 # Doesn't work for now
 #    const constT2 :T2 = (f0 = 12345.67, f1 = 9876.54, sd0 = "\0\1\2\3");
 }

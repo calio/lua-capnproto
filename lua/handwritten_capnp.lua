@@ -853,7 +853,7 @@ _M.T1.u0.ug0 = {
     end,
 }
 
-_M.T1.bar = "Hello"
+_M.T1.welcomeText = "Hello"
 
 _M.EnumType2 = {
     ["enum5"] = 0,
