@@ -26,6 +26,10 @@ local config = {
     default_enum_naming_func = util.upper_underscore_naming,
 }
 
+function _M.set_debug(_debug)
+    debug = _debug
+end
+
 function dbg(...)
     if not debug then
         return
