@@ -26,7 +26,8 @@ version() {
     exit
 }
 
-VERBOSE="false"
+VERBOSE=${VERBOSE:="false"}
+
 while : ; do
     case $1 in
         --version)
@@ -112,6 +113,7 @@ local outfile = util.get_output_name(schema) .. ".lua"
 --print(outfile)
 --print("set config:")
 compile.init(config)
+compile.set_debug(debug)
 local res = compile.compile(schema)
 
 util.write_file(outfile, res)
