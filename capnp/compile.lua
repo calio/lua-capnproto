@@ -984,10 +984,14 @@ _M.naming_funcs = {
 }
 
 function process_annotations(annos, nodes)
+    dbg("process_annotations:" .. encode(annos))
     for i, anno in ipairs(annos) do
         local id = anno.id
         anno.name = get_name(nodes[id].displayName)
         anno.value_saved = anno.value
+        assert(type(anno.value_saved) == "table", 'expected "table" but got "'
+            .. type(anno.value_saved) .. "\": " .. tostring(anno.value_saved))
+
         for k, v in pairs(anno.value_saved) do
             anno["type"] = k
             anno["value"] = v
@@ -1002,9 +1006,9 @@ function get_naming_func(name)
 end
 
 function comp_node(res, nodes, node, name)
-    dbgf("comp_node: %s", name)
+    dbgf("comp_node: %s, %s", name, node.id)
     if not node then
-        print("Ignoring node: ", name)
+        print("Ignore node: ", name)
         return
     end
 
@@ -1095,7 +1099,9 @@ function comp_body(res, schema)
 
         local imports = file.imports
         for i, import in ipairs(imports) do
-            comp_import(res, nodes, import)
+            --import node are compiled later by comp_file
+            --comp_import(res, nodes, import)
+            check_import(files, import)
         end
     end
 
@@ -1107,9 +1113,24 @@ function comp_body(res, schema)
     insert(res, "\nreturn _M\n")
 end
 
-function comp_import(res, nodes, import)
-    dbg("comp_import")
+function check_import(files, import)
     local id = import.id
+    local name = import.name
+
+    for i, file in ipairs(files) do
+        if file.id == id then
+            return true
+        end
+    end
+
+    error('imported file "' .. name .. '" is missing, compile it together with'
+        .. 'other Cap\'n Proto files')
+end
+
+function comp_import(res, nodes, import)
+    local id = import.id
+
+    dbgf("comp_import: %s", id)
 
     local import_node = nodes[id]
     for i, node in ipairs(import_node.nestedNodes) do

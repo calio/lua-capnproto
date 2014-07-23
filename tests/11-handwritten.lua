@@ -612,4 +612,10 @@ function test_enum_literal()
     assert_equal("UPPER-DASH", hw_capnp.T1.EnumType1Str[4])
 end
 
+function test_imported_constant()
+    assert_equal(1, hw_capnp.S1.flag1)
+    assert_equal(2, hw_capnp.S1.flag2)
+    assert_equal("Hello", hw_capnp.S1.flag3)
+end
+
 return _G

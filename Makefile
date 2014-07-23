@@ -7,6 +7,7 @@ PWD:=$(shell pwd)
 
 export PATH:=bin:$(PATH)
 export LUA_PATH:=$(PWD)/?.lua;$(PWD)/proto/?.lua;$(PWD)/lua/?.lua;$(PWD)/proto/?.lua;$(PWD)/tests/?.lua;$(PWD)/$(CAPNP_TEST)/?.lua;$(LUA_PATH);;
+export VERBOSE
 
 compiled: proto/example.capnp proto/enums.capnp
 	capnp compile -oc++ $+
@@ -27,8 +28,8 @@ cpp/main.o: cpp/main.c++ compiled
 cpp/main: cpp/main.o cpp/example_capnp.o cpp/enums_capnp.o
 	$(CXX) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
 
-test:
-	capnp compile -olua proto/example.capnp
+test: proto/example.capnp proto/enums.capnp proto/struct.capnp proto/lua.capnp
+	capnp compile -olua $+
 	tests/run_tests.sh
 
 test1:

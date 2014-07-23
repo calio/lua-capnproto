@@ -874,4 +874,125 @@ _M.EnumType2Str = {
     [5] = "upper_under_score",
 }
 
+_M.S1 = {
+    id = "14559636115419563896",
+    displayName = "proto/struct.capnp:S1",
+    dataWordCount = 0,
+    pointerCount = 1,
+    discriminantCount = 0,
+    discriminantOffset = 0,
+
+    fields = {
+        { name = "name", default = "", ["type"] = "text" },
+    },
+
+    calc_size_struct = function(data)
+        local size = 8
+        -- text
+        if data["name"] then
+            -- size 1, including trailing NULL
+            size = size + round8(#data["name"] + 1)
+        end
+        return size
+    end,
+
+    calc_size = function(data)
+        local size = 16 -- header + root struct pointer
+        return size + _M.S1.calc_size_struct(data)
+    end,
+
+    flat_serialize = function(data, p32, pos)
+        pos = pos and pos or 8 -- struct size in bytes
+        local start = pos
+        local dscrm
+        if data["name"] and type(data["name"]) == "string" then
+            local data_off = get_data_off(_M.S1, 0, pos)
+
+            local len = #data["name"] + 1
+            write_listp_buf(p32, _M.S1, 0, 2, len, data_off)
+
+            ffi_copy(p32 + pos / 4, data["name"])
+            pos = pos + round8(len)
+        end
+        return pos - start + 8
+    end,
+
+    serialize = function(data, p8, size)
+        if not p8 then
+            size = _M.S1.calc_size(data)
+
+            p8 = get_str_buf(size)
+        end
+        ffi_fill(p8, size)
+        local p32 = ffi_cast(puint32, p8)
+
+        -- Because needed size has been calculated, only 1 segment is needed
+        p32[0] = 0
+        p32[1] = (size - 8) / 8
+
+        -- skip header
+        write_structp(p32 + 2, _M.S1, 0)
+
+        -- skip header & struct pointer
+        _M.S1.flat_serialize(data, p32 + 4)
+
+        return ffi_string(p8, size)
+    end,
+
+    parse_struct_data = function(p32, data_word_count, pointer_count, header,
+            tab)
+
+        local s = tab
+
+        -- text
+        local off, size, num = read_listp_struct(p32, header, _M.S1, 0)
+        if off and num then
+            -- dataWordCount + offset + pointerSize + off
+            local p8 = ffi_cast(pint8, p32 + (0 + 0 + 1 + off) * 2)
+            s["name"] = ffi_string(p8, num - 1)
+        else
+            s["name"] = nil
+        end
+
+        return s
+    end,
+
+    parse = function(bin, tab)
+        if #bin < 16 then
+            return nil, "message too short"
+        end
+
+        local header = new_tab(0, 4)
+        local p32 = ffi_cast(puint32, bin)
+        header.base = p32
+
+        local nsegs = p32[0] + 1
+        header.seg_sizes = {}
+        for i=1, nsegs do
+            header.seg_sizes[i] = p32[i]
+        end
+        local pos = round8(4 + nsegs * 4)
+        header.header_size = pos / 8
+        p32 = p32 + pos / 4
+
+        if not tab then
+            tab = new_tab(0, 8)
+        end
+        local off, dw, pw = read_struct_buf(p32, header)
+        if off and dw and pw then
+            return _M.S1.parse_struct_data(p32 + 2 + off * 2, dw, pw,
+                    header, tab)
+        else
+            return nil
+        end
+    end,
+
+}
+
+_M.S1.flag1 = 1
+
+_M.S1.flag2 = 2
+
+_M.S1.flag3 = "Hello"
+
 return _M
