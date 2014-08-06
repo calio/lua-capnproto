@@ -76,4 +76,5 @@ struct T1 {
     const welcomeText :Text = "Hello";
 # Doesn't work for now
 #    const constT2 :T2 = (f0 = 12345.67, f1 = 9876.54, sd0 = "\0\1\2\3");
+    u64 @27 :UInt64;
 }

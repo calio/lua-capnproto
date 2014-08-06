@@ -61,7 +61,7 @@ local function get_str_buf(size)
     return str_buf
 end
 
-local _M = new_tab(0, 11)
+local _M = new_tab(0, 19)
 
 
 _M.pi = 3.14159
@@ -69,7 +69,7 @@ _M.pi = 3.14159
 _M.T1 = {
     id = "13624321058757364083",
     displayName = "proto/example.capnp:T1",
-    dataWordCount = 5,
+    dataWordCount = 6,
     pointerCount = 8,
     discriminantCount = 3,
     discriminantOffset = 10,
@@ -98,9 +98,10 @@ _M.T1 = {
         { name = "end", default = 0, ["type"] = "bool" },
         { name = "o0", default = nil, ["type"] = "anyPointer" },
         { name = "lt0", default = "opaque pointer", ["type"] = "list" },
+        { name = "u64", default = 0, ["type"] = "uint64" },
     },
     calc_size_struct = function(data)
-        local size = 104
+        local size = 112
         -- struct
         if data["s0"] then
             size = size + _M.T1.T2.calc_size_struct(data["s0"])
@@ -154,7 +155,7 @@ _M.T1 = {
     end,
 
     flat_serialize = function(data, p32, pos)
-        pos = pos and pos or 104 -- struct size in bytes
+        pos = pos and pos or 112 -- struct size in bytes
         local start = pos
         local dscrm
         if data["i0"] and (type(data["i0"]) == "number"
@@ -250,13 +251,13 @@ _M.T1 = {
         if data["g0"] and type(data["g0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            pos = pos + _M.T1.g0.flat_serialize(data["g0"], p32, pos) - 104
+            pos = pos + _M.T1.g0.flat_serialize(data["g0"], p32, pos) - 112
         end
 
         if data["u0"] and type(data["u0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            pos = pos + _M.T1.u0.flat_serialize(data["u0"], p32, pos) - 104
+            pos = pos + _M.T1.u0.flat_serialize(data["u0"], p32, pos) - 112
         end
 
         if data["ls0"] and type(data["ls0"]) == "table" then
@@ -285,12 +286,18 @@ _M.T1 = {
             pos = pos + write_list(p32 + _M.T1.dataWordCount * 2 + 6 * 2,
                     data["lt0"], (data_off + 1) * 8, "list", "text")
         end
+        local data_type = type(data["u64"])
+        if data["u64"] and (data_type == "number"
+                or data_type == "boolean" or data_type == "cdata") then
+
+            write_struct_field(p32, data["u64"], "uint64", 64, 5, 0)
+        end
         if dscrm then
             --buf, discriminantOffset, discriminantValue
             _M.T1.which(p32, 10, dscrm)
         end
 
-        return pos - start + 104
+        return pos - start + 112
     end,
 
     serialize = function(data, p8, size)
@@ -344,7 +351,7 @@ _M.T1 = {
 
         s["i3"] = read_struct_field(p32, "int32", 32, 2, 0)
         -- struct
-        local p = p32 + (5 + 0) * 2 -- buf, dataWordCount, offset
+        local p = p32 + (6 + 0) * 2 -- p32, dataWordCount, offset
         local off, dw, pw = read_struct_buf(p, header)
         if off and dw and pw then
             if not s["s0"] then
@@ -364,7 +371,7 @@ _M.T1 = {
         local off, size, num = read_listp_struct(p32, header, _M.T1, 1)
         if off and num then
             -- dataWordCount + offset + pointerSize + off
-            s["l0"] = read_list_data(p32 + (5 + 1 + 1 + off) * 2, header,
+            s["l0"] = read_list_data(p32 + (6 + 1 + 1 + off) * 2, header,
                     num, "int8")
         else
             s["l0"] = nil
@@ -388,7 +395,7 @@ _M.T1 = {
         local off, size, num = read_listp_struct(p32, header, _M.T1, 3)
         if off and num then
             -- dataWordCount + offset + pointerSize + off
-            local p8 = ffi_cast(pint8, p32 + (5 + 3 + 1 + off) * 2)
+            local p8 = ffi_cast(pint8, p32 + (6 + 3 + 1 + off) * 2)
             s["d0"] = ffi_string(p8, num)
         else
             s["d0"] = nil
@@ -431,7 +438,7 @@ _M.T1 = {
         local off, size, num = read_listp_struct(p32, header, _M.T1, 4)
         if off and num then
             -- dataWordCount + offset + pointerSize + off
-            s["ls0"] = read_list_data(p32 + (5 + 4 + 1 + off) * 2, header,
+            s["ls0"] = read_list_data(p32 + (6 + 4 + 1 + off) * 2, header,
                     num, "struct", _M.T1.T2)
         else
             s["ls0"] = nil
@@ -442,11 +449,13 @@ _M.T1 = {
         local off, size, num = read_listp_struct(p32, header, _M.T1, 6)
         if off and num then
             -- dataWordCount + offset + pointerSize + off
-            s["lt0"] = read_list_data(p32 + (5 + 6 + 1 + off) * 2, header,
+            s["lt0"] = read_list_data(p32 + (6 + 6 + 1 + off) * 2, header,
                     num, "text")
         else
             s["lt0"] = nil
         end
+
+        s["u64"] = read_struct_field(p32, "uint64", 64, 5, 0)
         return s
     end,
 
@@ -513,13 +522,15 @@ _M.T1.T2 = {
         pos = pos and pos or 24 -- struct size in bytes
         local start = pos
         local dscrm
-        if data["f0"] and (type(data["f0"]) == "number"
-                or type(data["f0"]) == "boolean") then
+        local data_type = type(data["f0"])
+        if data["f0"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["f0"], "float32", 32, 0, 0)
         end
-        if data["f1"] and (type(data["f1"]) == "number"
-                or type(data["f1"]) == "boolean") then
+        local data_type = type(data["f1"])
+        if data["f1"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["f1"], "float64", 64, 1, 0)
         end
@@ -627,7 +638,7 @@ _M.T1.EnumType1Str = {
 _M.T1.g0 = {
     id = "10312822589529145224",
     displayName = "proto/example.capnp:T1.g0",
-    dataWordCount = 5,
+    dataWordCount = 6,
     pointerCount = 8,
     discriminantCount = 0,
     discriminantOffset = 0,
@@ -647,7 +658,7 @@ _M.T1.g0 = {
         return size + _M.T1.g0.calc_size_struct(data)
     end,
     flat_serialize = function(data, p32, pos)
-        pos = pos and pos or 104 -- struct size in bytes
+        pos = pos and pos or 112 -- struct size in bytes
         local start = pos
         local dscrm
         if data["ui2"] and (type(data["ui2"]) == "number"
@@ -655,7 +666,7 @@ _M.T1.g0 = {
 
             write_struct_field(p32, data["ui2"], "uint32", 32, 6, 0)
         end
-        return pos - start + 104
+        return pos - start + 112
     end,
 
     parse_struct_data = function(p32, data_word_count, pointer_count, header,
@@ -668,7 +679,7 @@ _M.T1.g0 = {
 _M.T1.u0 = {
     id = "12188145960292142197",
     displayName = "proto/example.capnp:T1.u0",
-    dataWordCount = 5,
+    dataWordCount = 6,
     pointerCount = 8,
     discriminantCount = 4,
     discriminantOffset = 14,
@@ -699,7 +710,7 @@ _M.T1.u0 = {
         return size + _M.T1.u0.calc_size_struct(data)
     end,
     flat_serialize = function(data, p32, pos)
-        pos = pos and pos or 104 -- struct size in bytes
+        pos = pos and pos or 112 -- struct size in bytes
         local start = pos
         local dscrm
         if data["ui3"] then
@@ -722,7 +733,7 @@ _M.T1.u0 = {
         if data["ug0"] and type(data["ug0"]) == "table" then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            pos = pos + _M.T1.u0.ug0.flat_serialize(data["ug0"], p32, pos) - 104
+            pos = pos + _M.T1.u0.ug0.flat_serialize(data["ug0"], p32, pos) - 112
         end
 
         if data["ut0"] then
@@ -743,7 +754,7 @@ _M.T1.u0 = {
             _M.T1.u0.which(p32, 14, dscrm)
         end
 
-        return pos - start + 104
+        return pos - start + 112
     end,
     which = function(buf, offset, n)
         if n then
@@ -797,7 +808,7 @@ _M.T1.u0 = {
         local off, size, num = read_listp_struct(p32, header, _M.T1.u0, 7)
         if off and num then
             -- dataWordCount + offset + pointerSize + off
-            local p8 = ffi_cast(pint8, p32 + (5 + 7 + 1 + off) * 2)
+            local p8 = ffi_cast(pint8, p32 + (6 + 7 + 1 + off) * 2)
             s["ut0"] = ffi_string(p8, num - 1)
         else
             s["ut0"] = nil
@@ -812,7 +823,7 @@ _M.T1.u0 = {
 _M.T1.u0.ug0 = {
     id = "17270536655881866717",
     displayName = "proto/example.capnp:T1.u0.ug0",
-    dataWordCount = 5,
+    dataWordCount = 6,
     pointerCount = 8,
     discriminantCount = 0,
     discriminantOffset = 0,
@@ -832,7 +843,7 @@ _M.T1.u0.ug0 = {
         return size + _M.T1.u0.ug0.calc_size_struct(data)
     end,
     flat_serialize = function(data, p32, pos)
-        pos = pos and pos or 104 -- struct size in bytes
+        pos = pos and pos or 112 -- struct size in bytes
         local start = pos
         local dscrm
         if data["ugu0"] and (type(data["ugu0"]) == "number"
@@ -840,7 +851,7 @@ _M.T1.u0.ug0 = {
 
             write_struct_field(p32, data["ugu0"], "uint32", 32, 8, 0)
         end
-        return pos - start + 104
+        return pos - start + 112
     end,
 
     parse_struct_data = function(p32, data_word_count, pointer_count, header,
@@ -869,9 +880,9 @@ _M.EnumType2Str = {
     [0] = "enum5",
     [1] = "enum6",
     [2] = "enum7",
-    [3] = "upper_dash",
+    [3] = "UPPER-DASH",
     [4] = "lower_under_score",
-    [5] = "upper_under_score",
+    [5] = "UPPER_UNDER_SCORE",
 }
 
 _M.S1 = {

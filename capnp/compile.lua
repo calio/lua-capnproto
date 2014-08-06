@@ -650,15 +650,20 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         else
             dbgf("field %s: %s", field.name, field.type_name)
             local default = field.default_value and field.default_value or "nil"
+            local cdata_condition = ""
+            if field.type_name == "uint64" or field.type_name == "int64" then
+                cdata_condition = 'or data_type == "cdata"'
+            end
             if field.type_name ~= "void" then
                 insert(res, format([[
 
-        if data["%s"] and (type(data["%s"]) == "number"
-                or type(data["%s"]) == "boolean") then
+        local data_type = type(data["%s"])
+        if data["%s"] and (data_type == "number"
+                or data_type == "boolean" %s) then
 
             write_struct_field(p32, data["%s"], "%s", %d, %d, %s)
-        end]], field.name, field.name, field.name, field.name, field.type_name,
-                    field.size, field.slot.offset, default))
+        end]], field.name, field.name, cdata_condition, field.name,
+                    field.type_name, field.size, field.slot.offset, default))
             end
         end
 

@@ -99,18 +99,6 @@ function test_write_plain_val1()
     assert_hex("ff 00 00 00 d0 0f 49 40 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
 end
 
--- 64 bit number not in ULL/UL form
-function test_write_plain_int64()
-    local seg = { len = 32, pos = 0 }
-    seg.data = ffi.new("char[?]", 32) -- 32 bytes
-
-    capnp.write_struct_field(seg.data, 1393891543746000128, "int64", 64, 0, 0)
-    --capnp.write_struct_field(seg.data, 3.14159, "float32", 32, 1, 0)
-
-    seg.pos = seg.pos + 32
-    assert_hex("00 b5 66 50 f9 18 58 13 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
-end
-
 function test_read_struct_field()
     local seg = { len = 32, pos = 0 }
     seg.data = ffi.new("char[?]", 32) -- 32 bytes
@@ -382,3 +370,29 @@ function test_read_list_data_struct()
     assert_equalf(data[2].f0, copy[2].f0)
     assert_equalf(data[2].f1, copy[2].f1)
 end
+
+-- 64 bit number in cdata
+function test_write_read_plain_uint64()
+    local seg = { len = 32, pos = 0 }
+    seg.data = ffi.new("char[?]", 32) -- 32 bytes
+    local p32 = ffi.cast("uint32_t *", seg.data)
+
+    local uint64p = ffi.new("uint64_t[?]", 1)
+    local uint32p = ffi.cast("uint32_t *", uint64p)
+    uint32p[0] = 1
+    uint32p[1] = 2
+
+    capnp.write_struct_field(p32, 1393891543746000128, "int64", 64, 0, 0)
+    capnp.write_struct_field(p32, uint64p[0], "uint64", 64, 1, 0)
+    --capnp.write_struct_field(seg.data, 3.14159, "float32", 32, 1, 0)
+
+    seg.pos = seg.pos + 32
+    assert_hex("00 b5 66 50 f9 18 58 13 01 00 00 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", seg)
+
+    assert_equal(1393891543746000128, capnp.read_struct_field(p32, "int64", 64, 0))
+    local uint64 = capnp.read_struct_field(p32, "uint64", 64, 1)
+    local uint64_str = tostring(uint64)
+    assert_equal("cdata", type(uint64))
+    assert_equal("8589934593ULL", uint64_str)
+end
+
