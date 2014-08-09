@@ -991,6 +991,7 @@ _M.naming_funcs = {
     lower_underscore = util.lower_underscore_naming,
     upper_underscore = util.upper_underscore_naming,
     camel            = util.camel_naming,
+    lower_space      = util.lower_space_naming,
 }
 
 function process_annotations(annos, nodes)
@@ -1012,7 +1013,12 @@ function process_annotations(annos, nodes)
 end
 
 function get_naming_func(name)
-    return _M.naming_funcs[name]
+    local func =  _M.naming_funcs[name]
+    if not func then
+        error("unknown naming: " .. tostring(name))
+    end
+
+    return func
 end
 
 function comp_node(res, nodes, node, name)

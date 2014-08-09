@@ -867,22 +867,26 @@ _M.T1.u0.ug0 = {
 _M.T1.welcomeText = "Hello"
 
 _M.EnumType2 = {
-    ["enum5"] = 0,
-    ["enum6"] = 1,
-    ["enum7"] = 2,
-    ["UPPER-DASH"] = 3,
-    ["lower_under_score"] = 4,
-    ["UPPER_UNDER_SCORE"] = 5,
+    ["none"] = 0,
+    ["enum5"] = 1,
+    ["enum6"] = 2,
+    ["enum7"] = 3,
+    ["UPPER-DASH"] = 4,
+    ["lower_under_score"] = 5,
+    ["UPPER_UNDER_SCORE"] = 6,
+    ["lower space"] = 7,
 }
 
 
 _M.EnumType2Str = {
-    [0] = "enum5",
-    [1] = "enum6",
-    [2] = "enum7",
-    [3] = "UPPER-DASH",
-    [4] = "lower_under_score",
-    [5] = "UPPER_UNDER_SCORE",
+    [0] = "none",
+    [1] = "enum5",
+    [2] = "enum6",
+    [3] = "enum7",
+    [4] = "UPPER-DASH",
+    [5] = "lower_under_score",
+    [6] = "UPPER_UNDER_SCORE",
+    [7] = "lower space",
 }
 
 _M.S1 = {

@@ -3,10 +3,12 @@
 using Lua = import "lua.capnp";
 
 enum EnumType2 $Lua.naming("lower_underscore") {
-    enum5 @0;
-    enum6 @1;
-    enum7 @2;
-    upperDash @3 $Lua.naming("upper_dash");
-    lowerUnderScore @4 $Lua.naming("lower_underscore");
-    upperUnderScore @5 $Lua.naming("upper_underscore");
+    none @0;
+    enum5 @1;
+    enum6 @2;
+    enum7 @3;
+    upperDash @4 $Lua.naming("upper_dash");
+    lowerUnderScore @5 $Lua.naming("lower_underscore");
+    upperUnderScore @6 $Lua.naming("upper_underscore");
+    lowerSpace @7 $Lua.naming("lower_space");
 }

@@ -19,6 +19,9 @@ function test_underscore_naming()
     assert_equal("TEST_RES", util.upper_underscore_naming("testRes"))
     assert_equal("request_uri", util.lower_underscore_naming("requestURI"))
     assert_equal("VERSION-CONTROL", util.upper_dash_naming("versionControl"))
+    assert_equal("VERSION-CONTROL", util.upper_dash_naming("versionControl"))
+    assert_equal("foo bar", util.lower_space_naming("fooBar"))
+    assert_equal("foo", util.lower_space_naming("foo"))
 end
 
 function test_hex_utils()
