@@ -85,7 +85,7 @@ _M.T1 = {
         { name = "e0", default = "enum1", ["type"] = "enum" },
         { name = "l0", default = "opaque pointer", ["type"] = "list" },
         { name = "t0", default = "", ["type"] = "text" },
-        { name = "e1", default = "enum5", ["type"] = "enum" },
+        { name = "e1", default = "none", ["type"] = "enum" },
         { name = "d0", default = "", ["type"] = "data" },
         { name = "ui0", default = 0, ["type"] = "int32" },
         { name = "ui1", default = 0, ["type"] = "int32" },
@@ -158,33 +158,39 @@ _M.T1 = {
         pos = pos and pos or 112 -- struct size in bytes
         local start = pos
         local dscrm
-        if data["i0"] and (type(data["i0"]) == "number"
-                or type(data["i0"]) == "boolean") then
+        local data_type = type(data["i0"])
+        if data["i0"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["i0"], "uint32", 32, 0, 0)
         end
-        if data["i1"] and (type(data["i1"]) == "number"
-                or type(data["i1"]) == "boolean") then
+        local data_type = type(data["i1"])
+        if data["i1"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["i1"], "uint16", 16, 2, 0)
         end
-        if data["b0"] and (type(data["b0"]) == "number"
-                or type(data["b0"]) == "boolean") then
+        local data_type = type(data["b0"])
+        if data["b0"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["b0"], "bool", 1, 48, 0)
         end
-        if data["i2"] and (type(data["i2"]) == "number"
-                or type(data["i2"]) == "boolean") then
+        local data_type = type(data["i2"])
+        if data["i2"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["i2"], "int8", 8, 7, 0)
         end
-        if data["b1"] and (type(data["b1"]) == "number"
-                or type(data["b1"]) == "boolean") then
+        local data_type = type(data["b1"])
+        if data["b1"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["b1"], "bool", 1, 49, 0)
         end
-        if data["i3"] and (type(data["i3"]) == "number"
-                or type(data["i3"]) == "boolean") then
+        local data_type = type(data["i3"])
+        if data["i3"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["i3"], "int32", 32, 2, 0)
         end
@@ -230,8 +236,9 @@ _M.T1 = {
             dscrm = 0
         end
 
-        if data["ui0"] and (type(data["ui0"]) == "number"
-                or type(data["ui0"]) == "boolean") then
+        local data_type = type(data["ui0"])
+        if data["ui0"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["ui0"], "int32", 32, 4, 0)
         end
@@ -239,8 +246,9 @@ _M.T1 = {
             dscrm = 1
         end
 
-        if data["ui1"] and (type(data["ui1"]) == "number"
-                or type(data["ui1"]) == "boolean") then
+        local data_type = type(data["ui1"])
+        if data["ui1"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["ui1"], "int32", 32, 4, 0)
         end
@@ -266,18 +274,21 @@ _M.T1 = {
             pos = pos + write_list(p32 + _M.T1.dataWordCount * 2 + 4 * 2,
                     data["ls0"], (data_off + 1) * 8, "list", "struct", _M.T1.T2)
         end
-        if data["du0"] and (type(data["du0"]) == "number"
-                or type(data["du0"]) == "boolean") then
+        local data_type = type(data["du0"])
+        if data["du0"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["du0"], "uint32", 32, 9, 65535)
         end
-        if data["db0"] and (type(data["db0"]) == "number"
-                or type(data["db0"]) == "boolean") then
+        local data_type = type(data["db0"])
+        if data["db0"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["db0"], "bool", 1, 50, 1)
         end
-        if data["end"] and (type(data["end"]) == "number"
-                or type(data["end"]) == "boolean") then
+        local data_type = type(data["end"])
+        if data["end"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["end"], "bool", 1, 51, 0)
         end
@@ -635,6 +646,7 @@ _M.T1.EnumType1Str = {
     [4] = "UPPER-DASH",
 }
 
+_M.T1.welcomeText = "Hello"
 _M.T1.g0 = {
     id = "10312822589529145224",
     displayName = "proto/example.capnp:T1.g0",
@@ -661,8 +673,9 @@ _M.T1.g0 = {
         pos = pos and pos or 112 -- struct size in bytes
         local start = pos
         local dscrm
-        if data["ui2"] and (type(data["ui2"]) == "number"
-                or type(data["ui2"]) == "boolean") then
+        local data_type = type(data["ui2"])
+        if data["ui2"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["ui2"], "uint32", 32, 6, 0)
         end
@@ -717,8 +730,9 @@ _M.T1.u0 = {
             dscrm = 0
         end
 
-        if data["ui3"] and (type(data["ui3"]) == "number"
-                or type(data["ui3"]) == "boolean") then
+        local data_type = type(data["ui3"])
+        if data["ui3"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["ui3"], "uint16", 16, 11, 0)
         end
@@ -846,8 +860,9 @@ _M.T1.u0.ug0 = {
         pos = pos and pos or 112 -- struct size in bytes
         local start = pos
         local dscrm
-        if data["ugu0"] and (type(data["ugu0"]) == "number"
-                or type(data["ugu0"]) == "boolean") then
+        local data_type = type(data["ugu0"])
+        if data["ugu0"] and (data_type == "number"
+                or data_type == "boolean" ) then
 
             write_struct_field(p32, data["ugu0"], "uint32", 32, 8, 0)
         end
@@ -864,7 +879,6 @@ _M.T1.u0.ug0 = {
     end,
 }
 
-_M.T1.welcomeText = "Hello"
 
 _M.EnumType2 = {
     ["none"] = 0,
