@@ -39,3 +39,8 @@ How to add a new naming function
 * add a test case in tests/11-handwritten.lua (see test_lower_space_naming)
 * update lua/handwritten_capnp.lua using `vimdiff lua/handwritten_capnp.lua proto/example_capnp.lua`
 
+Generacted code
+===============
+
+`calc_size`             - calculate size need for serilization using given input data, header size included
+`calc_size_struct`      - calculate size need for serilization using given input data, header size not included

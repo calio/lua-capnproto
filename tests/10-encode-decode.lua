@@ -3,7 +3,7 @@ local lunit = require "lunitx"
 local capnp = require "capnp"
 local util = require "capnp.util"
 
-hw_capnp = require "handwritten_capnp"
+hw_capnp = require "example_capnp"
 --local format = string.format
 
 local tdiff = util.table_diff
@@ -197,7 +197,8 @@ function test_basic_value6()
         e1 = "enum7",
     }
 
-    assert_equal(128 + 24 + 8 + 8, hw_capnp.T1.calc_size(data))
+    -- header + T1.size + T2.size + l0 + t0
+    assert_equal(16 + 112 + 24 + 8 + 8, hw_capnp.T1.calc_size(data))
     local bin   = hw_capnp.T1.serialize(data)
     util.write_file("dump", bin)
     copy  = hw_capnp.T1.parse(bin, copy)
@@ -658,4 +659,27 @@ function test_lower_space_naming()
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal("lower space", copy.e1)
 end
+
+function test_type_check_when_calc_size()
+    -- data type should be checked when calculating size
+    local data = {
+        s0 = "I should be a lua table, not a string",
+    }
+
+    assert_equal(128, hw_capnp.T1.calc_size(data))
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal(0, copy.i0)
+    assert_equal(0, copy.i1)
+    assert_equal(0, copy.i2)
+    assert_equal(false, copy.b0)
+    assert_equal(false, copy.b1)
+    assert_equal(0, copy.i3)
+    assert_equal("enum1", copy.e0)
+    assert_equal("none", copy.e1)
+    assert_nil(copy.s0)
+    assert_nil(copy.l0)
+    assert_nil(copy.t0)
+end
+
 return _G
