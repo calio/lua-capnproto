@@ -26,7 +26,16 @@ version() {
     exit
 }
 
+realpath() {
+    perl -MCwd -e 'print Cwd::abs_path shift' $1;
+}
+
+
 VERBOSE=${VERBOSE:="false"}
+FILE=$(realpath $0)
+DIR=$(dirname $FILE)
+export LUA_PATH="$DIR/../?.lua;$LUA_PATH;;"
+
 
 while : ; do
     case $1 in
@@ -43,7 +52,7 @@ while : ; do
     esac
 done
 
-BASE=$(dirname $(perl -e "use Cwd \"abs_path\"; print abs_path(\"$0\")"))
+BASE=$(dirname $(realpath $0))
 #export LUA_PATH="$BASE/lua/?.lua;$BASE/proto/?.lua;$LUA_PATH;;"
 
 luajit - <(cat - | capnp decode $BASE/schema.capnp CodeGeneratorRequest) $@ <<EOT

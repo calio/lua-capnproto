@@ -28,6 +28,10 @@ All proto files including imported proto files should be compiled together. Outp
 
 Output file will be `message_capnp.lua`
 
+When developing, you may need to run the following command. This specifies which capnpc-lua to use.
+
+    VERBOSE=1 capnp compile -o ../bin/capnpc-lua example.capnp enums.capnp lua.capnp struct.capnp
+
 How to add a new naming function
 ================================
 
