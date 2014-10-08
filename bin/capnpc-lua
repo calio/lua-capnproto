@@ -82,6 +82,7 @@ end
 
 local naming
 local config = {
+    version = "${VERSION}",
 }
 local namings = {}
 for k, v in pairs(compile.naming_funcs) do
