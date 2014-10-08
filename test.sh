@@ -4,13 +4,15 @@ export PATH=$(pwd)/bin:$PATH
 export LUA_PATH="?.lua;lua/?.lua;proto/?.lua;tests/?.lua;$LUA_PATH;;"
 
 echo "[Compile example.capnp]"
-capnp compile -olua proto/example.capnp || exit
+capnp --verbose compile -olua proto/example.capnp proto/enums.capnp proto/lua.capnp proto/struct.capnp || exit
 
 echo "[Unit test...]"
 make test  || exit
 
-echo "[capnp_test...]"
-make test1 || exit
+#Disabled for now
+#echo "[capnp_test...]"
+#make test1 || exit
+
 #echo
 #echo "[Serialization test...]"
 #if [ $(uname) != "Linux" ]; then

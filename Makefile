@@ -35,7 +35,7 @@ test: proto/example_capnp.lua
 	tests/run_tests.sh
 
 test1:
-	capnp compile -olua $(CAPNP_TEST)/test.capnp
+	capnp compile -olua $(CAPNP_TEST)/test.capnp ../capnproto/c++/src/capnp/c++.capnp
 	$(MAKE) -C $(CAPNP_TEST) CAPNP_TEST_APP=`pwd`/bin/lua-capnproto-test
 
 all: cpp/main

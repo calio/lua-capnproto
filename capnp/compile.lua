@@ -1277,9 +1277,9 @@ end
 function _M.init(user_conf)
     dbg("set config init")
     for k, v in pairs(user_conf) do
-        if not config[k] then
-            print(format("Unknown user config: %s, ignored.", k))
-        end
+        --if not config[k] then
+        --    print(format("Unknown user config: %s, ignored.", k))
+        --end
         config[k] = v
         dbg("set config " .. k)
     end
