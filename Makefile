@@ -1,4 +1,4 @@
-VERSION:=0.0.2-dev
+VERSION:=0.1.0-1
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
 CAPNP_TEST:=../capnp_test
@@ -42,5 +42,18 @@ all: cpp/main
 
 clean:
 	-rm proto/example.capnp.c++ proto/example.capnp.h cpp/*.o cpp/main test.schema.lua proto/example_capnp.lua a.data c.data test.schema.txt *.data
+
+release:
+	@echo "Add git tag v$(VERSION)?"
+	@read
+	git tag -f v$(VERSION)
+	git push --tags
+	cp lua-capnproto.rockspec lua-capnproto-$(VERSION).rockspec
+	luarocks pack lua-capnproto-$(VERSION).rockspec
+	# increase version number
+	@echo "Old version is \"$(VERSION)\""
+	@echo "Enter new version: "
+	read new_version; perl -pi -e "s/$(VERSION)/$$new_version/" Makefile bin/capnpc-lua lua-capnproto.rockspec
+	
 
 .PHONY: all clean test

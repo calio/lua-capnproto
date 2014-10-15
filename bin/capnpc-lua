@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION=0.0.2-dev
+VERSION=0.1.0-1
 
 usage() {
     cat <<EOF
