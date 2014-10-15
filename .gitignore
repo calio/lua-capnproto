@@ -34,3 +34,6 @@ data_generator.lua
 *.json
 *.log
 *.bin
+
+lua-capnproto-*.rockspec
+*.src.rock
