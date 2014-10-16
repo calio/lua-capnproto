@@ -1,4 +1,4 @@
-VERSION:=0.1.0-2
+VERSION:=0.1.0-3
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
 CAPNP_TEST:=../capnp_test
@@ -50,10 +50,9 @@ release:
 	git push --tags
 	cp lua-capnproto.rockspec lua-capnproto-$(VERSION).rockspec
 	luarocks pack lua-capnproto-$(VERSION).rockspec
-	# increase version number
 	@echo "Old version is \"$(VERSION)\""
 	@echo "Enter new version: "
-	# The use of variable "new_version" ($$new_version) should be in the same line as where it gets its value
+	@# The use of variable "new_version" ($$new_version) should be in the same line as where it gets its value
 	@read new_version; perl -pi -e "s/$(VERSION)/$$new_version/" Makefile bin/capnpc-lua lua-capnproto.rockspec
 	
 
