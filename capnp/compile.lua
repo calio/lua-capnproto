@@ -587,7 +587,7 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             dbgf("field %s: enum", field.name)
             insert(res, format([[
 
-        if ]] .. check_type["enum"] .. [[  then
+        if ]] .. check_type["enum"] .. [[ then
             local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
             write_struct_field(p32, val, "uint16", %d, %d)
         end]], field.name, field.name, field.name, field.default_value,

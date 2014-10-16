@@ -53,6 +53,7 @@ release:
 	# increase version number
 	@echo "Old version is \"$(VERSION)\""
 	@echo "Enter new version: "
+	# The use of variable "new_version" ($$new_version) should be in the same line as where it gets its value
 	@read new_version; perl -pi -e "s/$(VERSION)/$$new_version/" Makefile bin/capnpc-lua lua-capnproto.rockspec
 	
 
