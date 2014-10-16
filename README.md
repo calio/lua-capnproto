@@ -32,9 +32,7 @@ To install lua-capnproto, you need to install Cap'n Proto <http://kentonv.github
 
 Then you can install lua-capnproto using the following commands:
 
-    $git clone https://github.com/cloudflare/lua-capnproto.git
-    $cd lua-capnproto
-    $sudo luarocks make
+    $sudo luarocks install lua-capnproto
 
 Let's compile an example file to test whether lua-capnproto was installed successfully:
 
