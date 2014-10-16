@@ -356,6 +356,15 @@ function _M.get_enum_name(v, default, enum_schema, name)
 end
 
 function _M.get_enum_val(v, default, enum_schema, name)
+    if type(v) == "number" then
+        -- we don't check upper boundary here because max enum value may
+        -- increase in later schema
+        if v >= 0 then
+            return v
+        end
+        return default
+    end
+
     local r = enum_schema[v]
     if not r then
         print(name, " Unknown enum val: " .. v)

@@ -682,4 +682,14 @@ function test_type_check_when_calc_size()
     assert_nil(copy.t0)
 end
 
+function test_get_enum_from_number()
+    local data = {
+        e1 = 7, -- "lower space"
+    }
+
+    assert_equal(128, hw_capnp.T1.calc_size(data))
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal("lower space", copy.e1)
+end
 return _G

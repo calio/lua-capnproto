@@ -189,7 +189,7 @@ local size_map = {
 local check_type = {
     struct = 'data["%s"] and type(data["%s"]) == "table"',
     group = 'data["%s"] and type(data["%s"]) == "table"',
-    enum = 'data["%s"] and type(data["%s"]) == "string"',
+    enum = 'data["%s"] and (type(data["%s"]) == "string" or type(data["%s"]) == "number")',
     list = 'data["%s"] and type(data["%s"]) == "table"',
     text = 'data["%s"] and type(data["%s"]) == "string"',
     data = 'data["%s"] and type(data["%s"]) == "string"',
@@ -590,9 +590,9 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if ]] .. check_type["enum"] .. [[ then
             local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
             write_struct_field(p32, val, "uint16", %d, %d)
-        end]], field.name, field.name, field.name, field.default_value,
-                    field.type_display_name, name, field.name,
-                    field.size, field.slot.offset))
+        end]], field.name, field.name, field.name, field.name,
+                    field.default_value, field.type_display_name, name,
+                    field.name, field.size, field.slot.offset))
 
         elseif field.type_name == "list" then
             dbgf("field %s: list", field.name)
