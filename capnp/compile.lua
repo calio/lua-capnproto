@@ -140,7 +140,7 @@ local function get_str_buf(size)
     return str_buf
 end
 
--- estimated from #nodes, not accurate
+-- Estimated from #nodes, not accurate
 local _M = new_tab(0, %d)
 
 ]], #nodes))

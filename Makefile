@@ -1,4 +1,4 @@
-VERSION:=0.1.1-1
+VERSION:=0.1.1-2
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
 CAPNP_TEST:=../capnp_test
@@ -58,6 +58,8 @@ version:
 	@read new_version; perl -pi -e "s/$(VERSION)/$$new_version/" Makefile bin/capnpc-lua lua-capnproto.rockspec
 
 release: tag_and_pack version
-	
+
+release_clean:
+	-rm -f lua-capnproto-*.rockspec *.rock
 
 .PHONY: all clean test release
