@@ -108,7 +108,7 @@ _M.T1 = {
         end
         -- list
         if data["l0"] then
-            -- num * acutal size
+            -- num * actual size
             size = size + round8(#data["l0"] * 1)
         end
         -- text
@@ -142,7 +142,7 @@ _M.T1 = {
             local num2 = #data["lt0"]
             for i2=1, num2 do
                 size = size + 8
-                 -- num * acutal size
+                 -- num * actual size
                 size = size + round8(#data["lt0"][i2] * 1 + 1)
             end
         end

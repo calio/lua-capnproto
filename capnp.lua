@@ -303,7 +303,7 @@ function _M.read_composite_tag(buf)
     local val = p[0]
     local sig = band(val, 0x03)
     if sig ~= 0 then
-        error("corrupt data, expected struct signiture(composite list tag) " ..
+        error("corrupt data, expected struct signature(composite list tag) " ..
                 "0 but have " .. sig)
     end
 
@@ -395,7 +395,7 @@ function _M.read_listp(p32, header)
         --print("single far pointer")
         return _M.read_far_pointer(p32, header, _M.read_listp)
     else
-        error("corrupt data, expected list signiture 1 or far pointer 2, " ..
+        error("corrupt data, expected list signature 1 or far pointer 2, " ..
                 "but have " .. sig)
     end
 end
@@ -509,7 +509,7 @@ function _M.write_list_data(p32, data, pos, elm_type, ...)
     else
         local p = get_pointer_from_type(p32, elm_type)
         for i = 1, len do
-            -- No default value avaliable from AST, so no need to pass
+            -- No default value available from AST, so no need to pass
             -- default value
             _M.write_num(p + i - 1, data[i], elm_type)
         end
@@ -676,7 +676,7 @@ function _M.read_struct_buf(p32, header)
     elseif sig == 2 then
         return _M.read_far_pointer(p, header, _M.read_struct_pointer)
     else
-        error("corrupt data, expected struct signiture 0 or far pointer 2, " ..
+        error("corrupt data, expected struct signature 0 or far pointer 2, " ..
                 "but have " .. sig)
     end
 end

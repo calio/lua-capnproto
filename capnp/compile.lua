@@ -743,7 +743,7 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
         end
 
         local new_name = "[\"" .. name .. "\"]" .. "[i" .. level .. "]"
-        -- calc body size
+        -- calculate body size
         insertl(res, level + 1, format("local num%d = #data[\"%s\"]\n",
                 level, name))
         insertl(res, level + 1, format("for %s=1, num%d do\n",
@@ -948,7 +948,7 @@ _M.%s = {
 ]], name))
 
     for i, v in ipairs(enum.enumerants) do
-        -- inherent parant naming function
+        -- inherent parent naming function
         v.naming_func = enum_naming_func
 
         if not v.codeOrder then

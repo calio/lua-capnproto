@@ -5,9 +5,9 @@ source = {
    tag = "v0.1.1-2",
 }
 description = {
-   summary = "Lua-capnproto is a pure lua implementation of capnproto based on luajit.",
+   summary = "Lua-capnproto is a pure lua implementation of capnproto based on LuaJIT.",
    detailed = [[
-       Lua-capnproto is a pure lua implementation of capnproto based on luajit.
+       Lua-capnproto is a pure lua implementation of capnproto based on LuaJIT.
    ]],
    homepage = "https://github.com/cloudflare/lua-capnproto",
    license = "BSD",

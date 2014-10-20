@@ -22,7 +22,7 @@ exit
 }
 
 version() {
-    echo "Cap'n Proto lua plugin version $VERSION"
+    echo "Cap'n Proto Lua plug-in version $VERSION"
     exit
 }
 
