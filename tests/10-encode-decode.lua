@@ -703,4 +703,15 @@ function test_unknown_enum_value()
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal("none", copy.e1)
 end
+
+function test_empty_enum_value()
+    local data = {
+        e1 = "",
+    }
+
+    assert_equal(128, hw_capnp.T1.calc_size(data))
+    local bin   = hw_capnp.T1.serialize(data)
+    copy  = hw_capnp.T1.parse(bin, copy)
+    assert_equal("none", copy.e1)
+end
 return _G

@@ -356,12 +356,18 @@ function _M.get_enum_name(v, default, enum_schema, name)
 end
 
 function _M.get_enum_val(v, default, enum_schema, name)
-    if type(v) == "number" then
+    local t = type(v)
+
+    if t == "number" then
         -- we don't check upper boundary here because max enum value may
         -- increase in later schema
         if v >= 0 then
             return v
         end
+        return default
+    end
+
+    if t ~= "string" or v == "" then
         return default
     end
 
