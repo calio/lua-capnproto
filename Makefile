@@ -1,4 +1,4 @@
-VERSION:=0.1.1-2
+VERSION:=0.1.2-1
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
 CAPNP_TEST:=../capnp_test
@@ -45,7 +45,7 @@ clean:
 
 tag_and_pack:
 	@echo "Add git tag v$(VERSION)?"
-	@read
+	@read -r FOO
 	git tag -f v$(VERSION)
 	git push --tags
 	cp lua-capnproto.rockspec lua-capnproto-$(VERSION).rockspec

@@ -1,8 +1,8 @@
 package = "lua-capnproto"
-version = "0.1.1-2"
+version = "0.1.2-1"
 source = {
    url = "git://github.com/cloudflare/lua-capnproto",
-   tag = "v0.1.1-2",
+   tag = "v0.1.2-1",
 }
 description = {
    summary = "Lua-capnproto is a pure lua implementation of capnproto based on LuaJIT.",
