@@ -31,7 +31,7 @@ cpp/main: cpp/main.o cpp/example_capnp.o cpp/enums_capnp.o
 proto/example_capnp.lua: proto/example.capnp proto/enums.capnp proto/struct.capnp proto/lua.capnp
 	capnp compile -obin/capnpc-lua $+
 
-test: proto/example_capnp.lua
+test: clean proto/example_capnp.lua
 	tests/run_tests.sh
 
 test1:

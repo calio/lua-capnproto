@@ -187,12 +187,12 @@ local size_map = {
 }
 
 local check_type = {
-    struct = 'data["%s"] and type(data["%s"]) == "table"',
-    group = 'data["%s"] and type(data["%s"]) == "table"',
-    enum = 'data["%s"] and (type(data["%s"]) == "string" or type(data["%s"]) == "number")',
-    list = 'data["%s"] and type(data["%s"]) == "table"',
-    text = 'data["%s"] and type(data["%s"]) == "string"',
-    data = 'data["%s"] and type(data["%s"]) == "string"',
+    struct = 'type(value) == "table"',
+    group = 'type(value) == "table"',
+    enum = 'type(value) == "string" or type(value) == "number"',
+    list = 'type(value) == "table"',
+    text = 'type(value) == "string"',
+    data = 'type(value) == "string"',
 }
 
 
@@ -557,17 +557,25 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         local start = pos
         local dscrm]], size))
 
+    insert(res, [[
+
+        local value]])
+
     for i, field in ipairs(fields) do
+        insert(res, format([=[
+
+
+        value = data["%s"]]=], field.name))
         --print("comp_field", field.name)
         -- union
         if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
             dbgf("field %s: union", field.name)
             insert(res, format([[
 
-        if data["%s"] then
+        if value then
             dscrm = %d
         end
-]], field.name, field.discriminantValue))
+]], field.discriminantValue))
         end
         if field.group then
             dbgf("field %s: group", field.name)
@@ -579,19 +587,18 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if ]] .. check_type["group"] .. [[ then
             -- groups are just namespaces, field offsets are set within parent
             -- structs
-            pos = pos + _M.%s.%s.flat_serialize(data["%s"], p32, pos) - %d
+            pos = pos + _M.%s.%s.flat_serialize(value, p32, pos) - %d
         end
-]], field.name, field.name, name, field.name, field.name, size))
+]], name, field.name, size))
 
         elseif field.type_name == "enum" then
             dbgf("field %s: enum", field.name)
             insert(res, format([[
 
         if ]] .. check_type["enum"] .. [[ then
-            local val = get_enum_val(data["%s"], %d, _M.%s, "%s.%s")
+            local val = get_enum_val(value, %d, _M.%s, "%s.%s")
             write_struct_field(p32, val, "uint16", %d, %d)
-        end]], field.name, field.name, field.name, field.name,
-                    field.default_value, field.type_display_name, name,
+        end]], field.default_value, field.type_display_name, name,
                     field.name, field.size, field.slot.offset))
 
         elseif field.type_name == "list" then
@@ -617,8 +624,8 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if ]] .. check_type["list"] .. [[ then
             local data_off = get_data_off(_M.%s, %d, pos)
             pos = pos + write_list(p32 + _M.%s.dataWordCount * 2 + %d * 2,
-                    data["%s"], (data_off + 1) * 8, %s)
-        end]], field.name, field.name, name, off, name, off, field.name, types))
+                    value, (data_off + 1) * 8, %s)
+        end]], name, off, name, off, types))
 
         elseif field.type_name == "struct" then
             dbgf("field %s: struct", field.name)
@@ -628,10 +635,10 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if ]] .. check_type["struct"] .. [[ then
             local data_off = get_data_off(_M.%s, %d, pos)
             write_structp_buf(p32, _M.%s, _M.%s, %d, data_off)
-            local size = _M.%s.flat_serialize(data["%s"], p32 + pos / 4)
+            local size = _M.%s.flat_serialize(value, p32 + pos / 4)
             pos = pos + size
-        end]], field.name, field.name, name, off, name, field.type_display_name,
-                    off, field.type_display_name, field.name))
+        end]], name, off, name, field.type_display_name,
+                    off, field.type_display_name))
 
         elseif field.type_name == "text" then
             dbgf("field %s: text", field.name)
@@ -641,13 +648,12 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if ]] .. check_type["text"] .. [[ then
             local data_off = get_data_off(_M.%s, %d, pos)
 
-            local len = #data["%s"] + 1
+            local len = #value + 1
             write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
-            ffi_copy(p32 + pos / 4, data["%s"])
+            ffi_copy(p32 + pos / 4, value)
             pos = pos + round8(len)
-        end]], field.name, field.name, name, off, field.name, name, off, 2,
-                    field.name))
+        end]], name, off, name, off, 2))
 
         elseif field.type_name == "data" then
             dbgf("field %s: data", field.name)
@@ -657,14 +663,13 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
         if ]] .. check_type["data"] .. [[ then
             local data_off = get_data_off(_M.%s, %d, pos)
 
-            local len = #data["%s"]
+            local len = #value
             write_listp_buf(p32, _M.%s, %d, %d, len, data_off)
 
             -- prevent copying trailing '\0'
-            ffi_copy(p32 + pos / 4, data["%s"], len)
+            ffi_copy(p32 + pos / 4, value, len)
             pos = pos + round8(len)
-        end]], field.name, field.name, name, off, field.name, name, off, 2,
-                    field.name))
+        end]], name, off, name, off, 2))
 
         else
             dbgf("field %s: %s", field.name, field.type_name)
@@ -676,13 +681,13 @@ function comp_flat_serialize(res, nodes, struct, fields, size, name)
             if field.type_name ~= "void" then
                 insert(res, format([[
 
-        local data_type = type(data["%s"])
-        if data["%s"] and (data_type == "number"
+        local data_type = type(value)
+        if (data_type == "number"
                 or data_type == "boolean" %s) then
 
-            write_struct_field(p32, data["%s"], "%s", %d, %d, %s)
-        end]], field.name, field.name, cdata_condition, field.name,
-                    field.type_name, field.size, field.slot.offset, default))
+            write_struct_field(p32, value, "%s", %d, %d, %s)
+        end]], cdata_condition, field.type_name, field.size,
+                    field.slot.offset, default))
             end
         end
 
@@ -786,8 +791,13 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
     calc_size_struct = function(data)
         local size = %d]], size))
 
+    insert(res, [[
+
+        local value]])
+
     for i, field in ipairs(fields) do
         dbgf("field %s is %s", field.name, field.type_name)
+
         if field.type_name == "list" then
             local list_type = util.get_field_type(field)
 
@@ -801,25 +811,29 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
             insert(res, format([[
 
         -- struct
+        value = data["%s"]
         if ]] .. check_type["struct"] .. [[ then
-            size = size + _M.%s.calc_size_struct(data["%s"])
-        end]], field.name, field.name, field.type_display_name, field.name))
+            size = size + _M.%s.calc_size_struct(value)
+        end]], field.name, field.type_display_name))
+
         elseif field.type_name == "text" then
             insert(res, format([[
 
         -- text
+        value = data["%s"]
         if ]] .. check_type["text"] .. [[ then
             -- size 1, including trailing NULL
-            size = size + round8(#data["%s"] + 1)
-        end]], field.name, field.name, field.name))
+            size = size + round8(#value + 1)
+        end]], field.name))
 
         elseif field.type_name == "data" then
             insert(res, format([[
 
         -- data
+        value = data["%s"]
         if ]] .. check_type["data"] .. [[ then
-            size = size + round8(#data["%s"])
-        end]], field.name, field.name, field.name))
+            size = size + round8(#value)
+        end]], field.name))
 
         end
 
