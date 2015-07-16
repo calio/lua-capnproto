@@ -9,7 +9,7 @@ local bit = require "bit"
 local tobit     = bit.tobit
 local bnot      = bit.bnot
 local band, bor, bxor = bit.band, bit.bor, bit.bxor
-local lshift, rshift, rol = bit.lshift, bit.rshift, bit.rol
+local lshift, rshift, rol, arshift = bit.lshift, bit.rshift, bit.rol, bit.arshift
 
 local typeof    = ffi.typeof
 local cast      = ffi.cast
@@ -325,7 +325,7 @@ function _M.write_composite_tag(p32, T, num)
 end
 
 function _M.read_struct_pointer(p)
-    local offset = rshift(p[0], 2)
+    local offset = arshift(p[0], 2)
     local data_word_count = band(p[1], 0xffff)
     local pointer_count = rshift(p[1], 16)
 
@@ -390,7 +390,7 @@ function _M.read_listp(p32, header)
 
     local sig = band(val0, 0x03)
     if sig == 1 then
-        local offset = rshift(val0, 2)
+        local offset = arshift(val0, 2)
 
         local size_type = band(val1, 0x07)
         local num = rshift(val1, 3)
