@@ -391,10 +391,8 @@ function _M.read_listp(p32, header)
     local sig = band(val0, 0x03)
     if sig == 1 then
         local offset = arshift(val0, 2)
-
         local size_type = band(val1, 0x07)
         local num = rshift(val1, 3)
-
         return offset, size_type, num
         -- return read_list_pointer(p32)
     elseif sig == 2 then
@@ -644,28 +642,61 @@ function _M.read_listp_struct(buf, header, T, offset)
     return _M.read_listp(p + base, header)
 end
 
+--- Read data structure from far pointer
+-- @param buf         32-bit pointer
+-- @param header      stream header, see http://kentonv.github.io/capnproto/encoding.html#serialization_over_a_stream
+-- @param parser      function(pointer, header) parsing function for actual data structure pointer
 function _M.read_far_pointer(buf, header, parser)
     local p = buf
+    local is_double, offset, seg_id = _M.parse_far_pointer(p)
+    local far_offset = _M.get_far_offset(header, offset, seg_id)
+    local target_offset, target_pointer, r1, r2
+    if is_double == 0 then
+        target_pointer = _M.get_pointer_by_far_offset(header, far_offset)
+        target_offset, r1, r2 = parser(target_pointer, header)
+    else
+        -- According docs word after second far pointer is 'tag' describing target data structure.
+        -- So, we should work with it like in single-pointer case,
+        target_pointer = _M.get_pointer_by_far_offset(header, far_offset+1)
+        -- excepting offset.
+        _, r1, r2 = parser(target_pointer, header)
+        -- It should be got from second far pointer structure (-2 because target_pointer points to second pointer structure + 1 word).
+        _, target_offset, target_seg_id = _M.parse_far_pointer(target_pointer-2)
+        target_offset = _M.get_far_offset(header, target_offset, target_seg_id)
+    end
+    local target_offset = target_offset + (target_pointer - p) / 2
+    return target_offset, r1, r2
+end
 
-    local landing = rshift(band(p[0], 0x04), 2)
-
-    assert(landing == 0, "double far pointer not supported yet")
+--- Parse far pointer structure
+-- @param p    32-bit pointer
+function _M.parse_far_pointer(p)
+    local sig = band(p[0], 0x03)
+    local is_double = rshift(band(p[0], 0x04), 2)
     local offset = rshift(p[0], 3)
     local seg_id = tonumber(p[1])
-    --print("landing, offset, seg_id:", landing, offset, seg_id)
+    return is_double, offset, seg_id
+end
 
-    -- object pointer offset
-    local op_offset = header.header_size
+--- Get offset relative other sigments
+-- @param header
+-- @param offset
+-- @param seg_id
+function _M.get_far_offset(header, offset, seg_id)
+    local far_offset = header.header_size
     for i=1, seg_id do
-        op_offset = op_offset + header.seg_sizes[i]
+        far_offset = far_offset + header.seg_sizes[i]
     end
-    op_offset = op_offset + offset  -- offset is in words
-    local pp = header.base + op_offset * 2 -- header.base is uint32_t *
+    return far_offset + offset 
+end
 
-    local p_offset, r1, r2 = parser(pp, header)
-    p_offset = p_offset + (pp - p) / 2 -- p and pp are uint32_t *
-
-    return p_offset, r1, r2
+--- Parse far pointer structure
+-- @param header
+-- @param offset
+-- @return 32-bit pointer
+function _M.get_pointer_by_far_offset(header, offset)
+    -- Convert offset to uint32_t * relative base.
+    return header.base + offset * 2
 end
 
 function _M.read_struct_buf(p32, header)
