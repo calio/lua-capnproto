@@ -660,7 +660,7 @@ function _M.read_far_pointer(buf, header, parser)
         target_pointer = _M.get_pointer_by_far_offset(header, far_offset+1)
         -- excepting offset.
         _, r1, r2 = parser(target_pointer, header)
-        -- It should be got from second far pointer structure (-2 because target_pointer points to second pointer structure + 1 word).
+        -- It should be obtained from second far pointer structure (-2 because target_pointer points to second pointer structure + 1 word).
         _, target_offset, target_seg_id = _M.parse_far_pointer(target_pointer-2)
         target_offset = _M.get_far_offset(header, target_offset, target_seg_id)
     end
@@ -690,12 +690,11 @@ function _M.get_far_offset(header, offset, seg_id)
     return far_offset + offset 
 end
 
---- Parse far pointer structure
+--- Convert offset to uint32_t * relative base
 -- @param header
 -- @param offset
 -- @return 32-bit pointer
 function _M.get_pointer_by_far_offset(header, offset)
-    -- Convert offset to uint32_t * relative base.
     return header.base + offset * 2
 end
 
