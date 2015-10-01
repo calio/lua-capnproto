@@ -6,23 +6,17 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
-local tobit     = bit.tobit
-local bnot      = bit.bnot
-local band, bor, bxor = bit.band, bit.bor, bit.bxor
-local lshift, rshift, rol, arshift = bit.lshift, bit.rshift, bit.rol, bit.arshift
+local arshift           = bit.arshift
+local lshift, rshift    = bit.lshift, bit.rshift
+local band, bor, bxor   = bit.band, bit.bor, bit.bxor
 
 local typeof    = ffi.typeof
 local cast      = ffi.cast
 local ffistr    = ffi.string
 local copy      = ffi.copy
-local format    = string.format
-local lower     = string.lower
 local ceil      = math.ceil
 local floor     = math.floor
-local byte      = string.byte
 local type      = type
-local modf      = math.modf
-local substr    = string.sub
 local error     = error
 
 -- Only works with Little Endian for now
@@ -34,7 +28,6 @@ assert(ffi.sizeof("double") == 8)
 local bfloat32 = ffi.new('float[?]', 2)
 local bfloat64 = ffi.new('double[?]', 3)
 local bint32   = ffi.new('int[?]', 2)
-local bint64   = ffi.new('int64_t[?]', 2)
 local buint64  = ffi.new('uint64_t[?]', 2)
 
 local round8 = function(size)
@@ -42,24 +35,19 @@ local round8 = function(size)
 end
 
 
+-- table.new(narr, nrec)
 local ok, new_tab = pcall(require, "table.new")
 if not ok then
-    new_tab = function (narr, nrec) return {} end
+    new_tab = function () return {} end
 end
 
 
 local _M = new_tab(0, 32)
 
 
-local pint8    = typeof("int8_t *")
-local pint16   = typeof("int16_t *")
 local pint32   = typeof("int32_t *")
-local pint64   = typeof("int64_t *")
-local puint8   = typeof("uint8_t *")
-local puint16  = typeof("uint16_t *")
 local puint32  = typeof("uint32_t *")
 local puint64  = typeof("uint64_t *")
-local pbool    = typeof("uint8_t *")
 local pfloat32 = typeof("float *")
 local pfloat64 = typeof("double *")
 
@@ -108,7 +96,7 @@ end
 -- @param default   its default value
 -- @return          xor'ed value
 function _M.fix_float32_default(val, default)
-    local uint, float
+    local float
     bfloat32[0] = default
     bfloat32[1] = val
 
@@ -126,7 +114,7 @@ end
 -- @param default   its default value
 -- @return          xor'ed value
 function _M.fix_float64_default(val, default)
-    local uint, float
+    local float
     bfloat64[0] = default
     bfloat64[1] = val
     local uint_def = cast(puint64, bfloat64)
@@ -145,7 +133,6 @@ end
 -- @param default       field default value
 -- @return              parsed field
 function _M.read_struct_field(p32, field_type, size, off, default)
-    local buf = p32
     if field_type == "void" then
         return "Void"
     end
@@ -333,13 +320,13 @@ function _M.read_struct_pointer(p)
 end
 
 function _M.write_structp(p32, T, data_off)
-    local p32 = cast(pint32, p32)
+    p32 = cast(pint32, p32)
     p32[0] = lshift(data_off, 2)
     p32[1] = lshift(T.pointerCount, 16) + T.dataWordCount
 end
 
 function _M.write_structp_buf(p32, T, TSub, offset, data_off)
-    local p32 = cast(pint32, p32)
+    p32 = cast(pint32, p32)
     local base = T.dataWordCount * 2 + offset * 2
     p32[base] = lshift(data_off, 2)
     p32[base + 1] = lshift(TSub.pointerCount, 16) + TSub.dataWordCount
@@ -417,7 +404,7 @@ function _M.write_listp(p32, size_type, num, data_off)
 end
 
 function _M.write_listp_buf(p32, T, offset, size_type, num, data_off)
-    local p32 = cast(pint32, p32)
+    p32 = cast(pint32, p32)
     local base = T.dataWordCount * 2 + offset * 2
 
     p32[base] = lshift(data_off, 2) + 1
@@ -530,7 +517,7 @@ end
 -- @param p32
 -- @param pos     free space offset from p32
 function _M.write_list(p32, data, pos, typ, ...)
-    local size = 0
+    local size
     local data_off = (pos - 8) / 8 --get_data_off(parentT, offset, pos)
 
     local elm_type, T  = ...
@@ -622,7 +609,7 @@ function _M.read_list_data(p32, header, num, elm_type, ...)
 
         size = size * 8
         ]]
-        local p32 = get_pointer_from_type(p32, elm_type)
+        p32 = get_pointer_from_type(p32, elm_type)
 
         for i = 1, num do
             t[i] = p32[i - 1]
