@@ -18,6 +18,8 @@ local ceil      = math.ceil
 local floor     = math.floor
 local type      = type
 local error     = error
+local ngx_log   = ngx.log
+local ERR       = ngx.ERR
 
 -- Only works with Little Endian for now
 assert(ffi.abi("le") == true)
@@ -360,8 +362,7 @@ function _M.get_enum_val(v, default, enum_schema, name)
 
     local r = enum_schema[v]
     if not r then
-        print(name, " Unknown enum val: " .. v)
-        --error("Unknown enum val:" .. v)
+        ngx_log(ERR, name, " Unknown enum val: ", v)
         return default
     end
     return r
