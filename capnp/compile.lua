@@ -236,7 +236,7 @@ local function _set_field_default(nodes, field, slot)
             and field.type_name ~= "anyPointer"
     then
 
-        for k, v in pairs(slot.defaultValue) do
+        for _, v in pairs(slot.defaultValue) do
             if field.type_name == "bool" then
                 field.print_default_value = v and 1 or 0
                 field.default_value = field.print_default_value
@@ -276,7 +276,7 @@ end
 
 local function _get_type(type_field)
     local type_name
-    for k, v in pairs(type_field) do
+    for k, _ in pairs(type_field) do
         type_name = k
         break
     end
@@ -301,11 +301,11 @@ local function _set_field_type(field, slot, nodes)
                 field.type_display_name = get_name(nodes[v.typeId].displayName)
             elseif type_name == "list" then
                 local list_type
-                for k, v in pairs(field.slot["type"].list.elementType) do
-                    list_type = k
+                for k1, v1 in pairs(field.slot["type"].list.elementType) do
+                    list_type = k1
                     if list_type == "struct" then
                         field.type_display_name = get_name(
-                                nodes[v.typeId].displayName)
+                                nodes[v1.typeId].displayName)
                     end
                     break
                 end
@@ -383,7 +383,7 @@ local function comp_parse_struct_data(res, nodes, struct, fields, size, name)
         local dscrm = _M.%s.which(p32, %d)]], name, struct.discriminantOffset))
     end
 
-    for i, field in ipairs(fields) do
+    for _, field in ipairs(fields) do
         if field.discriminantValue and field.discriminantValue ~= NOT_UNION then
             insert(res, format([[
 
@@ -589,7 +589,7 @@ local function comp_flat_serialize(res, nodes, struct, fields, size, name)
 
         local value]])
 
-    for i, field in ipairs(fields) do
+    for _, field in ipairs(fields) do
         insert(res, format([=[
 
 
@@ -740,7 +740,7 @@ end
 
 -- insert with indent level
 local function insertl(res, level, data)
-    for i=1, level * 4 do
+    for _=1, level * 4 do
         insert(res, " ")
     end
     insert(res, data)
@@ -748,7 +748,7 @@ end
 
 -- insert a list with indent level
 local function insertlt(res, level, data_table)
-    for i, v in ipairs(data_table) do
+    for _, v in ipairs(data_table) do
         insertl(res, level, v)
     end
 end
@@ -853,7 +853,7 @@ local function comp_calc_size(res, fields, size, name, nodes, is_group)
 
         local value]])
 
-    for i, field in ipairs(fields) do
+    for _, field in ipairs(fields) do
         dbgf("field %s is %s", field.name, field.type_name)
 
         if field.type_name == "list" then
@@ -938,7 +938,7 @@ local function comp_fields(res, nodes, node, struct)
 
     fields = {
 ]])
-    for i, field in ipairs(struct.fields) do
+    for _, field in ipairs(struct.fields) do
         comp_field(res, nodes, field)
         if field.group then
             if not node.nestedNodes then
@@ -1027,7 +1027,7 @@ end
 
 local function process_annotations(annos, nodes)
     dbg("process_annotations:" .. encode(annos))
-    for i, anno in ipairs(annos) do
+    for _, anno in ipairs(annos) do
         local id = anno.id
         anno.name = get_name(nodes[id].displayName)
         anno.value_saved = anno.value
@@ -1054,7 +1054,7 @@ local function comp_enum(res, nodes, enum, name, enum_naming_func)
 _M.%s = {
 ]], name))
 
-    for i, v in ipairs(enum.enumerants) do
+    for _, v in ipairs(enum.enumerants) do
         -- inherent parent naming function
         v.naming_func = enum_naming_func
 
@@ -1067,7 +1067,7 @@ _M.%s = {
             dbgf("%s annotations: %s", name, cjson.encode(v.annotations))
             process_annotations(v.annotations, nodes)
 
-            for i, anno in ipairs(v.annotations) do
+            for _, anno in ipairs(v.annotations) do
                 if anno.name == "naming" then
                     v.naming_func = get_naming_func(anno.value)
                     dbgf("Naming function: %s", anno.value)
@@ -1098,7 +1098,7 @@ _M.%s = {
 _M.%sStr = {
 ]], name))
 
-    for i, v in ipairs(enum.enumerants) do
+    for _, v in ipairs(enum.enumerants) do
         if not v.codeOrder then
             v.codeOrder = 0
         end
@@ -1166,7 +1166,7 @@ _M.%s = {
 
         local naming_func
         if node.annotations then
-            for i, anno in ipairs(node.annotations) do
+            for _, anno in ipairs(node.annotations) do
                 if anno.name == "naming" then
                     naming_func = get_naming_func(anno.value)
                 end
@@ -1200,7 +1200,7 @@ _M.%s = %s
     end
 
     if node.nestedNodes then
-        for i, child in ipairs(node.nestedNodes) do
+        for _, child in ipairs(node.nestedNodes) do
             comp_node(res, nodes, nodes[child.id], name .. "." .. child.name)
         end
     end
@@ -1227,7 +1227,7 @@ local function comp_file(res, nodes, file)
     local id = file.id
 
     local file_node = nodes[id]
-    for i, node in ipairs(file_node.nestedNodes) do
+    for _, node in ipairs(file_node.nestedNodes) do
         comp_node(res, nodes, nodes[node.id], node.name)
     end
 end
@@ -1236,7 +1236,7 @@ local function check_import(files, import)
     local id = import.id
     local name = import.name
 
-    for i, file in ipairs(files) do
+    for _, file in ipairs(files) do
         if file.id == id then
             return true
         end
@@ -1261,17 +1261,17 @@ end
 local function comp_body(res, schema)
     dbg("comp_body")
     local nodes = schema.nodes
-    for i, v in ipairs(nodes) do
+    for _, v in ipairs(nodes) do
         nodes[v.id] = v
     end
 
     local files = schema.requestedFiles
 
-    for i, file in ipairs(files) do
+    for _, file in ipairs(files) do
         comp_file(res, nodes, file)
 
         local imports = file.imports
-        for i, import in ipairs(imports) do
+        for _, import in ipairs(imports) do
             --import node are compiled later by comp_file
             --comp_import(res, nodes, import)
             check_import(files, import)
@@ -1292,7 +1292,7 @@ local function comp_import(res, nodes, import)
     dbgf("comp_import: %s", id)
 
     local import_node = nodes[id]
-    for i, node in ipairs(import_node.nestedNodes) do
+    for _, node in ipairs(import_node.nestedNodes) do
         comp_node(res, nodes, nodes[node.id], node.name)
     end
 end
@@ -1312,13 +1312,13 @@ function gen_%s()
 ]], name))
 
     if node.nestedNodes then
-        for i, child in ipairs(node.nestedNodes) do
+        for _, child in ipairs(node.nestedNodes) do
             comp_dg_node(res, nodes, nodes[child.id])
         end
     end
 
     insert(res, format("    local %s  = {}\n", name))
-    for i, field in ipairs(node.struct.fields) do
+    for _, field in ipairs(node.struct.fields) do
         if field.group then
             -- TODO group stuffs
         elseif field.type_name == "struct" then
@@ -1367,10 +1367,10 @@ module(...)
     local files = schema.requestedFiles
     local nodes = schema.nodes
 
-    for i, file in ipairs(files) do
+    for _, file in ipairs(files) do
         local file_node = nodes[file.id]
 
-        for i, node in ipairs(file_node.nestedNodes) do
+        for _, node in ipairs(file_node.nestedNodes) do
             comp_dg_node(res, nodes, nodes[node.id])
         end
     end
