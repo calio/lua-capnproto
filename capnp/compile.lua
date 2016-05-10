@@ -163,6 +163,7 @@ local list_size_map = {
     -- 7 = ?,
 }
 
+-- in bits
 local size_map = {
     void    = 0,
     bool    = 1,
@@ -196,6 +197,7 @@ local check_type = {
 }
 
 
+--- TODO get size of current type, should be only used for plain type?
 function get_size(type_name)
     local size = size_map[type_name]
     if not size then
@@ -205,6 +207,7 @@ function get_size(type_name)
     return size
 end
 
+--- set field.print_default_value and field.default_value
 function _set_field_default(nodes, field, slot)
     local default
     if slot.defaultValue
@@ -259,6 +262,8 @@ function _get_type(type_field)
     return type_name
 end
 
+-- TODO
+--- set field.type_display_name field.type_name
 function _set_field_type(field, slot, nodes)
     local type_name
     if field.group then
@@ -298,6 +303,7 @@ function _set_field_type(field, slot, nodes)
     assert(field.type_name)
 end
 
+-- set field.{type_name, type_display_name, name, print_default_value, default_value}
 function comp_field(res, nodes, field)
     dbg("comp_field")
     local slot = field.slot
@@ -309,6 +315,7 @@ function comp_field(res, nodes, field)
         slot.offset = 0
     end
 
+    -- set field.name
     field.name = config.default_naming_func(field.name)
 
     _set_field_type(field, slot, nodes)
@@ -725,6 +732,14 @@ function insertl(res, level, data)
     insert(res, data)
 end
 
+--- TODO generate code to calculate size needed for this list
+-- @res
+-- @field  field is the list field (current field)
+-- @nodes
+-- @name field.name
+-- @level indent level
+-- @elm_type current field is a list, elm_type is the type if current list's
+--   element. It could be plain type like uint8 of a list type of a struct type.
 function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     if not elm_type then
         return
@@ -752,9 +767,11 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     else
         -- struct tag
         if elm_type == "struct" then
+            -- TODO name in `format` function is not used
             insertl(res, level + 1, format("size = size + 8\n", name))
         end
 
+        -- TODO what is new_name
         local new_name = "[\"" .. name .. "\"]" .. "[i" .. level .. "]"
         -- calculate body size
         insertl(res, level + 1, format("local num%d = #data[\"%s\"]\n",
@@ -789,6 +806,18 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     insertl(res, level, "end")
 end
 
+-- TDOD what are the fields in `field`?
+
+--- Generate `calc_size_struct` function in a structure
+-- @param res       result table, containing code pieces. It will be catnicated
+--                  to a full string in the end.
+-- @param fields    fields of current struct
+-- @param size      base size of this struct, including field sizes and list or
+--                  struct pointer sizes, not including list content and struct
+--                  content.
+-- @param name      struct.type_name
+-- @param nodes
+-- @param is_group
 function comp_calc_size(res, fields, size, name, nodes, is_group)
     dbgf("comp_calc_size")
     if is_group then
@@ -807,14 +836,17 @@ function comp_calc_size(res, fields, size, name, nodes, is_group)
         dbgf("field %s is %s", field.name, field.type_name)
 
         if field.type_name == "list" then
+            -- better name?
             local list_type = util.get_field_type(field)
 
             insert(res, "\n")
+            -- list_type is a array describing what's the type of this list. It
+            -- could be {"list", "list", "uint8"}.
             -- list_type[1] must be "list" and should be skipped because is
-            -- is not element type
+            -- is not a list element type
             insert(res, "        -- list\n")
             _M.comp_calc_list_size(res, field, nodes, field.name, 2,
-                    select(2, unpack(list_type)))
+                    select(2, unpack(list_type))) -- TODO what does this do? what is magic number 2?
         elseif field.type_name == "struct" or field.type_name == "group" then
             insert(res, format([[
 
@@ -874,6 +906,12 @@ function comp_which(res)
 ]])
 end
 
+--- TODO
+-- @param res
+-- @param nodes
+-- @param node
+-- @param struct
+-- @TODO what structure is fields.field
 function comp_fields(res, nodes, node, struct)
     insert(res, [[
 
@@ -890,7 +928,7 @@ function comp_fields(res, nodes, node, struct)
         end
         insert(res, format([[
         { name = "%s", default = %s, ["type"] = "%s" },
-]], field.name, field.print_default_value, field.type_name))
+]], field.name, field.print_default_value, field.type_name)) -- TODO where is field.type_name from? it's set in comp_field
     end
     dbg("struct:", name)
     insert(res, format([[
@@ -898,6 +936,12 @@ function comp_fields(res, nodes, node, struct)
 ]]))
 end
 
+--- TODO
+-- @param res
+-- @param nodes
+-- @param node
+-- @param struct -> node.struct (if any)
+-- @param name -> node.name
 function comp_struct(res, nodes, node, struct, name)
 
         if not struct.dataWordCount then
@@ -933,6 +977,8 @@ function comp_struct(res, nodes, node, struct, name)
         insert(res, #struct.fields)
         insert(res, ",\n")
 
+        -- TODO what's the unit of size?
+        -- TODO what is 8?
         struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
@@ -1063,6 +1109,11 @@ function get_naming_func(name)
     return func
 end
 
+--- TODO
+-- @param res
+-- @param nodes
+-- @param node
+-- @param name  node's name
 function comp_node(res, nodes, node, name)
     dbgf("comp_node: %s, %s", name, node.id)
     if not node then
@@ -1075,23 +1126,31 @@ function comp_node(res, nodes, node, name)
         return
     end
 
+    -- TODO name is from node.name
     node.name = name
+    -- TODO change get_name to a better name that makes sense
+    -- node.type_name is like T1.u0
     node.type_name = get_name(node.displayName)
 
     local s = node.struct
+    -- test if current node is a struct
     if s then
 
-    insert(res, format([[
+        insert(res, format([[
 
 _M.%s = {
 ]], name))
+
         s.type_name = node.type_name
+
         insert(res, format([[
     id = "%s",
     displayName = "%s",
 ]], node.id, node.displayName))
+
         comp_struct(res, nodes, node, s, name)
-    insert(res, "\n}\n")
+
+        insert(res, "\n}\n")
     end
 
     local e = node.enum
@@ -1143,6 +1202,18 @@ _M.%s = %s
     end
 end
 
+---
+-- @field id
+-- @field displayName
+-- @field displayNamePrefixLength
+-- @field scopeId
+-- @field nestedNodes
+-- @field const
+-- @table node
+
+-- TODO
+--- Generate output file body
+--
 function comp_body(res, schema)
     dbg("comp_body")
     local nodes = schema.nodes
@@ -1196,6 +1267,21 @@ function comp_import(res, nodes, import)
     end
 end
 
+-- TODO
+---
+-- @param res
+-- @param nodes
+-- @param file  a struct like this
+--
+--    { id = "11589887431441418763",
+--      filename = "example.capnp",
+--      imports = {
+--        { id = "12096873787901909133",
+--          name = "enums.capnp" },
+--        { id = "12812221665212325453",
+--          name = "lua.capnp" },
+--        { id = "11326697975835387723",
+--          name = "struct.capnp" } } },
 function comp_file(res, nodes, file)
     dbg("comp_file")
     local id = file.id
@@ -1287,6 +1373,13 @@ module(...)
     return table.concat(res)
 end
 
+-- TODO add more
+--- schema table, converted from `capnp` command's output
+-- @field nodes
+-- @field requestedFiles
+-- @table schema
+
+--- lua-capnproto compiler main function
 function _M.compile(schema)
     local res = {}
 

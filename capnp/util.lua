@@ -219,6 +219,8 @@ function _M.to_text(val, T)
     return concat(res)
 end
 
+-- recursive get a type of a field, returns mulpitle results, from left to
+-- right is master type to sub types
 local function get_type(typ)
     if not typ then
         return
@@ -232,6 +234,8 @@ local function get_type(typ)
     end
 end
 
+-- get a array describing field type, could be { "list", "list", "uint8" } (a
+-- list of list of uint8 type).
 function _M.get_field_type(field)
     if field and field.slot and field.slot["type"] then
         return { get_type(field.slot["type"]) }
