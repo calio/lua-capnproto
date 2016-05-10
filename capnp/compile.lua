@@ -31,6 +31,7 @@ function _M.set_debug(_debug)
     debug = _debug
 end
 
+-- TODO this is global
 function dbg(...)
     if not debug then
         return
@@ -38,6 +39,7 @@ function dbg(...)
     print(...)
 end
 
+-- TODO this is global
 function dbgf(...)
     if not debug then
         return
@@ -45,6 +47,7 @@ function dbgf(...)
     print(format(...))
 end
 
+-- TODO this is global
 function get_schema_text(file)
     local f = io.open(file)
     if not f then
@@ -66,6 +69,7 @@ function get_schema_text(file)
     return "return " .. s
 end
 
+-- TODO this is global
 function comp_header(res, nodes)
     dbg("compile_headers")
     insert(res, format([[
