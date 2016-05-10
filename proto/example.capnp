@@ -78,3 +78,13 @@ struct T1 {
 #    const constT2 :T2 = (f0 = 12345.67, f1 = 9876.54, sd0 = "\0\1\2\3");
     u64 @27 :UInt64;
 }
+
+struct T3 {
+    lsU16 @0 :List(UInt16);
+    lsU32 @1 :List(UInt32);
+    lsU64 @2 :List(UInt64);
+    lsI16 @3 :List(Int16);
+    lsI32 @4 :List(Int32);
+    lsI64 @5 :List(Int64);
+}
+

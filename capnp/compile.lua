@@ -1,6 +1,6 @@
 -----------------------------------------------------------------
 -- lua-capnproto compiler
--- @copyright 2013-2014 Jiale Zhi (vipcalio@gmail.com)
+-- @copyright 2013-2016 Jiale Zhi (vipcalio@gmail.com)
 -----------------------------------------------------------------
 
 local cjson = require("cjson")
@@ -733,13 +733,21 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     insertl(res, level, format("if data[\"%s\"] and " ..
             "type(data[\"%s\"]) == \"table\" then\n", name, name))
 
+    if elm_type == "object" or elm_type == "anyPointer"
+        or elm_type == "group" then
+
+        error("List of object/anyPointer/group type is not supported yet.")
+    end
+
     if elm_type ~= "struct" and elm_type ~= "list" and elm_type ~= "data"
             and elm_type ~= "text" then
 
+        -- elm_type is a plain type.
+        local elm_size = get_size(elm_type) / 8
         insertlt(res, level + 1, {
             "-- num * acutal size\n",
             format("size = size + round8(#data[\"%s\"] * %d)\n",
-                name, list_size_map[field.size])
+                name, elm_size)
             })
     else
         -- struct tag
