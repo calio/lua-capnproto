@@ -484,6 +484,7 @@ local function comp_parse_struct_data(res, nodes, struct, fields, size, name)
 
         elseif field.type_name == "anyPointer" then
             -- TODO support anyPointer
+            error("anyPointer is not supported yet")
         elseif field.type_name == "void" then
             insert(res, format([[
 
@@ -1297,6 +1298,7 @@ local function comp_import(res, nodes, import)
     end
 end
 
+-- Data generator stuff
 local function comp_dg_node(res, nodes, node)
     if not node.struct then
         return
@@ -1321,12 +1323,15 @@ function gen_%s()
     for _, field in ipairs(node.struct.fields) do
         if field.group then
             -- TODO group stuffs
+            error("group is not supported yet")
         elseif field.type_name == "struct" then
             insert(res, format("    %s.%s = gen_%s()\n", name,
                     field.name,
                     gsub(lower(field.type_display_name), "%.", "_")))
 
         elseif field.type_name == "enum" then
+            -- TODO fill this
+
         elseif field.type_name == "list" then
             local list_type = field.element_type
             insert(res, format([[
