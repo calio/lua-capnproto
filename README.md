@@ -36,7 +36,7 @@ Then you can install lua-capnproto using the following commands:
 
 Let's compile an example file to test whether lua-capnproto was installed successfully:
 
-    $capnp compile -olua proto/example.capnp
+    $capnp compile -olua proto/example.capnp proto/enums.capnp proto/lua.capnp proto/struct.capnp
 
 Normally, you should see no errors and a file named "proto/example_capnp.lua" is generated.
 
