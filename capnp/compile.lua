@@ -1182,7 +1182,7 @@ function check_import(files, import)
     end
 
     error('imported file "' .. name .. '" is missing, compile it together with'
-        .. 'other Cap\'n Proto files')
+        .. ' other Cap\'n Proto files')
 end
 
 function comp_import(res, nodes, import)
