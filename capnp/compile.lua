@@ -929,13 +929,13 @@ function comp_struct(res, nodes, node, struct, name)
             insert(res, "    isGroup = true,\n")
         end
 
-        insert(res, "    field_count = ")
-        insert(res, #struct.fields)
-        insert(res, ",\n")
-
         struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
         if struct.fields then
+            insert(res, "    field_count = ")
+            insert(res, #struct.fields)
+            insert(res, ",\n")
+
             comp_fields(res, nodes, node, struct)
             --if not struct.isGroup then
 

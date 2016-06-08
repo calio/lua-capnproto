@@ -88,3 +88,5 @@ struct T3 {
     lsI64 @5 :List(Int64);
 }
 
+struct T4 {
+}
