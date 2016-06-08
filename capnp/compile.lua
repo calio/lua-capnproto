@@ -900,62 +900,62 @@ end
 
 function comp_struct(res, nodes, node, struct, name)
 
-        if not struct.dataWordCount then
-            struct.dataWordCount = 0
-        end
-        if not struct.pointerCount then
-            struct.pointerCount = 0
-        end
+    if not struct.dataWordCount then
+        struct.dataWordCount = 0
+    end
+    if not struct.pointerCount then
+        struct.pointerCount = 0
+    end
 
-        insert(res, "    dataWordCount = ")
-        insert(res, struct.dataWordCount)
+    insert(res, "    dataWordCount = ")
+    insert(res, struct.dataWordCount)
+    insert(res, ",\n")
+
+    insert(res, "    pointerCount = ")
+    insert(res, struct.pointerCount)
+    insert(res, ",\n")
+
+    if struct.discriminantCount then
+        insert(res, "    discriminantCount = ")
+        insert(res, struct.discriminantCount)
+        insert(res, ",\n")
+    end
+    if struct.discriminantOffset then
+        insert(res, "    discriminantOffset = ")
+        insert(res, struct.discriminantOffset)
+        insert(res, ",\n")
+    end
+    if struct.isGroup then
+        insert(res, "    isGroup = true,\n")
+    end
+
+    struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
+
+    if struct.fields then
+        insert(res, "    field_count = ")
+        insert(res, #struct.fields)
         insert(res, ",\n")
 
-        insert(res, "    pointerCount = ")
-        insert(res, struct.pointerCount)
-        insert(res, ",\n")
+        comp_fields(res, nodes, node, struct)
+        --if not struct.isGroup then
 
-        if struct.discriminantCount then
-            insert(res, "    discriminantCount = ")
-            insert(res, struct.discriminantCount)
-            insert(res, ",\n")
+        --end
+        comp_calc_size(res, struct.fields, struct.size,
+                struct.type_name, nodes, struct.isGroup)
+        comp_flat_serialize(res, nodes, struct, struct.fields, struct.size,
+                struct.type_name)
+        if not struct.isGroup then
+            comp_serialize(res, struct.type_name)
         end
-        if struct.discriminantOffset then
-            insert(res, "    discriminantOffset = ")
-            insert(res, struct.discriminantOffset)
-            insert(res, ",\n")
+        if struct.discriminantCount and struct.discriminantCount > 0 then
+            comp_which(res)
         end
-        if struct.isGroup then
-            insert(res, "    isGroup = true,\n")
+        comp_parse_struct_data(res, nodes, struct, struct.fields,
+                struct.size, struct.type_name)
+        if not struct.isGroup then
+            comp_parse(res, struct.type_name)
         end
-
-        struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
-
-        if struct.fields then
-            insert(res, "    field_count = ")
-            insert(res, #struct.fields)
-            insert(res, ",\n")
-
-            comp_fields(res, nodes, node, struct)
-            --if not struct.isGroup then
-
-            --end
-            comp_calc_size(res, struct.fields, struct.size,
-                    struct.type_name, nodes, struct.isGroup)
-            comp_flat_serialize(res, nodes, struct, struct.fields, struct.size,
-                    struct.type_name)
-            if not struct.isGroup then
-                comp_serialize(res, struct.type_name)
-            end
-            if struct.discriminantCount and struct.discriminantCount > 0 then
-                comp_which(res)
-            end
-            comp_parse_struct_data(res, nodes, struct, struct.fields,
-                    struct.size, struct.type_name)
-            if not struct.isGroup then
-                comp_parse(res, struct.type_name)
-            end
-        end
+    end
 end
 
 function comp_enum(res, nodes, enum, name, enum_naming_func)
