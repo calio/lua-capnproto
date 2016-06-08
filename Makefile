@@ -1,4 +1,4 @@
-VERSION:=0.1.2-1
+VERSION:=0.1.3-1
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
 CAPNP_TEST:=../capnp_test
@@ -44,10 +44,18 @@ clean:
 	-rm proto/example.capnp.c++ proto/example.capnp.h cpp/*.o cpp/main test.schema.lua proto/example_capnp.lua a.data c.data test.schema.txt *.data
 
 tag_and_pack:
+ifeq ($(shell git tag --sort=version:refname|tail -n 1), v$(VERSION))
+	@echo "Need to \"make version\" first"
+	@exit 1
+endif
 	@echo "Add git tag v$(VERSION)?"
 	@read -r FOO
 	git tag -f v$(VERSION)
+	@echo "Push tags?"
+	@read -r FOO
 	git push --tags
+	@echo "Build package?"
+	@read -r FOO
 	cp lua-capnproto.rockspec lua-capnproto-$(VERSION).rockspec
 	luarocks pack lua-capnproto-$(VERSION).rockspec
 
@@ -56,8 +64,10 @@ version:
 	@echo "Enter new version: "
 	@# The use of variable "new_version" ($$new_version) should be in the same line as where it gets its value
 	@read new_version; perl -pi -e "s/$(VERSION)/$$new_version/" Makefile bin/capnpc-lua lua-capnproto.rockspec
+	git add Makefile bin/capnpc-lua lua-capnproto.rockspec
+	git commit -m 'Bump version number'
 
-release: tag_and_pack version
+release: tag_and_pack
 
 release_clean:
 	-rm -f lua-capnproto-*.rockspec *.rock

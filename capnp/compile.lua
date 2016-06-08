@@ -1,6 +1,6 @@
 -----------------------------------------------------------------
 -- lua-capnproto compiler
--- @copyright 2013-2014 Jiale Zhi (vipcalio@gmail.com)
+-- @copyright 2013-2016 Jiale Zhi (vipcalio@gmail.com)
 -----------------------------------------------------------------
 
 local cjson = require("cjson")
@@ -733,13 +733,21 @@ function _M.comp_calc_list_size(res, field, nodes, name, level, elm_type, ...)
     insertl(res, level, format("if data[\"%s\"] and " ..
             "type(data[\"%s\"]) == \"table\" then\n", name, name))
 
+    if elm_type == "object" or elm_type == "anyPointer"
+        or elm_type == "group" then
+
+        error("List of object/anyPointer/group type is not supported yet.")
+    end
+
     if elm_type ~= "struct" and elm_type ~= "list" and elm_type ~= "data"
             and elm_type ~= "text" then
 
+        -- elm_type is a plain type.
+        local elm_size = get_size(elm_type) / 8
         insertlt(res, level + 1, {
             "-- num * acutal size\n",
             format("size = size + round8(#data[\"%s\"] * %d)\n",
-                name, list_size_map[field.size])
+                name, elm_size)
             })
     else
         -- struct tag
@@ -892,62 +900,62 @@ end
 
 function comp_struct(res, nodes, node, struct, name)
 
-        if not struct.dataWordCount then
-            struct.dataWordCount = 0
-        end
-        if not struct.pointerCount then
-            struct.pointerCount = 0
-        end
+    if not struct.dataWordCount then
+        struct.dataWordCount = 0
+    end
+    if not struct.pointerCount then
+        struct.pointerCount = 0
+    end
 
-        insert(res, "    dataWordCount = ")
-        insert(res, struct.dataWordCount)
+    insert(res, "    dataWordCount = ")
+    insert(res, struct.dataWordCount)
+    insert(res, ",\n")
+
+    insert(res, "    pointerCount = ")
+    insert(res, struct.pointerCount)
+    insert(res, ",\n")
+
+    if struct.discriminantCount then
+        insert(res, "    discriminantCount = ")
+        insert(res, struct.discriminantCount)
         insert(res, ",\n")
-
-        insert(res, "    pointerCount = ")
-        insert(res, struct.pointerCount)
+    end
+    if struct.discriminantOffset then
+        insert(res, "    discriminantOffset = ")
+        insert(res, struct.discriminantOffset)
         insert(res, ",\n")
+    end
+    if struct.isGroup then
+        insert(res, "    isGroup = true,\n")
+    end
 
-        if struct.discriminantCount then
-            insert(res, "    discriminantCount = ")
-            insert(res, struct.discriminantCount)
-            insert(res, ",\n")
-        end
-        if struct.discriminantOffset then
-            insert(res, "    discriminantOffset = ")
-            insert(res, struct.discriminantOffset)
-            insert(res, ",\n")
-        end
-        if struct.isGroup then
-            insert(res, "    isGroup = true,\n")
-        end
+    struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
 
+    if struct.fields then
         insert(res, "    field_count = ")
         insert(res, #struct.fields)
         insert(res, ",\n")
 
-        struct.size = struct.dataWordCount * 8 + struct.pointerCount * 8
+        comp_fields(res, nodes, node, struct)
+        --if not struct.isGroup then
 
-        if struct.fields then
-            comp_fields(res, nodes, node, struct)
-            --if not struct.isGroup then
-
-            --end
-            comp_calc_size(res, struct.fields, struct.size,
-                    struct.type_name, nodes, struct.isGroup)
-            comp_flat_serialize(res, nodes, struct, struct.fields, struct.size,
-                    struct.type_name)
-            if not struct.isGroup then
-                comp_serialize(res, struct.type_name)
-            end
-            if struct.discriminantCount and struct.discriminantCount > 0 then
-                comp_which(res)
-            end
-            comp_parse_struct_data(res, nodes, struct, struct.fields,
-                    struct.size, struct.type_name)
-            if not struct.isGroup then
-                comp_parse(res, struct.type_name)
-            end
+        --end
+        comp_calc_size(res, struct.fields, struct.size,
+                struct.type_name, nodes, struct.isGroup)
+        comp_flat_serialize(res, nodes, struct, struct.fields, struct.size,
+                struct.type_name)
+        if not struct.isGroup then
+            comp_serialize(res, struct.type_name)
         end
+        if struct.discriminantCount and struct.discriminantCount > 0 then
+            comp_which(res)
+        end
+        comp_parse_struct_data(res, nodes, struct, struct.fields,
+                struct.size, struct.type_name)
+        if not struct.isGroup then
+            comp_parse(res, struct.type_name)
+        end
+    end
 end
 
 function comp_enum(res, nodes, enum, name, enum_naming_func)
@@ -1174,7 +1182,7 @@ function check_import(files, import)
     end
 
     error('imported file "' .. name .. '" is missing, compile it together with'
-        .. 'other Cap\'n Proto files')
+        .. ' other Cap\'n Proto files')
 end
 
 function comp_import(res, nodes, import)

@@ -6,7 +6,7 @@ local util = require "capnp.util"
 local data = {
     people = {
         {
-            id = "123",
+            id = 123,
             name = "Alice",
             email = "alice@example.com",
             phones = {
@@ -20,7 +20,7 @@ local data = {
             },
         },
         {
-            id = "456",
+            id = 456,
             name = "Bob",
             email = "bob@example.com",
             phones = {

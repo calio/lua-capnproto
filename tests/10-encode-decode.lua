@@ -714,4 +714,31 @@ function test_empty_enum_value()
     copy  = hw_capnp.T1.parse(bin, copy)
     assert_equal("none", copy.e1)
 end
+
+function test_list_uint16_size()
+    local data = { ls_u16 = {1, 2, 3, 4, 5, 6, 7, 8, 9} }
+    -- header (and root struct pointer) + 6 list pointers + round8(2 * 9)
+    assert_equal(16 + 8 * 6 + 24, hw_capnp.T3.calc_size(data))
+
+    local data = { ls_u32 = {1, 2, 3, 4, 5, 6, 7, 8, 9} }
+    -- header (and root struct pointer) + 6 list pointers + round8(4 * 9)
+    assert_equal(16 + 8 * 6 + 40, hw_capnp.T3.calc_size(data))
+
+    local data = { ls_u64 = {1, 2, 3, 4, 5, 6, 7, 8, 9} }
+    -- header (and root struct pointer) + 6 list pointers + round8(8 * 9)
+    assert_equal(16 + 8 * 6 + 72, hw_capnp.T3.calc_size(data))
+
+    local data = { ls_i16 = {1, 2, 3, 4, 5, 6, 7, 8, 9} }
+    -- header (and root struct pointer) + 6 list pointers + round8(2 * 9)
+    assert_equal(16 + 8 * 6 + 24, hw_capnp.T3.calc_size(data))
+
+    local data = { ls_i32 = {1, 2, 3, 4, 5, 6, 7, 8, 9} }
+    -- header (and root struct pointer) + 6 list pointers + round8(4 * 9)
+    assert_equal(16 + 8 * 6 + 40, hw_capnp.T3.calc_size(data))
+
+    local data = { ls_i64 = {1, 2, 3, 4, 5, 6, 7, 8, 9} }
+    -- header (and root struct pointer) + 6 list pointers + round8(8 * 9)
+    assert_equal(16 + 8 * 6 + 72, hw_capnp.T3.calc_size(data))
+end
+
 return _G
