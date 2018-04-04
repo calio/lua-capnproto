@@ -524,8 +524,9 @@ end
 function comp_serialize(res, name)
     insert(res, format([[
 
-    serialize = function(data, p8, size)
-        if not p8 then
+    -- Serialize and return pointer to char[] and size
+    serialize_cdata = function(data, p8, size)
+        if p8 == nil then
             size = _M.%s.calc_size(data)
 
             p8 = get_str_buf(size)
@@ -543,9 +544,14 @@ function comp_serialize(res, name)
         -- skip header & struct pointer
         _M.%s.flat_serialize(data, p32 + 4)
 
+        return p8, size
+    end,
+
+    serialize = function(data, p8, size)
+        p8, size = _M.%s.serialize_cdata(data, p8, size)
         return ffi_string(p8, size)
     end,
-]], name, name, name))
+]], name, name, name, name))
 end
 
 function comp_flat_serialize(res, nodes, struct, fields, size, name)
