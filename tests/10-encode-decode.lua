@@ -741,4 +741,16 @@ function test_list_uint16_size()
     assert_equal(16 + 8 * 6 + 72, hw_capnp.T3.calc_size(data))
 end
 
+function test_serialize_cdata()
+    local data = {
+        i0 = 32,
+    }
+
+    assert_equal(128, hw_capnp.T1.calc_size(data))
+    local bin   = hw_capnp.T1.serialize(data)
+    local arr, len = hw_capnp.T1.serialize_cdata(data)
+    assert_equal(#bin, len)
+    assert_equal(bin, ffi.string(arr, len))
+end
+
 return _G
