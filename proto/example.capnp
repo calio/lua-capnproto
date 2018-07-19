@@ -64,6 +64,7 @@ struct T1 {
     end @23 :Bool; # "end" is lua's reserved word
     o0  @24 :AnyPointer;
     lt0 @25 :List(Text);
+    ld0 @27 :List(Data);
 #    u1: union {
 #        g1 :group {
 #            v1 @17 :Void;
@@ -76,7 +77,7 @@ struct T1 {
     const welcomeText :Text = "Hello";
 # Doesn't work for now
 #    const constT2 :T2 = (f0 = 12345.67, f1 = 9876.54, sd0 = "\0\1\2\3");
-    u64 @27 :UInt64;
+    u64 @28 :UInt64;
 }
 
 struct T3 {
