@@ -584,7 +584,7 @@ function _M.read_list_data(p32, header, num, elm_type, ...)
             local off, child_size, child_num = _M.read_listp_list(p32,
                     header, i)
             if off and child_num then
-                t[i] = _M.read_text_data(p32 + (1 + off) * 2, child_num)
+                t[i] = _M.read_text_data(p32 + (i + off) * 2, child_num)
             end
         end
     elseif elm_type == "struct" then
