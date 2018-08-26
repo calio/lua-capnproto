@@ -1,7 +1,7 @@
 package = "lua-capnproto"
 version = "0.1.4-4"
 source = {
-   url = "https://github.com/calio/lua-capnproto",
+   url = "git://github.com/calio/lua-capnproto",
    tag = "v0.1.4-4",
 }
 description = {
