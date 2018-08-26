@@ -1,7 +1,7 @@
 package = "lua-capnproto"
 version = "0.1.4-1"
 source = {
-   url = "git://github.com/cloudflare/lua-capnproto",
+   url = "https://github.com/calio/lua-capnproto.git",
    tag = "v0.1.4-1",
 }
 description = {
@@ -9,7 +9,7 @@ description = {
    detailed = [[
        Lua-capnproto is a pure lua implementation of capnproto based on LuaJIT.
    ]],
-   homepage = "https://github.com/cloudflare/lua-capnproto",
+   homepage = "https://github.com/calio/lua-capnproto",
    license = "BSD",
 }
 dependencies = {
