@@ -1,4 +1,4 @@
-VERSION:=0.1.4-2
+VERSION:=0.1.4-3
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
 CAPNP_TEST:=../capnp_test
