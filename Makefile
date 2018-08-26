@@ -1,4 +1,4 @@
-VERSION:=0.1.3-2
+VERSION:=0.1.3-3
 CXXFLAGS:=-std=gnu++11 -g -Iproto -I/usr/local/include
 LDFLAGS:=-L/usr/local/lib -lcapnp -lkj -pthread
 CAPNP_TEST:=../capnp_test
@@ -56,15 +56,15 @@ endif
 	git push --tags
 	@echo "Build package?"
 	@read -r FOO
-	cp lua-capnproto.rockspec lua-capnproto-$(VERSION).rockspec
-	luarocks pack lua-capnproto-$(VERSION).rockspec
+	#cp lua-capnproto.rockspec lua-capnproto-$(VERSION).rockspec
+	luarocks pack rockspec/lua-capnproto-$(VERSION).rockspec
 
 version:
 	@echo "Old version is \"$(VERSION)\""
 	@echo "Enter new version: "
 	@# The use of variable "new_version" ($$new_version) should be in the same line as where it gets its value
-	@read new_version; perl -pi -e "s/$(VERSION)/$$new_version/" Makefile bin/capnpc-lua lua-capnproto.rockspec
-	git add Makefile bin/capnpc-lua lua-capnproto.rockspec
+	@read new_version; perl -pi -e "s/$(VERSION)/$$new_version/" Makefile bin/capnpc-lua rockspec/lua-capnproto.rockspec; cp rockspec/lua-capnproto.rockspec rockspec/lua-capnproto-$$new_version.rockspec
+	git add Makefile bin/capnpc-lua rockspec/lua-capnproto.rockspec rockspec/lua-capnproto-*.rockspec
 	git commit -m 'Bump version number'
 
 release: tag_and_pack
